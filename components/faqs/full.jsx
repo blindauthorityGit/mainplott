@@ -6,7 +6,7 @@ const Full = ({ data, klasse }) => {
     return (
         <div className={`${klasse}`}>
             {data.map((e, i) => {
-                return <Element question={e.question} answer={e.answer}></Element>;
+                return <Element key={`faq${i}`} question={e.question} answer={e.answer}></Element>;
             })}
         </div>
     );
