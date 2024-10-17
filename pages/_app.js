@@ -1,7 +1,7 @@
 import "@/styles/globals.css";
 import { useState, useRef, useEffect } from "react";
 
-import Menu from "../components/Menu"; // Import your Menu component
+import Menu from "../components/menu"; // Import your Menu component
 import { MenuProvider } from "../context/menuContext"; // Import the Menu Provider
 
 //LIBS
