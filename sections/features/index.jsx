@@ -16,7 +16,7 @@ const FeaturesSection = ({ data }) => {
             {data.map((e, i) => {
                 return (
                     <IconBox
-                        klasse="lg:col-span-3 items-start"
+                        klasse="lg:col-span-3 col-span-12 items-start"
                         icon={e.image}
                         headline={e.headline}
                         text={e.text}

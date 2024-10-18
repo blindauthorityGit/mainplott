@@ -12,9 +12,9 @@ const TestimonialsSection = ({ data }) => {
     }, [data]);
 
     return (
-        <div className="grid grid-cols-12 lg:px-24 lg:gap-12 lg:mt-10">
+        <div className="grid grid-cols-12 px-4 lg:px-24 gap-8 lg:gap-12 lg:mt-10">
             {data.map((e, i) => {
-                return <InfoBox klasse="lg:col-span-4 items-start" text={e.text} key={`linkbox${i}`} />;
+                return <InfoBox klasse="lg:col-span-4 col-span-12 items-start" text={e.text} key={`linkbox${i}`} />;
             })}
         </div>
     );

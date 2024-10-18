@@ -33,7 +33,7 @@ export default function Menu() {
                         <img
                             src={urlFor(menuData.logo).url()}
                             alt="Logo"
-                            className="h-12 inline-block mx-auto md:mx-0"
+                            className="h-24 inline-block mx-auto md:mx-0"
                         />
                     </Link>
                 </div>

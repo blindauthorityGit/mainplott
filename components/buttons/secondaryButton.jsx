@@ -34,7 +34,7 @@ const SecondaryButton = ({
 
     // Conditional rendering: Link version vs. Non-Link version
     const ButtonContent = (
-        <motion.div className="relative inline-block" initial="rest" whileHover="hover" animate="rest">
+        <motion.div className="relative inline-block w-full lg:w-auto" initial="rest" whileHover="hover" animate="rest">
             {/* Offset Background Layer */}
             <motion.div
                 className={`absolute inset-0 ${offsetColor} rounded-[10px] -z-10`}

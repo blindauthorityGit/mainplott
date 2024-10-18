@@ -27,14 +27,14 @@ const IntroText = ({ data, order }) => {
                     viewport={{ once: true }}
                 >
                     <BasicPortableText value={data.richText}></BasicPortableText>
-                    <div className="lg:h-16"></div>
+                    <div className="h-8 lg:h-16"></div>
                     {data.button && (
                         <SecondaryButton link="/about" offsetColor="bg-primaryColor-200">
                             mehr erfahren
                         </SecondaryButton>
                     )}
                 </motion.div>
-                <div className={`col-span-12 lg:col-span-6 ${order ? "order-first" : null}`}>
+                <div className={`col-span-12 lg:col-span-6 order-first ${order ? "lg:order-first" : null}`}>
                     <div className="">
                         <motion.div
                             className=" h-auto z-10 relative "

@@ -40,7 +40,7 @@ const FAQSection = ({ klasse }) => {
 
     return (
         <>
-            <div className="grid grid-cols-12 lg:px-24 lg:gap-x-6 lg:mt-10">
+            <div className="grid grid-cols-12 px-4 lg:px-24 lg:gap-x-6 lg:mt-10">
                 <motion.div className="col-span-12 lg:col-span-12 h-auto z-10 x relative">
                     <H2 klasse="2">
                         <div className="">Häufig gestellte Fragen</div>
