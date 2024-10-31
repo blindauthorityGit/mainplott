@@ -1,11 +1,11 @@
 import React from "react";
 import { CoverImage } from "../images";
-import { H3 } from "../typography";
+import { H3, P } from "../typography";
 import Link from "next/link";
 import urlFor from "../../functions/urlFor";
 import { motion } from "framer-motion"; // Import framer-motion
 
-const LinkBox = ({ klasse, link, image, text, icon: Icon }) => {
+const LinkBox = ({ klasse, link, image, text, icon, details, title }) => {
     return (
         <motion.div className={`${klasse} text-center`} initial="rest" whileHover="hover" animate="rest">
             <Link href={link}>
@@ -31,7 +31,7 @@ const LinkBox = ({ klasse, link, image, text, icon: Icon }) => {
                     </motion.svg>
 
                     {/* Icon Animation */}
-                    {Icon && (
+                    {icon && (
                         <motion.div
                             className="absolute inset-0 flex items-center justify-center z-40"
                             variants={{
@@ -40,7 +40,8 @@ const LinkBox = ({ klasse, link, image, text, icon: Icon }) => {
                             }}
                             transition={{ delay: 0.3, duration: 0.3, ease: "easeInOut" }}
                         >
-                            <Icon className="text-white text-6xl" />
+                            <img src={urlFor(icon).url()} alt="" />
+                            {/* <Icon className="text-white text-6xl" /> */}
                         </motion.div>
                     )}
 
@@ -83,6 +84,21 @@ const LinkBox = ({ klasse, link, image, text, icon: Icon }) => {
                     >
                         {text}
                     </H3>
+                    {title && (
+                        <H3
+                            klasse="relative !mb-4"
+                            as={motion.h3}
+                            variants={{
+                                rest: { color: "#000" }, // Default color (e.g., dark grey or black)
+                                hover: { color: "var(--primaryColor)" }, // Change to primary color
+                            }}
+                            transition={{ duration: 0.4, ease: "easeInOut" }}
+                        >
+                            {title}
+                        </H3>
+                    )}
+
+                    {details && <P klasse="lg:!-mt-3">{details}</P>}
                 </motion.div>
             </Link>
         </motion.div>

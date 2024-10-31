@@ -1,6 +1,7 @@
 import pages from '../schemas/pages/pages.js'
 import startPage from '../schemas/pages/startPage.js'
 import aboutPage from '../schemas/pages/aboutPage.js'
+import ServicePage from '../schemas/pages/servicePage.js'
 
 //COMPONENTS
 import seo from '../schemas/seo'
@@ -15,6 +16,7 @@ import testimonial from '../schemas/components/testimonials'
 import testimonialsSingleton from '../schemas/components/testimonials/testimonial.js'
 import faq from '../schemas/components/faqs/faq.js'
 import faqsSingleton from '../schemas/components/faqs/'
+import shop from '../schemas/components/shop/'
 
 // Export all schemas
 export const schemaTypes = [
@@ -33,5 +35,7 @@ export const schemaTypes = [
   faqsSingleton,
   seo,
   settingsSingleton,
+  ServicePage,
+  shop,
   // You can add other schemas like aboutPage, contactPage here as needed
 ]

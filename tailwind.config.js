@@ -46,6 +46,12 @@ module.exports = {
                 errorColor: {
                     DEFAULT: "#9E2A2B",
                 },
+                warningColor: {
+                    DEFAULT: "#F18F01",
+                },
+                blackColor: {
+                    DEFAULT: "#090C08",
+                },
                 background: "#F9F9F9",
                 foreground: "var(--foreground)",
             },

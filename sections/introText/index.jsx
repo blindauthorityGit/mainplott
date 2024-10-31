@@ -34,7 +34,7 @@ const IntroText = ({ data, order }) => {
                         </SecondaryButton>
                     )}
                 </motion.div>
-                <div className={`col-span-12 lg:col-span-6 order-first ${order ? "lg:order-first" : null}`}>
+                <div className={`col-span-12 lg:col-span-6 order-first ${order ? "lg:order-first" : "lg:order-last"}`}>
                     <div className="">
                         <motion.div
                             className=" h-auto z-10 relative "

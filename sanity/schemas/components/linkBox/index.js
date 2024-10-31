@@ -13,6 +13,11 @@ export default {
       },
     },
     {
+      name: 'icon',
+      title: 'Icon',
+      type: 'image',
+    },
+    {
       name: 'text',
       title: 'Text',
       type: 'string',
@@ -20,6 +25,11 @@ export default {
     {
       name: 'link',
       title: 'Link',
+      type: 'string',
+    },
+    {
+      name: 'details',
+      title: 'Details',
       type: 'string',
     },
   ],

@@ -33,6 +33,9 @@ export default (S) =>
                     .schemaType('aboutPage') // Reference the "aboutPage" schema
                     .documentId('singleton-aboutPage'), // Singleton ID for the about page
                 ),
+              S.documentTypeListItem('servicePage')
+                .title('Service Pages') // Add Service Pages to Pages list
+                .icon(MdWeb),
             ]),
         ),
       // Define the "Global Components" category with a unique ID
@@ -80,6 +83,15 @@ export default (S) =>
                   S.document()
                     .schemaType('settingsSingleton') // Reference the "settingsSingleton" schema
                     .documentId('singleton-settings'), // Singleton ID for Settings
+                ),
+              S.listItem()
+                .title('Shop') // Singleton for Settings
+                .id('shopItem')
+                .icon(MdSettings) // Icon for Settings
+                .child(
+                  S.document()
+                    .schemaType('shop') // Reference the "settingsSingleton" schema
+                    .documentId('shop'), // Singleton ID for Settings
                 ),
             ]),
         ),

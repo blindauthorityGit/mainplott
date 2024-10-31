@@ -67,5 +67,74 @@ export default {
       title: 'City',
       type: 'string',
     },
+    {
+      name: 'menu',
+      title: 'Menu',
+      type: 'array',
+      of: [
+        {
+          type: 'object',
+          name: 'category',
+          title: 'Category',
+          fields: [
+            {
+              name: 'image',
+              title: 'Category Image',
+              type: 'image',
+              options: {
+                hotspot: true, // Enable cropping
+              },
+            },
+            {
+              name: 'title',
+              title: 'Category Title',
+              type: 'string',
+            },
+            {
+              name: 'menuItems',
+              title: 'Menu Items',
+              type: 'array',
+              of: [
+                {
+                  type: 'object',
+                  name: 'menuItem',
+                  title: 'Menu Item',
+                  fields: [
+                    {
+                      name: 'image',
+                      title: 'Menu Item Image',
+                      type: 'image',
+                      options: {
+                        hotspot: true, // Enable cropping
+                      },
+                    },
+                    {
+                      name: 'text',
+                      title: 'Menu Item Text',
+                      type: 'string',
+                    },
+                    {
+                      name: 'link',
+                      title: 'Menu Item Link',
+                      type: 'string',
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'logos',
+      title: 'Logos',
+      type: 'array',
+      of: [
+        {
+          type: 'image',
+        },
+      ],
+    },
   ],
 }
