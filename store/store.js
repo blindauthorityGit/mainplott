@@ -24,6 +24,13 @@ const useStore = create((set) => ({
     //SHOP DATA
     purchaseData: {
         selectedSize: null,
+        uploadedGraphic: null,
+        uploadedGraphicFile: null,
+        xPosition: 0,
+        yPosition: 0,
+        scale: 1,
+        containerWidth: null, // Add container width
+        containerHeight: null, // Add container height
     },
     setPurchaseData: (data) =>
         set((state) => ({

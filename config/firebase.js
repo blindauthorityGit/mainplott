@@ -66,12 +66,16 @@ export const uploadFileToTempFolder = async (file, userId) => {
 
     // Upload the file
     await uploadBytes(storageRef, file);
+    // Get the download URL
+    const downloadURL = await getDownloadURL(storageRef);
 
     // Save metadata in Firestore
     const fileMetadata = {
         userId,
         fileId: uniqueId,
         filePath,
+        downloadURL, // Include the download URL
+
         uploadTime: new Date().toISOString(),
         status: "temporary",
     };

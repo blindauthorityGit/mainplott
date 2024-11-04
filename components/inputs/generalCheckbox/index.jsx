@@ -24,7 +24,11 @@ const GeneralCheckBox = ({
     };
 
     return (
-        <div onClick={handleToggle} className="flex items-center cursor-pointer space-x-3" style={{ ...style }}>
+        <div
+            onClick={handleToggle}
+            className="flex items-center cursor-pointer font-body space-x-3"
+            style={{ ...style }}
+        >
             {/* Checkbox Container */}
             <motion.div
                 className={`relative w-10 h-10 rounded-[10px] border-2 ${borderColor} flex items-center justify-center 
