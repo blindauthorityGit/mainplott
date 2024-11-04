@@ -13,6 +13,7 @@ export const analyzePdf = async (file) => {
         }
 
         const analysisResult = await response.json();
+        console.log(analysisResult);
         return analysisResult;
     } catch (error) {
         console.error("Error analyzing PDF:", error);

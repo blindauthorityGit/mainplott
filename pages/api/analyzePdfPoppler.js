@@ -2,7 +2,6 @@
 import formidable from "formidable";
 import fs from "fs";
 import poppler from "pdf-poppler";
-import { uploadPreviewToStorage } from "@/config/firebase";
 
 // Define a simple API route handler to analyze the uploaded PDF
 export default async function handler(req, res) {
@@ -43,16 +42,11 @@ export default async function handler(req, res) {
 
                 // Return preview image URL for rendering on the client
                 const previewUrl = `/public/${options.out_prefix}-1.png`;
-                const previewFilePath = `${options.out_dir}/${options.out_prefix}-1.png`;
-                const previewFileBuffer = fs.readFileSync(previewFilePath);
-                console.log(previewUrl);
-                const downloadURL = await uploadPreviewToStorage(previewFileBuffer, "preview.png");
-                console.log(downloadURL);
 
                 return res.status(200).json({
                     message: "PDF analyzed successfully",
                     numPages: 1, // Assuming single-page PDFs for this example
-                    previewImage: downloadURL,
+                    previewImage: previewUrl,
                 });
             } catch (analyzeError) {
                 console.error("Error analyzing the PDF:", analyzeError);

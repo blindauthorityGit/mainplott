@@ -83,3 +83,27 @@ export const uploadFileToTempFolder = async (file, userId) => {
 
     return fileMetadata;
 };
+
+// Function to upload generated preview image to Firebase Storage
+export const uploadPreviewToStorage = async (previewFileBuffer, fileName) => {
+    try {
+        const uniqueId = uuidv4();
+        const filePath = `pdfpreviews/${uniqueId}-${fileName}`;
+
+        // Firebase storage reference
+        const storageRef = ref(storage, filePath);
+
+        // Upload the preview image buffer
+        await uploadBytes(storageRef, previewFileBuffer, {
+            contentType: "image/png",
+        });
+
+        // Get download URL of the uploaded file
+        const downloadURL = await getDownloadURL(storageRef);
+        console.log("Preview image uploaded successfully:", downloadURL);
+        return downloadURL;
+    } catch (error) {
+        console.error("Error uploading preview image:", error);
+        throw error;
+    }
+};

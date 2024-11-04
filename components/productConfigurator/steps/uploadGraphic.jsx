@@ -5,6 +5,8 @@ import { uploadFileToTempFolder } from "@/config/firebase"; // Import the upload
 import { analyzeImage } from "@/functions/analyzeImage"; // Import the analyzeImage function
 import { analyzePdf } from "@/functions/analyzePdf"; // Import the analyzePdf function
 import PdfPreview from "@/components/pdfPreview";
+import { P } from "@/components/typography";
+import { FiTrash2, FiInfo, FiRefreshCw } from "react-icons/fi"; // Importing the trash, info, and refresh icons
 
 import { GraphicUploadModalContent } from "@/components/modalContent"; // Import the new modal content component
 import LoadingSpinner from "@/components/spinner"; // Import the loading spinner component
@@ -12,7 +14,7 @@ import LoadingSpinner from "@/components/spinner"; // Import the loading spinner
 // STORE
 import useStore from "@/store/store"; // Your Zustand store
 
-export default function UploadGraphic({ product }) {
+export default function UploadGraphic({ product, setCurrentStep, steps, currentStep }) {
     const {
         purchaseData,
         setPurchaseData,
@@ -25,14 +27,19 @@ export default function UploadGraphic({ product }) {
         showSpinner,
         setShowSpinner,
     } = useStore();
-    const [uploadedFile, setUploadedFile] = useState(null);
+    const [uploadedFile, setUploadedFile] = useState(purchaseData?.uploadedGraphicFile || null);
     const [uploading, setUploading] = useState(true);
     const [uploadError, setUploadError] = useState(null);
 
     const stepData = {
         title: "Grafik hochladen",
-        description: "Ziehen Sie Ihre Grafik hierher oder klicken Sie unten, um eine Datei hochzuladen.",
+        // description: "Ziehen Sie Ihre Grafik hierher oder klicken Sie unten, um eine Datei hochzuladen.",
     };
+
+    useEffect(() => {
+        console.log(purchaseData, purchaseData?.uploadedGraphicFile);
+        console.log(uploadedFile);
+    }, [uploadedFile]);
 
     // Function to handle new file upload, similar to the initial file drop
     const handleNewFileUpload = async (newFile) => {
@@ -112,6 +119,7 @@ export default function UploadGraphic({ product }) {
                     setUploadError("Die Datei ist zu groß. Die maximale Dateigröße beträgt 10MB.");
                     return;
                 }
+                console.log(file);
 
                 setUploadError(null); // Clear any previous errors
                 setUploadedFile(file);
@@ -123,8 +131,8 @@ export default function UploadGraphic({ product }) {
                     const userId = purchaseData?.userId || "anonymous"; // Replace with real user ID if available
                     const fileMetadata = await uploadFileToTempFolder(file, userId);
                     // Save metadata to the store
-                    setPurchaseData({ ...purchaseData, uploadedGraphic: fileMetadata });
-
+                    setPurchaseData({ ...purchaseData, uploadedGraphic: fileMetadata, uploadedGraphicFile: file });
+                    console.log(fileMetadata);
                     // Determine what kind of analysis is needed based on file type
                     if (file.type === "image/jpeg" || file.type === "image/png") {
                         // Analyze JPEG or PNG with sharp
@@ -146,7 +154,11 @@ export default function UploadGraphic({ product }) {
                                 size={analysisResult.size}
                                 format={analysisResult.format}
                                 dimension={analysisResult.dimension}
-                                onNewFileUpload={handleNewFileUpload} // Pass the function here
+                                onNewFileUpload={handleNewFileUpload}
+                                setCurrentStep={setCurrentStep}
+                                setModalOpen={setModalOpen} // Pass the modal control function
+                                steps={steps}
+                                currentStep={currentStep} // Pass the function here
                             />
                         );
                     } else if (file.type === "application/pdf") {
@@ -157,6 +169,7 @@ export default function UploadGraphic({ product }) {
                         setModalContent(
                             <GraphicUploadModalContent
                                 file={file}
+                                preview={pdfAnalysisResult.previewImage}
                                 numPages={pdfAnalysisResult.numPages}
                                 previewComponent={<PdfPreview file={file} />}
                                 onNewFileUpload={handleNewFileUpload} // Pass the function here
@@ -188,17 +201,30 @@ export default function UploadGraphic({ product }) {
         [setShowSpinner, purchaseData, setPurchaseData, setModalOpen, setModalContent, setColorSpace, setDpi]
     );
 
+    // Function to show details again by opening the modal
+    const handleShowDetails = () => {
+        if (uploadedFile) {
+            setModalOpen(true);
+        }
+    };
+
+    // Function to handle deleting the uploaded image
+    const handleDeleteUpload = () => {
+        setUploadedFile(null);
+        setPurchaseData({ ...purchaseData, uploadedGraphic: null, uploadedGraphicFile: null });
+    };
+
     const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
     return (
-        <>
-            <div
-                {...getRootProps()}
-                className="flex flex-col items-center justify-center  bg-gray-100 border-dashed border-2 border-gray-400"
-            >
-                <input {...getInputProps()} />
-                <ContentWrapper data={stepData}>
-                    <>
+        <div className="lg:px-16 lg:mt-8">
+            <ContentWrapper data={stepData}>
+                <>
+                    <div
+                        {...getRootProps()}
+                        className="flex flex-col  items-center justify-center  bg-gray-100 border-dashed border-2 p-12 border-gray-400"
+                    >
+                        <input {...getInputProps()} />
                         <div className="text-center">
                             {isDragActive ? (
                                 <p className="font-body font-semibold text-xl text-primaryColor">
@@ -226,9 +252,39 @@ export default function UploadGraphic({ product }) {
                                 <p className="font-body text-gray-700">Hochgeladene Datei: {uploadedFile.name}</p>
                             </div>
                         )}
-                    </>
-                </ContentWrapper>
-            </div>
-        </>
+                    </div>
+                    <P klasse="!text-sm mt-4 mb-4">
+                        Akzeptierte Formate: JPG, PNG, PDF, TIFF, AI, EPS
+                        <br />
+                        max 10 MB
+                    </P>
+                    {uploadedFile && (
+                        <div className="flex items-center gap-4 mt-4 font-body text-sm">
+                            <img
+                                className="max-h-40 rounded-[20px]"
+                                src={URL.createObjectURL(uploadedFile)}
+                                alt="Uploaded Preview"
+                            />
+                            <div className="flex flex-col gap-2">
+                                <button
+                                    type="button"
+                                    className="flex items-center px-4 py-2 bg-errorColor text-white rounded-lg hover:bg-red-600"
+                                    onClick={handleDeleteUpload}
+                                >
+                                    <FiTrash2 className="mr-2" /> Löschen
+                                </button>
+                                <button
+                                    type="button"
+                                    className="flex items-center px-4 py-2 bg-successColor text-white rounded-lg hover:bg-primaryColor-600"
+                                    onClick={handleShowDetails}
+                                >
+                                    <FiInfo className="mr-2" /> Details anzeigen
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </>
+            </ContentWrapper>
+        </div>
     );
 }
