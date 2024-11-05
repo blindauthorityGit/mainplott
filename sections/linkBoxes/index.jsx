@@ -15,7 +15,7 @@ const LinkBoxesSection = ({ data, klasse }) => {
 
     return (
         <div className={`grid grid-cols-12 px-4 lg:px-24 gap-2 lg:gap-6 mt-4 lg:mt-10 `}>
-            {data.map((e, i) => {
+            {data?.map((e, i) => {
                 return (
                     <LinkBox
                         klasse={`lg:col-span-3 col-span-6 items-start ${klasse}`}
