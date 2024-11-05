@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MdOutlineClose } from "react-icons/md";
 import useStore from "../../store/store";
-import Overlay from "./Overlay"; // Import the Overlay component
+import Overlay from "./overlay"; // Import the Overlay component
 
 const Modal = () => {
     const { modalOpen, setModalOpen, modalContent, isFullHeightModal } = useStore();
