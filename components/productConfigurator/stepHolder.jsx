@@ -6,6 +6,9 @@ import useStore from "@/store/store"; // Your Zustand store
 import { StepButton } from "@/components/buttons";
 import dynamic from "next/dynamic";
 
+//Hooks
+import useIsMobile from "@/hooks/isMobile";
+
 // Dynamically import the KonvaLayer component with no SSR
 const KonvaLayer = dynamic(() => import("@/components/konva"), { ssr: false });
 
@@ -17,6 +20,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
     const imageRef = useRef();
     const containerRef = useRef(); // Add a reference to the container
+    const isMobile = useIsMobile();
 
     const handlePrevStep = () => {
         setCurrentStep((prev) => Math.max(prev - 1, 0));
@@ -59,6 +63,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     };
 
     // Adjust image dimensions dynamically to maintain aspect ratio and fill the container up to 860px height
+    // Adjust image dimensions dynamically to maintain aspect ratio and fill the container up to 860px height
     useEffect(() => {
         if (imageRef.current) {
             const img = new Image();
@@ -68,8 +73,8 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 const containerWidth = containerRef.current?.offsetWidth;
                 const containerHeight = containerRef.current?.offsetHeight;
 
-                // Set a max height limit of 860px
-                const maxHeight = 860;
+                // Set a max height limit (lower for mobile)
+                const maxHeight = isMobile ? "auto" : 860;
 
                 // Calculate aspect ratio
                 const aspectRatio = width / height;
@@ -102,7 +107,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 setImageSize({ width, height });
             };
         }
-    }, [selectedImage]);
+    }, [selectedImage, isMobile]);
 
     // Determine if "Next" button should be disabled
     const isNextDisabled = () => {
@@ -116,9 +121,9 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     };
 
     return (
-        <div className="grid grid-cols-12 lg:px-24 gap-4 h-full">
+        <div className="grid grid-cols-12 lg:px-24 lg:gap-4 h-full">
             {/* Left - Product Image / Konva Layer with fade in/out animation */}
-            <div className="col-span-6 relative" ref={containerRef}>
+            <div className="col-span-12 lg:col-span-6 relative mb-4 lg:mb-0" ref={containerRef}>
                 <div className="w-full flex items-center justify-center lg:min-h-[840px] lg:max-h-[860px] relative">
                     <AnimatePresence mode="wait">
                         {currentStep === 2 && purchaseData.uploadedGraphic ? (
@@ -155,7 +160,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     key={selectedImage}
                                     ref={imageRef}
                                     style={{
-                                        maxHeight: "860px",
+                                        maxHeight: isMobile ? "auto" : "860px",
                                         width: imageSize.width ? `${imageSize.width}px` : "auto",
                                         height: imageSize.height ? `${imageSize.height}px` : "auto",
                                         objectFit: "contain",
@@ -189,14 +194,14 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
             </div>
 
             {/* Right - Step Indicator, Dynamic Content, Buttons */}
-            <div className="col-span-6 lg:pt-16 flex flex-col h-full">
+            <div className="col-span-12 lg:col-span-6 lg:pt-16 flex flex-col h-full">
                 {/* Step Indicator */}
-                <div className="mb-6">
+                <div className="lg:mb-6">
                     <StepIndicator currentStep={currentStep} steps={steps} />
                 </div>
 
                 {/* Dynamic Content with entry/exit animation */}
-                <div className="flex-grow mb-8">
+                <div className="flex-grow mb-8 px-4 lg:px-0">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={currentStep}

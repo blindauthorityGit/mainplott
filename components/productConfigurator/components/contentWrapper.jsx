@@ -6,8 +6,9 @@ const CpntentWrapper = ({ data, klasse, children }) => {
     return (
         <div className={`${klasse}`}>
             <H2>{data.title}</H2>
-            <P klasse="lg:!text-sm">{data.description}</P>
+            <P klasse="text-xs hidden lg:block lg:!text-sm">{data.description}</P>
             {children}
+            <P klasse="text-xs lg:hidden lg:!text-sm">{data.description}</P>
         </div>
     );
 };

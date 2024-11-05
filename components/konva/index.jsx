@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
-import { Stage, Layer, Image as KonvaImage, Transformer } from "react-konva";
+import { Stage, Layer, Image as KonvaImage, Transformer, Path as KonvaPath } from "react-konva";
 import useStore from "@/store/store"; // Import Zustand store
 import { Button } from "@mui/material"; // Importing a button from Material-UI for exporting the image
 import { FiZoomIn, FiZoomOut } from "react-icons/fi"; // Importing zoom icons from react-icons
@@ -20,6 +20,7 @@ const KonvaLayer = ({
     const productImageRef = useRef(null);
     const uploadedGraphicRef = useRef(null);
     const transformerRef = useRef(null);
+    const boundaryPathRef = useRef(null);
 
     // Zustand store to get container dimensions
     const { purchaseData } = useStore();
@@ -137,12 +138,18 @@ const KonvaLayer = ({
     }, [uploadedGraphicFile, uploadedGraphicURL]);
 
     // Handle drag bounds based on the provided boundaries
+    // Handle drag bounds based on the provided SVG path boundaries
     const handleDragBoundFunc = (pos) => {
-        const { MIN_X, MAX_X, MIN_Y, MAX_Y } = boundaries;
-        return {
-            x: Math.max(MIN_X, Math.min(MAX_X, pos.x)),
-            y: Math.max(MIN_Y, Math.min(MAX_Y, pos.y)),
-        };
+        if (boundaryPathRef.current) {
+            const rect = boundaryPathRef.current.getClientRect();
+            const newX = Math.max(rect.x, Math.min(rect.x + rect.width, pos.x));
+            const newY = Math.max(rect.y, Math.min(rect.y + rect.height, pos.y));
+            return {
+                x: newX,
+                y: newY,
+            };
+        }
+        return pos;
     };
 
     // Handle zooming using mouse wheel
@@ -263,7 +270,17 @@ const KonvaLayer = ({
                 <Layer>
                     {/* Product Image - background */}
                     {productImage && <KonvaImage ref={productImageRef} />}
-
+                    {/* Boundary Path - visible for development purposes */}
+                    <KonvaPath
+                        ref={boundaryPathRef}
+                        data={
+                            "M40.4915 305.5C40.4915 205.5 13.8248 101.167 0.491516 61.5C-6.16229 39.5001 56.3858 11.3334 88.4915 0C93.3249 9.83333 116.392 30.3 169.992 33.5C236.992 37.5 249.492 3.50004 250.492 4.50004C302.992 3.00004 341.992 61.5 340.992 61.5C302.992 74.3 290.492 187.167 288.992 242V432C288.992 456.8 267.325 460.667 256.492 459.5C205.158 459.167 96.4915 458.7 72.4915 459.5C42.4915 460.5 40.4915 430.5 40.4915 305.5Z" // Sample rectangular path for testing
+                        }
+                        stroke="red"
+                        strokeWidth={2}
+                        dash={[10, 5]} // Makes the path visible with dashed lines
+                        opacity={0.5} // Reduce opacity to avoid too much distraction
+                    />
                     {/* Uploaded Graphic - draggable and scalable */}
                     {(uploadedGraphicFile || uploadedGraphicURL) && (
                         <KonvaImage
