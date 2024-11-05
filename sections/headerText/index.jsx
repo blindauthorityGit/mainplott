@@ -26,10 +26,10 @@ const HeaderText = ({ data }) => {
                     whileInView="visible"
                     viewport={{ once: true }}
                 >
-                    <P klasse="text-primaryColor font-bold ">{data.topline}</P>
-                    <H1>{data.headline}</H1>
+                    <P klasse="text-primaryColor font-bold ">{data?.topline}</P>
+                    <H1>{data?.headline}</H1>
                     <div className="lg:w-2/4 mx-auto lg:mt-12">
-                        <BasicPortableText value={data.text}></BasicPortableText>
+                        <BasicPortableText value={data?.text}></BasicPortableText>
                     </div>
                 </motion.div>
             </div>

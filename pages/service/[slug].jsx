@@ -17,7 +17,7 @@ export default function Partner({ data, globalData }) {
 
     return (
         <MainContainer>
-            <HeaderText data={data}></HeaderText>
+            <HeaderText data={data && data}></HeaderText>
             <LinkBoxSection klasse="lg:!col-span-4" data={data?.linkBoxes}></LinkBoxSection>
             <Spacer></Spacer>
             <LogoLeiste data={globalData?.settings?.logos}></LogoLeiste>
