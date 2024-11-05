@@ -15,20 +15,14 @@ import { getAllProductHandles, getProductByHandle, fetchHexColorValue } from "..
 // SANITY
 import client from "../../client";
 
-export default function Product({ product, sizes, colorPatternIds }) {
+export default function Product({ product, sizes }) {
     useEffect(() => {
-        console.log(product.productByHandle, sizes, colorPatternIds);
-        // getColorsFromMetaobjects(colorPatternIds);
-        // fetchHexColorValue(colorPatternIds[0]);
-    }, [product, sizes, colorPatternIds]);
+        console.log(product.productByHandle, sizes);
+    }, [product, sizes]);
 
     return (
         <MainContainer>
-            <ProductConfigurator
-                product={product.productByHandle}
-                sizes={sizes}
-                colorPatternIds={colorPatternIds}
-            ></ProductConfigurator>
+            <ProductConfigurator product={product.productByHandle} sizes={sizes}></ProductConfigurator>
             {/* <ProductDetail image={product.productByHandle.images.edges[0].node.originalSrc}></ProductDetail> */}
         </MainContainer>
     );
@@ -52,14 +46,13 @@ export async function getStaticPaths() {
 export async function getStaticProps({ params }) {
     // Hole die Produktdaten basierend auf dem Handle
     const product = await getProductByHandle(params.handle);
-    console.log(product);
 
     if (!product) {
         return { notFound: true };
     }
 
     return {
-        props: { product: product, sizes: product.sizes, colorPatternIds: product.colorPatternIds },
+        props: { product: product, sizes: product.sizes },
         revalidate: 60, // ISR, um die Seite alle 60 Sekunden neu zu generieren
     };
 }

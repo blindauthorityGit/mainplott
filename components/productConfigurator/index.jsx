@@ -12,7 +12,7 @@ const stepsConfig = [
     { id: "configureDesign", component: ConfigureDesign },
 ];
 
-export default function ProductConfigurator({ product, sizes, colorPatternIds }) {
+export default function ProductConfigurator({ product, sizes, colorPatternIds, variants }) {
     const [currentStep, setCurrentStep] = useState(0);
     const [selectedImage, setSelectedImage] = useState(null);
 
@@ -28,6 +28,7 @@ export default function ProductConfigurator({ product, sizes, colorPatternIds })
             currentStep={currentStep}
             setCurrentStep={setCurrentStep}
             selectedImage={selectedImage}
+            variants={variants}
         >
             <CurrentStepComponent
                 product={product}
@@ -38,6 +39,7 @@ export default function ProductConfigurator({ product, sizes, colorPatternIds })
                 setModalOpen={setModalOpen} // Pass the modal control function
                 steps={steps}
                 currentStep={currentStep}
+                variants={variants}
             />
         </StepHolder>
     );

@@ -53,6 +53,9 @@ const useStore = create((set) => ({
 
     selectedImage: null,
     setSelectedImage: (image) => set(() => ({ selectedImage: image })),
+
+    selectedVariant: null, // Add this to store the selected variant
+    setSelectedVariant: (variant) => set(() => ({ selectedVariant: variant })), // Add setter for selectedVariant
 }));
 
 export default useStore;

@@ -121,105 +121,108 @@ export async function getAllProductHandles() {
 
 export async function getProductByHandle(handle) {
     const query = `{
-    productByHandle(handle: "${handle}") {
-      title
-      description
-      tags
-      vendor
-      images(first: 10) {
-        edges {
-          node {
-            originalSrc
-            altText
-          }
-        }
-      }
-             metafield(namespace: "shopify", key: "color-pattern") {
-          value
-          type
+      productByHandle(handle: "${handle}") {
+          title
           description
-        }
-
-
-      variants(first: 40) {  
-        edges {
-          node {
-            title     
-            selectedOptions {  
-              name
-              value
-            }
-            image {
-              originalSrc
-              altText
-            }
+          tags
+          vendor
+          images(first: 10) {
+              edges {
+                  node {
+                      originalSrc
+                      altText
+                  }
+              }
           }
-        }
+          metafield(namespace: "shopify", key: "color-pattern") {
+              value
+              type
+              description
+          }
+          variants(first: 40) {
+              edges {
+                  node {
+                      title     
+                      selectedOptions {
+                          name
+                          value
+                      }
+                      image {
+                          originalSrc
+                          altText
+                      }
+                      metafield(namespace: "custom", key: "back_image") {
+                          value
+                      }
+                  }
+              }
+          }
       }
-    }
   }`;
 
     const response = await callShopify(query);
-    console.log(response);
     const product = response.data.productByHandle;
 
-    // Größen-Array erstellen
+    // Create sizes array
     const sizes = product.variants.edges
         .map((variant) => variant.node.selectedOptions.find((option) => option.name === "Größe")?.value)
-        .filter((size) => size); // Filtert undefined-Werte, falls einige Varianten keine Größe haben
+        .filter((size) => size);
 
-    // Metaobject-IDs für Farben aus dem color-pattern Metafield extrahieren
+    // Extract Metaobject IDs for colors from color-pattern metafield
     const colorPatternIds = product.metafield
         ? JSON.parse(product.metafield.value).map((id) => id.split("/").pop())
         : [];
 
-    console.log("Farben Metaobject-IDs:", colorPatternIds);
+    // Fetch back image URLs for all variants and embed them in the product
+    const variantsWithBackImages = await Promise.all(
+        product.variants.edges.map(async (variant) => {
+            if (variant.node.metafield && variant.node.metafield.value) {
+                const backImageUrl = await getBackImageUrl(variant.node.metafield.value);
+                return {
+                    ...variant.node,
+                    backImageUrl,
+                };
+            }
+            return {
+                ...variant.node,
+                backImageUrl: null,
+            };
+        })
+    );
 
-    return { ...response.data, sizes, colorPatternIds };
+    // Attach the updated variants to the product object
+    product.variants.edges = variantsWithBackImages.map((variant) => ({
+        node: variant,
+    }));
+
+    console.log("Variants with Back Images:", product.variants.edges);
+
+    return { ...response.data, sizes, colorPatternIds, product };
 }
 
-// export async function getColorsFromMetaobjects(colorPatternIds) {
-//     if (colorPatternIds.length === 0) return [];
+// Function to fetch back image URL based on metafield ID
+export async function getBackImageUrl(mediaImageId) {
+    console.log("Fetching back image URL with mediaImageId:", mediaImageId);
 
-//     // Formatierte IDs ohne zusätzliche Anführungszeichen
-//     const formattedIds = colorPatternIds.map((id) => `\"gid://shopify/Metaobject/${id}\"`).join(", ");
-//     console.log(formattedIds);
-//     const query = `{
-//           metaobject(id: "gid://shopify/Metaobject/117306458454") {
-//         type
-//     }}`;
+    const query = `{
+      node(id: "${mediaImageId}") {
+          ... on MediaImage {
+              id
+              image {
+                  url
+              }
+          }
+      }
+  }`;
 
-//     const response = await callShopify(query);
+    try {
+        const response = await callShopify(query);
+        const backImageUrl = response?.data?.node?.image?.url || null;
 
-//     if (response.errors) {
-//         console.error("Shopify API Errors:", response.errors);
-//         throw new Error("Error fetching colors from Metaobjects.");
-//     }
-
-//     // Farbwerte aus den Metafeldern extrahieren
-//     // const colors = response.data.nodes
-//     //     .map((node) => node.fields.find((field) => field.key === "color")?.value)
-//     //     .filter((color) => color);
-
-//     console.log("Farben:", response);
-//     return response;
-// }
-
-// export async function fetchHexColorValue(metafieldId) {
-//     const domain = process.env.SHOPIFY_STORE_DOMAIN;
-//     const token = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
-
-//     console.log(metafieldId, domain, token);
-//     const response = await fetch(`https://b1d160-0f.myshopify.com/api/2023-01/metafields/117305835862.json`, {
-//         method: "GET",
-//         headers: {
-//             "X-Shopify-Storefront-Access-Token": token,
-//             Accept: "application/json",
-//             "Content-Type": "application/json",
-//         },
-//     });
-
-//     const data = await response.json();
-//     console.log(data);
-//     return data.metafield.value; // Hexwert
-// }
+        console.log("Fetched Back Image URL:", backImageUrl);
+        return backImageUrl;
+    } catch (error) {
+        console.error("Error fetching back image URL:", error);
+        return null;
+    }
+}

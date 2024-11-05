@@ -145,6 +145,47 @@ const KonvaLayer = ({
         };
     };
 
+    // Handle zooming using mouse wheel
+    //    const handleWheelZoom = (e) => {
+    //     e.evt.preventDefault(); // Prevent page scroll
+    //     const scaleBy = 1.05;
+    //     const stage = stageRef.current;
+    //     const oldScale = stage.scaleX();
+    //     const pointer = stage.getPointerPosition();
+
+    //     const mousePointTo = {
+    //         x: (pointer.x - stage.x()) / oldScale,
+    //         y: (pointer.y - stage.y()) / oldScale,
+    //     };
+
+    //     // Determine new scale based on scroll direction
+    //     const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+    //     setZoomLevel(newScale);
+
+    //     stage.scale({ x: newScale, y: newScale });
+
+    //     const newPos = {
+    //         x: pointer.x - mousePointTo.x * newScale,
+    //         y: pointer.y - mousePointTo.y * newScale,
+    //     };
+    //     stage.position(newPos);
+    //     stage.batchDraw();
+    // };
+
+    // useEffect(() => {
+    //     const stage = stageRef.current;
+    //     if (stage) {
+    //         stage.on("wheel", handleWheelZoom);
+    //     }
+
+    //     // Cleanup event listener on component unmount
+    //     return () => {
+    //         if (stage) {
+    //             stage.off("wheel", handleWheelZoom);
+    //         }
+    //     };
+    // }, []);
+
     // Function to export the canvas as a JPEG
     const handleExport = () => {
         if (stageRef.current) {
@@ -277,6 +318,8 @@ const KonvaLayer = ({
                 </Button>
                 <Button
                     className="!bg-primaryColor !text-2xl"
+                    git
+                    a
                     onClick={handleZoomOut}
                     variant="contained"
                     color="primary"

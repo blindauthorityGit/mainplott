@@ -9,7 +9,7 @@ import formatVariants from "@/functions/formatVariants"; // Function for formatt
 import { getColorHex } from "@/libs/colors";
 
 export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
-    const { purchaseData, setPurchaseData } = useStore();
+    const { purchaseData, setPurchaseData, setSelectedVariant } = useStore();
     const [selectedSize, setSelectedSize] = useState(purchaseData.selectedSize || null);
     const [selectedColor, setSelectedColor] = useState(purchaseData.selectedColor || null);
     const [isChecked, setIsChecked] = useState(false);
@@ -30,9 +30,23 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                 // Set initial selected image
                 const firstImage = formattedVariants[firstSize].colors[0]?.image;
                 setSelectedImage(firstImage);
+                setActiveVariant(firstSize, firstColor);
             }
         }
     }, []);
+
+    // Function to set the active variant
+    const setActiveVariant = (size, color) => {
+        const activeVariant = product.variants.edges.find(
+            ({ node }) =>
+                node.selectedOptions.some((option) => option.name === "Größe" && option.value === size) &&
+                node.selectedOptions.some((option) => option.name === "Farbe" && option.value === color)
+        );
+        console.log(activeVariant);
+        if (activeVariant) {
+            setSelectedVariant(activeVariant.node);
+        }
+    };
 
     // Handle size change
     const handleSizeChange = (size) => {
@@ -43,6 +57,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
         const firstImage = formattedVariants[size].colors[0]?.image;
         setSelectedImage(firstImage);
         setSelectedColor(firstColor);
+        setActiveVariant(size, firstColor);
     };
 
     // Handle color change
@@ -52,6 +67,8 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
         // Update selected image when color changes
         const image = formattedVariants[selectedSize]?.colors.find((c) => c.color === color)?.image;
         setSelectedImage(image);
+        // Set the active variant in Zustand store
+        setActiveVariant(selectedSize, color);
     };
 
     const handleToggle = (newState) => {

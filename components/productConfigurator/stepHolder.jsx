@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion"; // Import framer-motion for animations
 import { useState, useEffect, useRef } from "react";
+import { BiRefresh } from "react-icons/bi"; // Import the rotate icon from react-icons
 import StepIndicator from "./shared/stepIndicator";
 import useStore from "@/store/store"; // Your Zustand store
 import { StepButton } from "@/components/buttons";
@@ -9,12 +10,12 @@ import dynamic from "next/dynamic";
 const KonvaLayer = dynamic(() => import("@/components/konva"), { ssr: false });
 
 export default function StepHolder({ children, steps, currentStep, setCurrentStep }) {
-    const { purchaseData, setPurchaseData } = useStore(); // Use purchaseData to determine if an uploadedGraphic exists
+    const { purchaseData, setPurchaseData, selectedVariant, selectedImage, setSelectedImage } = useStore();
     const [imageHeight, setImageHeight] = useState(null);
     const [imageSize, setImageSize] = useState({ width: null, height: null });
+    const [isFrontView, setIsFrontView] = useState(true); // Track if we're viewing the front or back
 
     const imageRef = useRef();
-    const { selectedImage } = useStore(); // Selected product image
     const containerRef = useRef(); // Add a reference to the container
 
     const handlePrevStep = () => {
@@ -38,12 +39,25 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         }
     }, [currentStep]);
 
+    useEffect(() => {
+        console.log(selectedVariant);
+    }, [selectedVariant]);
+
+    // Handle rotate button click
+    const handleRotateImage = () => {
+        if (selectedVariant?.backImageUrl) {
+            setIsFrontView(!isFrontView);
+            setSelectedImage(isFrontView ? selectedVariant.backImageUrl : selectedVariant.image.originalSrc);
+        }
+    };
+
     // Animation variants for the image - simple fade in/out
     const fadeAnimationVariants = {
         initial: { opacity: 0 },
         animate: { opacity: 1 },
         exit: { opacity: 0 },
     };
+
     // Adjust image dimensions dynamically to maintain aspect ratio and fill the container up to 860px height
     useEffect(() => {
         if (imageRef.current) {
@@ -105,10 +119,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         <div className="grid grid-cols-12 lg:px-24 gap-4 h-full">
             {/* Left - Product Image / Konva Layer with fade in/out animation */}
             <div className="col-span-6 relative" ref={containerRef}>
-                <div
-                    className="w-full flex items-center justify-center lg:min-h-[840px] lg:max-h-[860px] relative"
-                    // style={{ height: imageHeight ? `${imageHeight}px` : "auto" }}
-                >
+                <div className="w-full flex items-center justify-center lg:min-h-[840px] lg:max-h-[860px] relative">
                     <AnimatePresence mode="wait">
                         {currentStep === 2 && purchaseData.uploadedGraphic ? (
                             <motion.div
@@ -139,25 +150,38 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                             </motion.div>
                         ) : (
                             selectedImage && (
-                                <motion.img
+                                <motion.div
+                                    className="relative mix-blend-multiply"
                                     key={selectedImage}
                                     ref={imageRef}
-                                    src={selectedImage}
-                                    alt="Product Step Image"
-                                    className="w-full  mix-blend-multiply"
-                                    variants={fadeAnimationVariants}
-                                    initial="initial"
-                                    animate="animate"
-                                    exit="exit"
                                     style={{
                                         maxHeight: "860px",
                                         width: imageSize.width ? `${imageSize.width}px` : "auto",
                                         height: imageSize.height ? `${imageSize.height}px` : "auto",
                                         objectFit: "contain",
                                     }}
+                                    variants={fadeAnimationVariants}
+                                    initial="initial"
+                                    animate="animate"
+                                    exit="exit"
                                     transition={{ duration: 0.3, ease: "easeInOut" }}
-                                    onLoad={() => setImageHeight(imageRef.current?.clientHeight)}
-                                />
+                                >
+                                    <img
+                                        src={selectedImage}
+                                        alt="Product Step Image"
+                                        className="w-full mix-blend-multiply"
+                                        onLoad={() => setImageHeight(imageRef.current?.clientHeight)}
+                                    />
+                                    {/* Rotate Icon Button */}
+                                    {selectedVariant?.backImageUrl && (
+                                        <button
+                                            onClick={handleRotateImage}
+                                            className="absolute top-4 right-4 bg-white p-2 rounded-full shadow-md"
+                                        >
+                                            <BiRefresh size={24} />
+                                        </button>
+                                    )}
+                                </motion.div>
                             )
                         )}
                     </AnimatePresence>
