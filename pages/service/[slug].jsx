@@ -20,7 +20,7 @@ export default function Partner({ data, globalData }) {
             <HeaderText data={data}></HeaderText>
             <LinkBoxSection klasse="lg:!col-span-4" data={data?.linkBoxes}></LinkBoxSection>
             <Spacer></Spacer>
-            <LogoLeiste data={globalData.settings.logos}></LogoLeiste>
+            <LogoLeiste data={globalData?.settings?.logos}></LogoLeiste>
         </MainContainer>
     );
 }
