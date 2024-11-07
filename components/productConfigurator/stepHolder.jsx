@@ -47,6 +47,17 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         console.log(selectedVariant);
     }, [selectedVariant]);
 
+    useEffect(() => {
+        if (!purchaseData.position && containerRef.current) {
+            console.log(containerRef.current.offsetHeight / 2);
+            setPurchaseData({
+                ...purchaseData,
+                xPosition: containerRef.current.offsetWidth / 2,
+                yPosition: containerRef.current.offsetHeight / 2,
+            });
+        }
+    }, [containerRef.current]);
+
     // Handle rotate button click
     const handleRotateImage = () => {
         if (selectedVariant?.backImageUrl) {
@@ -139,12 +150,14 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     uploadedGraphicFile={purchaseData.uploadedGraphicFile}
                                     uploadedGraphicURL={purchaseData.uploadedGraphic?.downloadURL}
                                     productImage={selectedImage}
-                                    boundaries={{
-                                        MIN_X: 50,
-                                        MAX_X: 450,
-                                        MIN_Y: 50,
-                                        MAX_Y: 500,
-                                    }}
+                                    boundaries={
+                                        {
+                                            // MIN_X: 50,
+                                            // MAX_X: 450,
+                                            // MIN_Y: 50,
+                                            // MAX_Y: 500,
+                                        }
+                                    }
                                     position={{ x: purchaseData.xPosition, y: purchaseData.yPosition }}
                                     setPosition={(newPos) =>
                                         setPurchaseData({ ...purchaseData, xPosition: newPos.x, yPosition: newPos.y })
@@ -161,8 +174,8 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     ref={imageRef}
                                     style={{
                                         maxHeight: isMobile ? "auto" : "860px",
-                                        width: imageSize.width ? `${imageSize.width}px` : "auto",
-                                        height: imageSize.height ? `${imageSize.height}px` : "auto",
+                                        width: isMobile ? "" : imageSize.width ? `${imageSize.width}px` : "auto",
+                                        height: isMobile ? "" : imageSize.height ? `${imageSize.height}px` : "auto",
                                         objectFit: "contain",
                                     }}
                                     variants={fadeAnimationVariants}
@@ -174,7 +187,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     <img
                                         src={selectedImage}
                                         alt="Product Step Image"
-                                        className="w-full mix-blend-multiply"
+                                        className="w-full mix-blend-multiply max-h-[380px] lg:max-h-[none]"
                                         onLoad={() => setImageHeight(imageRef.current?.clientHeight)}
                                     />
                                     {/* Rotate Icon Button */}

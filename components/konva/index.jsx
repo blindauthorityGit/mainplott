@@ -144,6 +144,7 @@ const KonvaLayer = ({
             const rect = boundaryPathRef.current.getClientRect();
             const newX = Math.max(rect.x, Math.min(rect.x + rect.width, pos.x));
             const newY = Math.max(rect.y, Math.min(rect.y + rect.height, pos.y));
+            console.log(rect);
             return {
                 x: newX,
                 y: newY,
@@ -292,7 +293,7 @@ const KonvaLayer = ({
                             offsetY={60} // Set offset to scale from the center (half of the height)
                             scaleX={scale}
                             scaleY={scale}
-                            dragBoundFunc={handleDragBoundFunc}
+                            // dragBoundFunc={handleDragBoundFunc}
                             onClick={() => {
                                 console.log("Image clicked");
                                 // Add logic to show icons or actions like delete/change
