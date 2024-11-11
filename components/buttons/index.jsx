@@ -8,3 +8,4 @@ export { default as MainButtonNOLink } from "./mainButtonNOLink";
 export { default as TextButton } from "./textButton";
 export { default as GeneralNavButton } from "./generalNavButton";
 export { default as StepButton } from "./stepButton";
+export { default as IconButton } from "./iconButton";

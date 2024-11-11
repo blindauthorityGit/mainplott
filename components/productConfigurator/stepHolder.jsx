@@ -27,6 +27,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     };
 
     const handleNextStep = () => {
+        console.log(purchaseData);
         setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
     };
 
@@ -39,24 +40,45 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 containerWidth: offsetWidth,
                 containerHeight: offsetHeight,
             });
-            console.log(offsetWidth, offsetHeight);
+            console.log("DA ISSES", offsetWidth, offsetHeight);
         }
     }, [currentStep]);
 
-    useEffect(() => {
-        console.log(selectedVariant);
-    }, [selectedVariant]);
+    // SET VIEW TO FRONMT WHEN NAVIGATING
+    // useEffect(() => {
+    //     setPurchaseData({
+    //         ...purchaseData,
+    //         currentSide: "front",
+    //     });
+    // }, [currentStep]);
 
     useEffect(() => {
         if (!purchaseData.position && containerRef.current) {
             console.log(containerRef.current.offsetHeight / 2);
+
             setPurchaseData({
                 ...purchaseData,
-                xPosition: containerRef.current.offsetWidth / 2,
-                yPosition: containerRef.current.offsetHeight / 2,
+                sides: {
+                    ...purchaseData.sides,
+                    [purchaseData.currentSide]: {
+                        ...purchaseData.sides[purchaseData.currentSide],
+                        xPosition: containerRef.current.offsetWidth / 2,
+                        yPosition: containerRef.current.offsetHeight / 2,
+                    },
+                },
             });
         }
     }, [containerRef.current]);
+
+    useEffect(() => {
+        if (selectedVariant && selectedVariant.image) {
+            setSelectedImage(
+                purchaseData.currentSide !== "front" && selectedVariant.backImageUrl
+                    ? selectedVariant.backImageUrl
+                    : selectedVariant.image.originalSrc
+            );
+        }
+    }, [purchaseData.currentSide, selectedVariant]);
 
     // Handle rotate button click
     const handleRotateImage = () => {
@@ -83,7 +105,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 let { width, height } = img;
                 const containerWidth = containerRef.current?.offsetWidth;
                 const containerHeight = containerRef.current?.offsetHeight;
-
+                console.log(containerRef.current);
                 // Set a max height limit (lower for mobile)
                 const maxHeight = isMobile ? "auto" : 860;
 
@@ -122,7 +144,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
     // Determine if "Next" button should be disabled
     const isNextDisabled = () => {
-        if (currentStep === 1 && !purchaseData.uploadedGraphic) {
+        if (currentStep === 1 && !purchaseData.sides["front"].uploadedGraphic) {
             return true;
         }
         if (currentStep === steps.length - 1) {
@@ -137,7 +159,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
             <div className="col-span-12 lg:col-span-6 relative mb-4 lg:mb-0" ref={containerRef}>
                 <div className="w-full flex items-center justify-center lg:min-h-[840px] lg:max-h-[860px] relative">
                     <AnimatePresence mode="wait">
-                        {currentStep === 2 && purchaseData.uploadedGraphic ? (
+                        {currentStep === 2 ? (
                             <motion.div
                                 key="konva"
                                 variants={fadeAnimationVariants}
@@ -147,8 +169,12 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                 transition={{ duration: 0.3, ease: "easeInOut" }}
                             >
                                 <KonvaLayer
-                                    uploadedGraphicFile={purchaseData.uploadedGraphicFile}
-                                    uploadedGraphicURL={purchaseData.uploadedGraphic?.downloadURL}
+                                    uploadedGraphicFile={
+                                        purchaseData.sides[purchaseData.currentSide].uploadedGraphicFile
+                                    }
+                                    uploadedGraphicURL={
+                                        purchaseData.sides[purchaseData.currentSide].uploadedGraphic?.downloadURL
+                                    }
                                     productImage={selectedImage}
                                     boundaries={
                                         {
@@ -158,12 +184,37 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                             // MAX_Y: 500,
                                         }
                                     }
-                                    position={{ x: purchaseData.xPosition, y: purchaseData.yPosition }}
+                                    position={{
+                                        x: purchaseData.sides[purchaseData.currentSide].xPosition,
+                                        y: purchaseData.sides[purchaseData.currentSide].yPosition,
+                                    }}
                                     setPosition={(newPos) =>
-                                        setPurchaseData({ ...purchaseData, xPosition: newPos.x, yPosition: newPos.y })
+                                        setPurchaseData({
+                                            ...purchaseData,
+                                            sides: {
+                                                ...purchaseData.sides,
+                                                [purchaseData.currentSide]: {
+                                                    ...purchaseData.sides[purchaseData.currentSide],
+                                                    xPosition: newPos.x,
+                                                    yPosition: newPos.y,
+                                                },
+                                            },
+                                        })
                                     }
-                                    scale={purchaseData.scale}
-                                    setScale={(newScale) => setPurchaseData({ ...purchaseData, scale: newScale })}
+                                    scale={purchaseData.sides[purchaseData.currentSide].scale}
+                                    // setScale={(newScale) => setPurchaseData({ ...purchaseData, scale: newScale })}
+                                    setScale={(newScale) =>
+                                        setPurchaseData({
+                                            ...purchaseData,
+                                            sides: {
+                                                ...purchaseData.sides,
+                                                [purchaseData.currentSide]: {
+                                                    ...purchaseData.sides[purchaseData.currentSide],
+                                                    scale: newScale,
+                                                },
+                                            },
+                                        })
+                                    }
                                 />
                             </motion.div>
                         ) : (

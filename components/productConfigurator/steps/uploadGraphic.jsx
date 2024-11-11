@@ -6,7 +6,6 @@ import { analyzeImage } from "@/functions/analyzeImage"; // Import the analyzeIm
 import { analyzePdf } from "@/functions/analyzePdf"; // Import the analyzePdf function
 import PdfPreview from "@/components/pdfPreview";
 import { P } from "@/components/typography";
-import { FiTrash2, FiInfo, FiRefreshCw } from "react-icons/fi"; // Importing the trash, info, and refresh icons
 
 import { GraphicUploadModalContent } from "@/components/modalContent"; // Import the new modal content component
 import LoadingSpinner from "@/components/spinner"; // Import the loading spinner component
@@ -27,19 +26,19 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
         showSpinner,
         setShowSpinner,
     } = useStore();
-    const [uploadedFile, setUploadedFile] = useState(purchaseData?.uploadedGraphicFile || null);
+    const [uploadedFile, setUploadedFile] = useState(null);
     const [uploading, setUploading] = useState(true);
     const [uploadError, setUploadError] = useState(null);
+    const [currentSide, setCurrentSide] = useState("front"); // Track the current side being worked on
 
     const stepData = {
         title: "Grafik hochladen",
-        // description: "Ziehen Sie Ihre Grafik hierher oder klicken Sie unten, um eine Datei hochzuladen.",
     };
 
     useEffect(() => {
-        console.log(purchaseData, purchaseData?.uploadedGraphicFile);
-        console.log(uploadedFile);
-    }, [uploadedFile]);
+        // Set uploaded file from purchaseData when side or purchaseData changes
+        setUploadedFile(purchaseData.sides[currentSide]?.uploadedGraphicFile || null);
+    }, [currentSide, purchaseData]);
 
     // Function to handle new file upload, similar to the initial file drop
     const handleNewFileUpload = async (newFile) => {
@@ -53,7 +52,19 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                 // Upload the new file to Firebase temporary folder
                 const userId = purchaseData?.userId || "anonymous"; // Replace with real user ID if available
                 const fileMetadata = await uploadFileToTempFolder(newFile, userId);
-                setPurchaseData({ ...purchaseData, uploadedGraphic: fileMetadata });
+
+                // Update the purchaseData for the current side
+                setPurchaseData({
+                    ...purchaseData,
+                    sides: {
+                        ...purchaseData.sides,
+                        [currentSide]: {
+                            ...purchaseData.sides[currentSide],
+                            uploadedGraphic: fileMetadata,
+                            uploadedGraphicFile: newFile,
+                        },
+                    },
+                });
 
                 // Analyze the new file
                 if (newFile.type === "image/jpeg" || newFile.type === "image/png") {
@@ -75,7 +86,6 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                             format={analysisResult.format}
                             dimension={analysisResult.dimension}
                             onNewFileUpload={handleNewFileUpload} // Pass the function here
-                            // Pass the function here
                         />
                     );
                 }
@@ -131,8 +141,20 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                     const userId = purchaseData?.userId || "anonymous"; // Replace with real user ID if available
                     const fileMetadata = await uploadFileToTempFolder(file, userId);
                     // Save metadata to the store
-                    setPurchaseData({ ...purchaseData, uploadedGraphic: fileMetadata, uploadedGraphicFile: file });
+
+                    setPurchaseData({
+                        ...purchaseData,
+                        sides: {
+                            ...purchaseData.sides,
+                            [currentSide]: {
+                                ...purchaseData.sides[currentSide],
+                                uploadedGraphic: fileMetadata,
+                                uploadedGraphicFile: file,
+                            },
+                        },
+                    });
                     console.log(fileMetadata);
+
                     // Determine what kind of analysis is needed based on file type
                     if (file.type === "image/jpeg" || file.type === "image/png") {
                         // Analyze JPEG or PNG with sharp
@@ -141,9 +163,6 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                             console.log(analysisResult);
                             setColorSpace(analysisResult.colorSpace);
                             setDpi(analysisResult.dpi);
-                            console.log("Color Space:", analysisResult.colorSpace);
-                            console.log("DPI:", analysisResult.dpi);
-                            console.log("SIZE:", analysisResult.size);
                         }
                         setModalContent(
                             <GraphicUploadModalContent
@@ -175,14 +194,6 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                 onNewFileUpload={handleNewFileUpload} // Pass the function here
                             />
                         );
-
-                        // Call a function to handle PDF (e.g., extract metadata or convert to image)
-                        // You might want to create an analyzePDF(file) function for this purpose
-                    } else if (file.type === "application/postscript" || file.type === "application/illustrator") {
-                        // Handle EPS or AI file
-                        console.log("EPS or AI file detected. Converting and analyzing...");
-                        // You might want to create an analyzeVectorFile(file) function for this purpose
-                        // Convert the vector file to an image using ImageMagick, then analyze with sharp if needed
                     }
 
                     // Open modal
@@ -198,7 +209,16 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                 }
             }
         },
-        [setShowSpinner, purchaseData, setPurchaseData, setModalOpen, setModalContent, setColorSpace, setDpi]
+        [
+            setShowSpinner,
+            purchaseData,
+            setPurchaseData,
+            setModalOpen,
+            setModalContent,
+            setColorSpace,
+            setDpi,
+            currentSide,
+        ]
     );
 
     // Function to show details again by opening the modal
@@ -211,7 +231,17 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
     // Function to handle deleting the uploaded image
     const handleDeleteUpload = () => {
         setUploadedFile(null);
-        setPurchaseData({ ...purchaseData, uploadedGraphic: null, uploadedGraphicFile: null });
+        setPurchaseData({
+            ...purchaseData,
+            sides: {
+                ...purchaseData.sides,
+                [currentSide]: {
+                    ...purchaseData.sides[currentSide],
+                    uploadedGraphic: null,
+                    uploadedGraphicFile: null,
+                },
+            },
+        });
     };
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
@@ -222,7 +252,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                 <>
                     <div
                         {...getRootProps()}
-                        className="flex flex-col  items-center justify-center  bg-gray-100 border-dashed border-2 p-12 border-gray-400"
+                        className="flex flex-col items-center justify-center bg-gray-100 border-dashed border-2 p-12 border-gray-400"
                     >
                         <input {...getInputProps()} />
                         <div className="text-center">
@@ -258,7 +288,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                         <br />
                         max 10 MB
                     </P>
-                    {uploadedFile && (
+                    {/* {uploadedFile && (
                         <div className="flex items-center gap-4 mt-4 font-body text-sm">
                             <img
                                 className="max-h-40 rounded-[20px]"
@@ -266,23 +296,25 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                 alt="Uploaded Preview"
                             />
                             <div className="flex flex-col gap-2">
-                                <button
-                                    type="button"
-                                    className="flex items-center px-4 py-2 bg-errorColor text-white rounded-lg hover:bg-red-600"
+                                <IconButton
                                     onClick={handleDeleteUpload}
-                                >
-                                    <FiTrash2 className="mr-2" /> Löschen
-                                </button>
-                                <button
-                                    type="button"
-                                    className="flex items-center px-4 py-2 bg-successColor text-white rounded-lg hover:bg-primaryColor-600"
+                                    icon={FiX}
+                                    label="Löschen"
+                                    bgColor="bg-errorColor"
+                                    hoverColor="hover:bg-red-600"
+                                    textColor="text-white"
+                                />
+                                <IconButton
                                     onClick={handleShowDetails}
-                                >
-                                    <FiInfo className="mr-2" /> Details anzeigen
-                                </button>
+                                    icon={FiInfo}
+                                    label="Details anzeigen"
+                                    bgColor="bg-infoColor"
+                                    hoverColor="hover:bg-primaryColor-600"
+                                    textColor="text-white"
+                                />
                             </div>
                         </div>
-                    )}
+                    )} */}
                 </>
             </ContentWrapper>
         </div>

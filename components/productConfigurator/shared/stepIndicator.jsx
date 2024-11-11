@@ -45,7 +45,7 @@ const StepIndicator = ({ steps, currentStep }) => {
             </div>
 
             {/* Step Line */}
-            <div className="relative w-full h-2 bg-gray-200 rounded-full">
+            <div className="relative w-full h-1 bg-gray-200 rounded-full">
                 {/* Progress Line */}
                 <motion.div
                     className="absolute top-0 left-0 h-full bg-textColor rounded-full"

@@ -3,6 +3,7 @@ import { Stage, Layer, Image as KonvaImage, Transformer, Path as KonvaPath } fro
 import useStore from "@/store/store"; // Import Zustand store
 import { Button } from "@mui/material"; // Importing a button from Material-UI for exporting the image
 import { FiZoomIn, FiZoomOut } from "react-icons/fi"; // Importing zoom icons from react-icons
+import { motion } from "framer-motion";
 
 const KonvaLayer = ({
     productImage,
@@ -31,16 +32,9 @@ const KonvaLayer = ({
     const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
     const [isDraggingGraphic, setIsDraggingGraphic] = useState(false);
 
-    // Log props to check their values
-    useEffect(() => {
-        console.log("Product Image: ", productImage);
-        console.log("Uploaded Graphic File: ", uploadedGraphicFile);
-        console.log("Uploaded Graphic URL: ", uploadedGraphicURL);
-        console.log("Boundaries: ", boundaries);
-        console.log("Position: ", position);
-        console.log("Scale: ", scale);
-        console.log("Initial Position: ", initialPosition);
-    }, [productImage, uploadedGraphicFile, uploadedGraphicURL, boundaries, position, scale, initialPosition]);
+    // New states to track the loaded status of images
+    const [isProductImageLoaded, setIsProductImageLoaded] = useState(false);
+    const [isUploadedGraphicLoaded, setIsUploadedGraphicLoaded] = useState(false);
 
     // Load the product image into the Konva image element
     useEffect(() => {
@@ -49,6 +43,8 @@ const KonvaLayer = ({
             // Set crossOrigin to anonymous
             img.src = productImage;
             img.onload = () => {
+                setIsProductImageLoaded(true); // Update state when product image is loaded
+
                 if (productImageRef.current) {
                     // Calculate aspect ratio and maintain "contain" logic
                     const aspectRatio = img.width / img.height;
@@ -80,14 +76,22 @@ const KonvaLayer = ({
         }
     }, [productImage, containerWidth, containerHeight]);
 
+    useEffect(() => {
+        console.log("KONVA LOADED");
+    }, []);
+
     // Load the uploaded graphic into the Konva image element
     useEffect(() => {
         if (uploadedGraphicFile || uploadedGraphicURL) {
             const img = new window.Image();
+            console.log(img);
             // Set crossOrigin to anonymous
             if (uploadedGraphicURL) {
                 img.src = uploadedGraphicURL;
+                console.log(img.src);
                 img.onload = () => {
+                    setIsUploadedGraphicLoaded(true); // Update state when uploaded graphic is loaded
+                    console.log("IMAGE IS LOADED");
                     if (uploadedGraphicRef.current) {
                         const aspectRatio = img.width / img.height;
                         let newWidth = 120;
@@ -112,6 +116,8 @@ const KonvaLayer = ({
                 reader.onload = (e) => {
                     img.src = e.target.result;
                     img.onload = () => {
+                        setIsUploadedGraphicLoaded(true); // Update state when uploaded graphic is loaded
+
                         if (uploadedGraphicRef.current) {
                             const aspectRatio = img.width / img.height;
                             let newWidth = 120;
@@ -152,47 +158,6 @@ const KonvaLayer = ({
         }
         return pos;
     };
-
-    // Handle zooming using mouse wheel
-    //    const handleWheelZoom = (e) => {
-    //     e.evt.preventDefault(); // Prevent page scroll
-    //     const scaleBy = 1.05;
-    //     const stage = stageRef.current;
-    //     const oldScale = stage.scaleX();
-    //     const pointer = stage.getPointerPosition();
-
-    //     const mousePointTo = {
-    //         x: (pointer.x - stage.x()) / oldScale,
-    //         y: (pointer.y - stage.y()) / oldScale,
-    //     };
-
-    //     // Determine new scale based on scroll direction
-    //     const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
-    //     setZoomLevel(newScale);
-
-    //     stage.scale({ x: newScale, y: newScale });
-
-    //     const newPos = {
-    //         x: pointer.x - mousePointTo.x * newScale,
-    //         y: pointer.y - mousePointTo.y * newScale,
-    //     };
-    //     stage.position(newPos);
-    //     stage.batchDraw();
-    // };
-
-    // useEffect(() => {
-    //     const stage = stageRef.current;
-    //     if (stage) {
-    //         stage.on("wheel", handleWheelZoom);
-    //     }
-
-    //     // Cleanup event listener on component unmount
-    //     return () => {
-    //         if (stage) {
-    //             stage.off("wheel", handleWheelZoom);
-    //         }
-    //     };
-    // }, []);
 
     // Function to export the canvas as a JPEG
     const handleExport = () => {
@@ -313,16 +278,24 @@ const KonvaLayer = ({
                             }}
                         />
                     )}
-                    <Transformer
-                        ref={transformerRef}
-                        boundBoxFunc={(oldBox, newBox) => {
-                            // Limit resize to minimum and maximum size
-                            if (newBox.width < 50 || newBox.height < 50 || newBox.width > 250 || newBox.height > 250) {
-                                return oldBox;
-                            }
-                            return newBox;
-                        }}
-                    />
+                    {/* Transformer - Only apply if a graphic is present */}
+                    {(uploadedGraphicFile || uploadedGraphicURL) && (
+                        <Transformer
+                            ref={transformerRef}
+                            boundBoxFunc={(oldBox, newBox) => {
+                                // Limit resize to minimum and maximum size
+                                if (
+                                    newBox.width < 50 ||
+                                    newBox.height < 50 ||
+                                    newBox.width > 300 ||
+                                    newBox.height > 300
+                                ) {
+                                    return oldBox;
+                                }
+                                return newBox;
+                            }}
+                        />
+                    )}
                 </Layer>
             </Stage>
             <div style={{ position: "absolute", bottom: 20, right: 20, display: "flex", gap: "10px" }}>

@@ -60,6 +60,7 @@ export const uploadFileToStorage = async (file, path) => {
 export const uploadFileToTempFolder = async (file, userId) => {
     const uniqueId = uuidv4();
     const filePath = `temp/${userId}/${uniqueId}-${file.name}`;
+    console.log(file);
 
     // Firebase storage reference
     const storageRef = ref(storage, filePath);
@@ -68,7 +69,7 @@ export const uploadFileToTempFolder = async (file, userId) => {
     await uploadBytes(storageRef, file);
     // Get the download URL
     const downloadURL = await getDownloadURL(storageRef);
-
+    console.log(downloadURL);
     // Save metadata in Firestore
     const fileMetadata = {
         userId,

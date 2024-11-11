@@ -46,6 +46,9 @@ module.exports = {
                 errorColor: {
                     DEFAULT: "#9E2A2B",
                 },
+                infoColor: {
+                    DEFAULT: "#B0D0D3",
+                },
                 warningColor: {
                     DEFAULT: "#F18F01",
                 },

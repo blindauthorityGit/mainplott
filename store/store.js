@@ -22,16 +22,37 @@ const useStore = create((set) => ({
         })),
 
     //SHOP DATA
+    // purchaseData: {
+    //     selectedSize: null,
+    //     uploadedGraphic: null,
+    //     uploadedGraphicFile: null,
+    //     xPosition: 0,
+    //     yPosition: 0,
+    //     scale: 1,
+    //     containerWidth: null, // Add container width
+    //     containerHeight: null, // Add container height
+    // },
     purchaseData: {
         selectedSize: null,
-        uploadedGraphic: null,
-        uploadedGraphicFile: null,
-        xPosition: 0,
-        yPosition: 0,
-        scale: 1,
-        containerWidth: null, // Add container width
-        containerHeight: null, // Add container height
+        containerWidth: null, // Default width for safety
+        containerHeight: null, // Default height for safety
+        currentSide: "front",
+        sides: {
+            front: {
+                uploadedGraphic: null,
+                xPosition: 0,
+                yPosition: 0,
+                scale: 1,
+            },
+            back: {
+                uploadedGraphic: null,
+                xPosition: 0,
+                yPosition: 0,
+                scale: 1,
+            },
+        },
     },
+
     setPurchaseData: (data) =>
         set((state) => ({
             purchaseData: { ...state.purchaseData, ...data },
