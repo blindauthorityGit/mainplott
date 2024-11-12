@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { FaShoppingCart } from "react-icons/fa"; // Import the cart icon from react-icons
 import { useMenu } from "../../context/menuContext";
 import MegaMenu from "./megaMenu"; // Import the MegaMenu component
 import { motion, AnimatePresence } from "framer-motion"; // Import framer-motion for animations
-
-// FUNCTIONS
+import { MainButton } from "../buttons";
+import useStore from "@/store/store"; // Import Zustand store
 import urlFor from "../../functions/urlFor";
 
 export default function Menu() {
@@ -13,6 +14,7 @@ export default function Menu() {
     const [isSticky, setIsSticky] = useState(false); // State to track if the header is sticky
 
     const menuData = useMenu(); // Access menu data from context
+    const { cartItems, openCartSidebar } = useStore(); // Assuming cartItems is an array in Zustand
 
     useEffect(() => {
         const handleScroll = () => {
@@ -38,7 +40,7 @@ export default function Menu() {
                     <nav className="hidden md:flex space-x-4">
                         <Link
                             href="/about"
-                            className={` ${
+                            className={`${
                                 isMegaMenuVisible ? "text-primaryColor-400" : "text-textColor"
                             } hover:text-primaryColor-400`}
                             onMouseEnter={() => setIsMegaMenuVisible(true)}
@@ -77,19 +79,22 @@ export default function Menu() {
                     {/* Right Section - CTA Button, Cart, and Burger Menu */}
                     <div className="flex items-center space-x-4 md:space-x-4">
                         {/* CTA Button */}
-                        <Link
-                            href="/shop"
-                            className="hidden md:inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                        <MainButton
+                            klasse="!mt-0 !max-w-[240px] !min-w-[0]"
+                            link="/shop"
+                            className="hidden md:inline-block  text-white "
                         >
-                            Buy Now
-                        </Link>
+                            Shop
+                        </MainButton>
 
-                        {/* Cart Icon */}
-                        <button className="hidden md:inline-block relative">
-                            <span className="material-icons text-3xl text-gray-700">shopping_cart</span>
-                            <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full px-2 text-xs">
-                                3
-                            </span>
+                        {/* Cart Icon with Badge */}
+                        <button className="relative hidden md:inline-flex items-center">
+                            <FaShoppingCart onClick={openCartSidebar} className="text-3xl text-gray-700" />
+                            {cartItems.length > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full px-2 text-xs">
+                                    {cartItems.length}
+                                </span>
+                            )}
                         </button>
 
                         {/* Burger Menu */}
@@ -166,19 +171,18 @@ export default function Menu() {
                             {/* Right Section - CTA Button, Cart */}
                             <div className="flex items-center space-x-4 md:space-x-4">
                                 {/* CTA Button */}
-                                <Link
-                                    href="/shop"
-                                    className="hidden md:inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                                >
-                                    Buy Now
-                                </Link>
+                                <MainButton klasse="!mt-0 !max-w-[240px] !min-w-[0]" link="/shop">
+                                    Shop
+                                </MainButton>
 
-                                {/* Cart Icon */}
-                                <button className="hidden md:inline-block relative">
-                                    <span className="material-icons text-3xl text-gray-700">shopping_cart</span>
-                                    <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full px-2 text-xs">
-                                        3
-                                    </span>
+                                {/* Cart Icon with Badge */}
+                                <button className="relative hidden md:inline-flex items-center">
+                                    <FaShoppingCart className="text-3xl text-gray-700" />
+                                    {cartItems.length > 0 && (
+                                        <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full px-2 text-xs">
+                                            {cartItems.length}
+                                        </span>
+                                    )}
                                 </button>
                             </div>
                         </div>

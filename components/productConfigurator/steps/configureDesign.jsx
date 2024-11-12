@@ -141,7 +141,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     };
 
     return (
-        <div className="flex flex-col lg:px-16 lg:mt-8">
+        <div className="flex flex-col lg:px-16 lg:mt-8 font-body">
             <ContentWrapper data={stepData} />
 
             {/* Material-UI Tabs Component */}
@@ -182,14 +182,30 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
 
             {/* Upload Button Section */}
             {!purchaseData.sides[currentSide].uploadedGraphicFile ? (
-                <Button variant="contained" component="label" color="primary">
+                <Button
+                    variant="contained"
+                    component="label"
+                    sx={{
+                        mt: 1.5, // Tailwind equivalent for `mt-6`
+                        px: 3, // Tailwind equivalent for `px-6`
+                        py: 1, // Tailwind equivalent for `py-2`
+                        backgroundColor: "#ba979d", // Replace 'primaryColor.main' with your Tailwind color code if needed
+                        color: "white", // Text color
+                        fontFamily: "Montserrat", // Replace with your Tailwind font family if specified in your theme
+                        borderRadius: "8px", // Adjust to match your rounded-lg styling
+                        "&:hover": {
+                            backgroundColor: "primaryColor.light", // Replace with your Tailwind hover color
+                        },
+                        boxShadow: "none", // Removes Material-UI button shadow
+                    }}
+                >
                     Datei hochladen
                     <input type="file" hidden onChange={handleGraphicUpload} />
                 </Button>
             ) : (
                 <>
                     <div className="mb-4">
-                        <P klasse="!text-sm !mb-2">X-Achse Position</P>
+                        <P klasse="!text-sm !mb-0">X-Achse Position</P>
                         <Slider
                             value={purchaseData.sides[currentSide].xPosition}
                             min={0} // Minimum position on the X-axis
@@ -198,7 +214,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                             aria-labelledby="x-axis-slider"
                             sx={{
                                 "& .MuiSlider-thumb": {
-                                    backgroundColor: "#B0D0D3", // Customize the thumb color
+                                    backgroundColor: "#393836", // Customize the thumb color
                                     width: 20, // Thumb width
                                     height: 20, // Thumb height
                                     border: "2px solid white", // Add a border for visibility
@@ -212,7 +228,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                     border: "none",
                                 },
                                 "& .MuiSlider-rail": {
-                                    backgroundColor: "#d1d5db", // Rail color (default, unfilled area)
+                                    backgroundColor: "#EBE0E1", // Rail color (default, unfilled area)
                                     height: 6, // Rail thickness
                                 },
                                 "& .MuiSlider-valueLabel": {
@@ -224,7 +240,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                         />
                     </div>
                     <div className="mb-4">
-                        <P klasse="!text-sm !mb-2">Y-Achse Position</P>
+                        <P klasse="!text-sm !mb-0">Y-Achse Position</P>
                         <Slider
                             value={purchaseData.sides[currentSide].yPosition}
                             min={0} // Minimum position on the Y-axis
@@ -233,7 +249,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                             aria-labelledby="y-axis-slider"
                             sx={{
                                 "& .MuiSlider-thumb": {
-                                    backgroundColor: "#B0D0D3", // Customize the thumb color
+                                    backgroundColor: "#393836", // Customize the thumb color
                                     width: 20, // Thumb width
                                     height: 20, // Thumb height
                                     border: "2px solid white", // Add a border for visibility
@@ -247,11 +263,11 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                     border: "none",
                                 },
                                 "& .MuiSlider-rail": {
-                                    backgroundColor: "#d1d5db", // Rail color (default, unfilled area)
+                                    backgroundColor: "#EBE0E1", // Rail color (default, unfilled area)
                                     height: 6, // Rail thickness
                                 },
                                 "& .MuiSlider-valueLabel": {
-                                    backgroundColor: "#4f46e5", // Background color for value label
+                                    backgroundColor: "#EBE0E1", // Background color for value label
                                     color: "white", // Value label text color
                                     fontSize: "0.875rem", // Font size for value label
                                 },
@@ -259,7 +275,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                         />
                     </div>
                     <div className="mb-4">
-                        <P klasse="!text-sm !mb-2">Größe</P>
+                        <P klasse="!text-sm !mb-0">Größe</P>
                         <Slider
                             value={purchaseData.sides[currentSide].scale}
                             min={0.3}
@@ -269,7 +285,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                             aria-labelledby="scale-slider"
                             sx={{
                                 "& .MuiSlider-thumb": {
-                                    backgroundColor: "#B0D0D3", // Customize the thumb color
+                                    backgroundColor: "#393836", // Customize the thumb color
                                     width: 20, // Thumb width
                                     height: 20, // Thumb height
                                     border: "2px solid white", // Add a border for visibility
@@ -283,7 +299,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                     border: "none",
                                 },
                                 "& .MuiSlider-rail": {
-                                    backgroundColor: "#d1d5db", // Rail color (default, unfilled area)
+                                    backgroundColor: "#EBE0E1", // Rail color (default, unfilled area)
                                     height: 6, // Rail thickness
                                 },
                                 "& .MuiSlider-valueLabel": {
@@ -302,6 +318,10 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 <FormControlLabel
                     control={<Checkbox checked={copyFrontToBack} onChange={handleCopyFrontToBack} color="primary" />}
                     label="Vorderseite auf Rückseite kopieren"
+                    className="mt-8 !font-body"
+                    sx={{
+                        fontFamily: "Montserrat!important",
+                    }}
                 />
             )}
             {purchaseData.sides[currentSide].uploadedGraphicFile && (
@@ -313,7 +333,10 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                     />
                     <div className="flex flex-col gap-2">
                         <IconButton
-                            onClick={handleDeleteUpload}
+                            onClick={() => {
+                                handleDeleteUpload({ purchaseData, setPurchaseData, currentSide }),
+                                    setCopyFrontToBack(false);
+                            }}
                             icon={FiX}
                             label="Löschen"
                             bgColor="bg-errorColor"
@@ -321,10 +344,12 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                             textColor="text-white"
                         />
                         <IconButton
-                            onClick={handleShowDetails(
-                                purchaseData.sides[currentSide].uploadedGraphicFile,
-                                setModalOpen
-                            )}
+                            onClick={() => {
+                                handleShowDetails({
+                                    uploadedFile: purchaseData.sides[currentSide].uploadedGraphicFile,
+                                    setModalOpen: setModalOpen,
+                                });
+                            }}
                             icon={FiInfo}
                             label="Details anzeigen"
                             bgColor="bg-infoColor"

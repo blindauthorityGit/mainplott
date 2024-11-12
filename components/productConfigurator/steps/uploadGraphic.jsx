@@ -267,7 +267,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                             )}
                             <button
                                 type="button"
-                                className="mt-6 px-6 py-2 bg-primaryColor text-white rounded-lg hover:bg-primaryColor-600"
+                                className="mt-6 px-6 py-2 bg-primaryColor font-body text-white rounded-lg hover:bg-primaryColor-600"
                             >
                                 Datei auswählen
                             </button>

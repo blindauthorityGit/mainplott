@@ -13,7 +13,17 @@ import useIsMobile from "@/hooks/isMobile";
 const KonvaLayer = dynamic(() => import("@/components/konva"), { ssr: false });
 
 export default function StepHolder({ children, steps, currentStep, setCurrentStep }) {
-    const { purchaseData, setPurchaseData, selectedVariant, selectedImage, setSelectedImage } = useStore();
+    const {
+        purchaseData,
+        setPurchaseData,
+        selectedVariant,
+        selectedImage,
+        setSelectedImage,
+        cartItems,
+        addToCart,
+        openCartSidebar,
+        addCartItem,
+    } = useStore();
     const [imageHeight, setImageHeight] = useState(null);
     const [imageSize, setImageSize] = useState({ width: null, height: null });
     const [isFrontView, setIsFrontView] = useState(true); // Track if we're viewing the front or back
@@ -45,17 +55,12 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     }, [currentStep]);
 
     // SET VIEW TO FRONMT WHEN NAVIGATING
-    // useEffect(() => {
-    //     setPurchaseData({
-    //         ...purchaseData,
-    //         currentSide: "front",
-    //     });
-    // }, [currentStep]);
+    useEffect(() => {
+        console.log(cartItems);
+    }, [cartItems]);
 
     useEffect(() => {
         if (!purchaseData.position && containerRef.current) {
-            console.log(containerRef.current.offsetHeight / 2);
-
             setPurchaseData({
                 ...purchaseData,
                 sides: {
@@ -95,7 +100,6 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         exit: { opacity: 0 },
     };
 
-    // Adjust image dimensions dynamically to maintain aspect ratio and fill the container up to 860px height
     // Adjust image dimensions dynamically to maintain aspect ratio and fill the container up to 860px height
     useEffect(() => {
         if (imageRef.current) {
@@ -266,12 +270,12 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
                 {/* Dynamic Content with entry/exit animation */}
                 <div className="flex-grow mb-8 px-4 lg:px-0">
-                    <AnimatePresence mode="wait">
+                    <AnimatePresence mode="wait" initial={false}>
                         <motion.div
                             key={currentStep}
-                            initial="initial"
-                            animate="animate"
-                            exit="exit"
+                            initial={{ opacity: 0, x: -10 }} // Slide from left for entry animation
+                            animate={{ opacity: 1, x: 0 }} // Fade in and position to center
+                            exit={{ opacity: 0, x: 10 }} // Slide out to the right for exit animation
                             transition={{ duration: 0.3, ease: "easeInOut" }}
                         >
                             {children}
@@ -288,14 +292,26 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                     >
                         zurück
                     </StepButton>
-                    <StepButton
-                        onClick={handleNextStep}
-                        className="px-4 py-2 bg-textColor text-white rounded"
-                        klasse="bg-textColor"
-                        disabled={isNextDisabled()}
-                    >
-                        Weiter
-                    </StepButton>
+                    {currentStep === 4 ? (
+                        <StepButton
+                            onClick={() => {
+                                addCartItem(purchaseData), openCartSidebar();
+                            }}
+                            className="px-4 py-2 !bg-successColor text-white rounded"
+                            klasse="!bg-successColor"
+                        >
+                            in den EInkaufwagen
+                        </StepButton>
+                    ) : (
+                        <StepButton
+                            onClick={handleNextStep}
+                            className="px-4 py-2 bg-textColor text-white rounded"
+                            klasse="bg-textColor"
+                            disabled={isNextDisabled()}
+                        >
+                            Weiter
+                        </StepButton>
+                    )}
                 </div>
             </div>
         </div>

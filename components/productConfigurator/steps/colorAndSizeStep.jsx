@@ -9,11 +9,10 @@ import formatVariants from "@/functions/formatVariants"; // Function for formatt
 import { getColorHex } from "@/libs/colors";
 
 export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
-    const { purchaseData, setPurchaseData, setSelectedVariant } = useStore();
+    const { purchaseData, setPurchaseData, setSelectedVariant, setSelectedImage } = useStore();
     const [selectedSize, setSelectedSize] = useState(purchaseData.selectedSize || null);
     const [selectedColor, setSelectedColor] = useState(purchaseData.selectedColor || null);
     const [isChecked, setIsChecked] = useState(false);
-    const { setSelectedImage } = useStore();
 
     // Format variants for easier access
     const formattedVariants = formatVariants(product.variants);
@@ -34,6 +33,11 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
             }
         }
     }, []);
+
+    useEffect(() => {
+        setPurchaseData({ ...purchaseData, productName: product.title, product: product });
+        // setPurchaseData({ ...purchaseData, productName: product.title, product: product });
+    }, [product]);
 
     // Function to set the active variant
     const setActiveVariant = (size, color) => {

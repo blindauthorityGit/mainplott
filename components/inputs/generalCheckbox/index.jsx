@@ -17,7 +17,7 @@ const GeneralCheckBox = ({
     containerStyle,
 }) => {
     const handleToggle = () => {
-        onClick(); // Checkbox-Status umschalten
+        // onClick(); // Checkbox-Status umschalten
         if (onToggle) {
             onToggle(!isChecked); // Callback mit dem neuen Zustand
         }

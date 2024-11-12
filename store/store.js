@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { v4 as uuidv4 } from "uuid"; // To generate unique IDs for each cart item
+import { saveCartToLocalStorage, loadCartFromLocalStorage } from "@/functions/localStorage"; // Import the functions
 
 const useStore = create((set) => ({
     activeCategory: "",
@@ -6,9 +8,7 @@ const useStore = create((set) => ({
     activeTags: [],
 
     setActiveCategory: (category) => set({ activeCategory: category }),
-
     setActiveSubCategory: (category) => set({ activeSubCategory: category }),
-
     setActiveTags: (tags) => set({ activeTags: tags }),
 
     addTag: (tag) =>
@@ -21,22 +21,16 @@ const useStore = create((set) => ({
             activeTags: state.activeTags.filter((t) => t !== tag),
         })),
 
-    //SHOP DATA
-    // purchaseData: {
-    //     selectedSize: null,
-    //     uploadedGraphic: null,
-    //     uploadedGraphicFile: null,
-    //     xPosition: 0,
-    //     yPosition: 0,
-    //     scale: 1,
-    //     containerWidth: null, // Add container width
-    //     containerHeight: null, // Add container height
-    // },
+    // SHOP DATA
     purchaseData: {
         selectedSize: null,
-        containerWidth: null, // Default width for safety
-        containerHeight: null, // Default height for safety
+        containerWidth: null,
+        containerHeight: null,
         currentSide: "front",
+        profiDatenCheck: false,
+        productName: "",
+        product: null,
+        price: 0,
         sides: {
             front: {
                 uploadedGraphic: null,
@@ -58,6 +52,61 @@ const useStore = create((set) => ({
             purchaseData: { ...state.purchaseData, ...data },
         })),
 
+    // Cart Items Array and Functions
+    cartItems: [],
+
+    // Load cart from localStorage on initialization
+    initializeCart: () => {
+        const storedCartItems = loadCartFromLocalStorage();
+        set({ cartItems: storedCartItems });
+    },
+    // Sidebar visibility
+    isCartSidebarOpen: false,
+    openCartSidebar: () => set({ isCartSidebarOpen: true }),
+    closeCartSidebar: () => set({ isCartSidebarOpen: false }),
+
+    addCartItem: (item) => {
+        set((state) => {
+            const updatedCartItems = [...state.cartItems, item];
+            console.log(updatedCartItems);
+            saveCartToLocalStorage(updatedCartItems);
+            return { cartItems: updatedCartItems };
+        });
+    },
+
+    // Remove item from cart by id
+    removeCartItem: (id) => {
+        set((state) => {
+            const updatedCartItems = state.cartItems.filter((item) => item.id !== id);
+            localStorage.setItem("cartItems", JSON.stringify(updatedCartItems)); // Update localStorage
+            return { cartItems: updatedCartItems };
+        });
+    },
+
+    addToCart: () =>
+        set((state) => ({
+            cartItems: [
+                ...state.cartItems,
+                {
+                    ...JSON.parse(JSON.stringify(state.purchaseData)), // Deep copy purchaseData
+                    id: uuidv4(), // Unique identifier for the item
+                },
+            ],
+        })),
+
+    removeFromCart: (id) =>
+        set((state) => ({
+            cartItems: state.cartItems.filter((item) => item.id !== id),
+        })),
+
+    clearCart: () => set({ cartItems: [] }),
+
+    updateCartItem: (index, updatedData) =>
+        set((state) => ({
+            cartItems: state.cartItems.map((item, i) => (i === index ? { ...item, ...updatedData } : item)),
+        })),
+
+    // Modal and Spinner
     modalOpen: false,
     setModalOpen: (isOpen) => set(() => ({ modalOpen: isOpen })),
     showSpinner: false,
@@ -65,18 +114,16 @@ const useStore = create((set) => ({
     modalContent: null,
     setModalContent: (content) => set(() => ({ modalContent: content })),
 
-    // Adding colorSpace and dpi state
+    // Additional State
     colorSpace: null,
     dpi: null,
-
     setColorSpace: (colorSpace) => set(() => ({ colorSpace })),
     setDpi: (dpi) => set(() => ({ dpi })),
 
     selectedImage: null,
     setSelectedImage: (image) => set(() => ({ selectedImage: image })),
-
-    selectedVariant: null, // Add this to store the selected variant
-    setSelectedVariant: (variant) => set(() => ({ selectedVariant: variant })), // Add setter for selectedVariant
+    selectedVariant: null,
+    setSelectedVariant: (variant) => set(() => ({ selectedVariant: variant })),
 }));
 
 export default useStore;
