@@ -51,6 +51,24 @@ export async function getAllProductsInCollection(collection) {
                     }
                   }
                  }
+                        variants(first: 40) {
+              edges {
+                  node {
+                      title     
+                      selectedOptions {
+                          name
+                          value
+                      }
+                      image {
+                          originalSrc
+                          altText
+                      }
+                      metafield(namespace: "custom", key: "back_image") {
+                          value
+                      }
+                  }
+              }
+          }
         }
       }
     }
@@ -224,5 +242,43 @@ export async function getBackImageUrl(mediaImageId) {
     } catch (error) {
         console.error("Error fetching back image URL:", error);
         return null;
+    }
+}
+
+// libs/shopify.js
+
+// libs/shopify.js
+
+export async function getProductsByCategory(categoryHandle) {
+    const query = `{
+        collectionByHandle(handle: "${categoryHandle}") {
+            products(first: 5) {  
+                edges {
+                    node {
+                        id
+                        title
+                        handle
+                        images(first: 1) {
+                            edges {
+                                node {
+                                    originalSrc
+                                    altText
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }`;
+
+    try {
+        const response = await callShopify(query);
+        console.log(response);
+        const products = response?.data?.collectionByHandle?.products?.edges.map((edge) => edge.node) || [];
+        return products;
+    } catch (error) {
+        console.error("Error fetching products by category:", error);
+        return [];
     }
 }

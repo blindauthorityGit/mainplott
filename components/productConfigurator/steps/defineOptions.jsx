@@ -71,6 +71,14 @@ export default function DefineOptions() {
         });
     }, [price]);
 
+    useEffect(() => {
+        console.log(price);
+        setPurchaseData({
+            ...purchaseData,
+            quantity: quantity,
+        });
+    }, [quantity]);
+
     // Handle Veredelung change
     const handleVeredelungChange = (event) => setVeredelung(event.target.value);
 

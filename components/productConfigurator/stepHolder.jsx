@@ -37,7 +37,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     };
 
     const handleNextStep = () => {
-        console.log(purchaseData);
+        console.log(selectedImage);
         setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
     };
 
@@ -56,8 +56,8 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
     // SET VIEW TO FRONMT WHEN NAVIGATING
     useEffect(() => {
-        console.log(cartItems);
-    }, [cartItems]);
+        console.log(selectedImage);
+    }, [selectedImage]);
 
     useEffect(() => {
         if (!purchaseData.position && containerRef.current) {
@@ -295,7 +295,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                     {currentStep === 4 ? (
                         <StepButton
                             onClick={() => {
-                                addCartItem(purchaseData), openCartSidebar();
+                                addCartItem({ ...purchaseData, selectedImage }), openCartSidebar();
                             }}
                             className="px-4 py-2 !bg-successColor text-white rounded"
                             klasse="!bg-successColor"

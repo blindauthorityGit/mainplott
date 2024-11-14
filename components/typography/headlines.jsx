@@ -48,7 +48,7 @@ H4.displayName = "H4";
 
 const H5 = React.forwardRef(({ children, klasse }, ref) => {
     return (
-        <h5 ref={ref} className={`text-xs lg:text-base xl:text-sm font-regular font-ueber text-textColor ${klasse}`}>
+        <h5 ref={ref} className={`text-xs lg:text-base xl:text-base font-bold font-body text-textColor ${klasse}`}>
             {children}
         </h5>
     );

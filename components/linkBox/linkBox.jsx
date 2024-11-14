@@ -5,7 +5,7 @@ import Link from "next/link";
 import urlFor from "../../functions/urlFor";
 import { motion } from "framer-motion"; // Import framer-motion
 
-const LinkBox = ({ klasse, link, image, text, icon, details, title }) => {
+const LinkBox = ({ klasse, iconUrl, link, image, text, icon, details, title }) => {
     return (
         <motion.div className={`${klasse} text-center`} initial="rest" whileHover="hover" animate="rest">
             <Link href={link}>
@@ -74,7 +74,7 @@ const LinkBox = ({ klasse, link, image, text, icon, details, title }) => {
                 {/* Text with color animation */}
                 <motion.div className="mt-2 relative inline-block">
                     <H3
-                        klasse="relative !mb-4"
+                        klasse="relative !mb-4 !font-bold xl:!text-2xl !font-body"
                         as={motion.h3}
                         variants={{
                             rest: { color: "#000" }, // Default color (e.g., dark grey or black)

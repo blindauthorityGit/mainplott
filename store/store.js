@@ -67,9 +67,8 @@ const useStore = create((set) => ({
 
     addCartItem: (item) => {
         set((state) => {
-            const updatedCartItems = [...state.cartItems, item];
-            console.log(updatedCartItems);
-            saveCartToLocalStorage(updatedCartItems);
+            const updatedCartItems = [...state.cartItems, { ...item, id: uuidv4() }];
+            saveCartToLocalStorage(updatedCartItems); // Save to local storage if needed
             return { cartItems: updatedCartItems };
         });
     },
@@ -101,9 +100,9 @@ const useStore = create((set) => ({
 
     clearCart: () => set({ cartItems: [] }),
 
-    updateCartItem: (index, updatedData) =>
+    updateCartItem: (id, updatedData) =>
         set((state) => ({
-            cartItems: state.cartItems.map((item, i) => (i === index ? { ...item, ...updatedData } : item)),
+            cartItems: state.cartItems.map((item) => (item.id === id ? { ...item, ...updatedData } : item)),
         })),
 
     // Modal and Spinner

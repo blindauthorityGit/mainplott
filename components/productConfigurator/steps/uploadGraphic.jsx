@@ -6,9 +6,13 @@ import { analyzeImage } from "@/functions/analyzeImage"; // Import the analyzeIm
 import { analyzePdf } from "@/functions/analyzePdf"; // Import the analyzePdf function
 import PdfPreview from "@/components/pdfPreview";
 import { P } from "@/components/typography";
+import Link from "next/link"; // Import Next.js Link for navigation
+import GeneralCheckBox from "@/components/inputs/generalCheckbox"; // Import custom checkbox component
+import { motion, AnimatePresence } from "framer-motion"; // Import Framer Motion
 
 import { GraphicUploadModalContent } from "@/components/modalContent"; // Import the new modal content component
 import LoadingSpinner from "@/components/spinner"; // Import the loading spinner component
+import { H3 } from "@/components/typography";
 
 // STORE
 import useStore from "@/store/store"; // Your Zustand store
@@ -30,6 +34,8 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
     const [uploading, setUploading] = useState(true);
     const [uploadError, setUploadError] = useState(null);
     const [currentSide, setCurrentSide] = useState("front"); // Track the current side being worked on
+    const [isChecked, setIsChecked] = useState(false); // State for disclaimer acceptance
+    const [acceptedDisclaimer, setAcceptedDisclaimer] = useState(false); // State for disclaimer acceptance
 
     const stepData = {
         title: "Grafik hochladen",
@@ -244,77 +250,99 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
         });
     };
 
+    // Toggle acceptance of disclaimer
+    const handleDisclaimerCheck = () => {
+        setIsChecked(true);
+        setTimeout(() => {
+            setAcceptedDisclaimer(!acceptedDisclaimer);
+        }, 400);
+    };
+
     const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
     return (
         <div className="lg:px-16 lg:mt-8">
             <ContentWrapper data={stepData}>
                 <>
-                    <div
-                        {...getRootProps()}
-                        className="flex flex-col items-center justify-center bg-gray-100 border-dashed border-2 p-12 border-gray-400"
-                    >
-                        <input {...getInputProps()} />
-                        <div className="text-center">
-                            {isDragActive ? (
-                                <p className="font-body font-semibold text-xl text-primaryColor">
-                                    Lassen Sie los, um die Grafik hochzuladen!
-                                </p>
-                            ) : (
-                                <p className="font-body font-semibold text-xl text-gray-700">
-                                    Ziehen Sie Ihre Grafik hierher oder klicken Sie, um eine Datei hochzuladen.
-                                </p>
-                            )}
-                            <button
-                                type="button"
-                                className="mt-6 px-6 py-2 bg-primaryColor font-body text-white rounded-lg hover:bg-primaryColor-600"
+                    <AnimatePresence>
+                        {!acceptedDisclaimer && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 20 }}
+                                transition={{ duration: 0.3, ease: "easeInOut" }}
+                                className="mb-4 p-4 bg-accentColor border border-gray-300 rounded-lg"
                             >
-                                Datei auswählen
-                            </button>
-                        </div>
-                        {uploadError && (
-                            <div className="mt-4 text-center">
-                                <p className="font-body text-red-600">{uploadError}</p>
-                            </div>
+                                <H3 klasse="text-lg text-errorColor mb-2">ZUERST LESEN, DANN UPLOADEN</H3>
+                                <P klasse="mb-4 text-sm text-gray-700">
+                                    Bitte beachten Sie, dass Sie nur Grafiken hochladen dürfen, die Ihnen gehören oder
+                                    für deren Nutzung Sie die Erlaubnis haben. Weitere Informationen finden Sie auf
+                                    unserer{" "}
+                                    <Link href="/datenschutz">
+                                        <span className="text-primaryColor underline">Datenschutz-Seite</span>
+                                    </Link>
+                                    .
+                                </P>
+                                <GeneralCheckBox
+                                    label="Ich habe die Bedingungen gelesen und akzeptiere sie."
+                                    isChecked={isChecked}
+                                    onToggle={handleDisclaimerCheck}
+                                    borderColor="border-gray-400"
+                                    checkColor="text-successColor"
+                                />
+                            </motion.div>
                         )}
-                        {uploadedFile && !uploading && (
-                            <div className="mt-4 text-center">
-                                <p className="font-body text-gray-700">Hochgeladene Datei: {uploadedFile.name}</p>
-                            </div>
+                    </AnimatePresence>
+
+                    <AnimatePresence>
+                        {acceptedDisclaimer && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 20 }}
+                                transition={{ duration: 0.3, ease: "easeInOut" }}
+                                {...getRootProps()}
+                                className="flex flex-col items-center justify-center bg-gray-100 border-dashed border-2 p-12 border-gray-400"
+                            >
+                                <input {...getInputProps()} />
+                                <div className="text-center">
+                                    {isDragActive ? (
+                                        <p className="font-body font-semibold text-xl text-primaryColor">
+                                            Lassen Sie los, um die Grafik hochzuladen!
+                                        </p>
+                                    ) : (
+                                        <p className="font-body font-semibold text-xl text-gray-700">
+                                            Ziehen Sie Ihre Grafik hierher oder klicken Sie, um eine Datei hochzuladen.
+                                        </p>
+                                    )}
+                                    <button
+                                        type="button"
+                                        className="mt-6 px-6 py-2 bg-primaryColor font-body text-white rounded-lg hover:bg-primaryColor-600"
+                                    >
+                                        Datei auswählen
+                                    </button>
+                                </div>
+                                {uploadError && (
+                                    <div className="mt-4 text-center">
+                                        <p className="font-body text-red-600">{uploadError}</p>
+                                    </div>
+                                )}
+                                {uploadedFile && !uploading && (
+                                    <div className="mt-4 text-center">
+                                        <p className="font-body text-gray-700">
+                                            Hochgeladene Datei: {uploadedFile.name}
+                                        </p>
+                                    </div>
+                                )}
+                            </motion.div>
                         )}
-                    </div>
+                    </AnimatePresence>
+
                     <P klasse="!text-sm mt-4 mb-4">
                         Akzeptierte Formate: JPG, PNG, PDF, TIFF, AI, EPS
                         <br />
                         max 10 MB
                     </P>
-                    {/* {uploadedFile && (
-                        <div className="flex items-center gap-4 mt-4 font-body text-sm">
-                            <img
-                                className="max-h-40 rounded-[20px]"
-                                src={URL.createObjectURL(uploadedFile)}
-                                alt="Uploaded Preview"
-                            />
-                            <div className="flex flex-col gap-2">
-                                <IconButton
-                                    onClick={handleDeleteUpload}
-                                    icon={FiX}
-                                    label="Löschen"
-                                    bgColor="bg-errorColor"
-                                    hoverColor="hover:bg-red-600"
-                                    textColor="text-white"
-                                />
-                                <IconButton
-                                    onClick={handleShowDetails}
-                                    icon={FiInfo}
-                                    label="Details anzeigen"
-                                    bgColor="bg-infoColor"
-                                    hoverColor="hover:bg-primaryColor-600"
-                                    textColor="text-white"
-                                />
-                            </div>
-                        </div>
-                    )} */}
                 </>
             </ContentWrapper>
         </div>

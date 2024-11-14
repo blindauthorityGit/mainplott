@@ -44,6 +44,7 @@ const KonvaLayer = ({
             img.src = productImage;
             img.onload = () => {
                 setIsProductImageLoaded(true); // Update state when product image is loaded
+                img.crossOrigin = "Anonymous";
 
                 if (productImageRef.current) {
                     // Calculate aspect ratio and maintain "contain" logic
@@ -70,6 +71,7 @@ const KonvaLayer = ({
                     productImageRef.current.x(offsetX);
                     productImageRef.current.y(offsetY);
                     productImageRef.current.image(img);
+
                     productImageRef.current.getLayer().batchDraw();
                 }
             };
@@ -92,6 +94,7 @@ const KonvaLayer = ({
                 img.onload = () => {
                     setIsUploadedGraphicLoaded(true); // Update state when uploaded graphic is loaded
                     console.log("IMAGE IS LOADED");
+
                     if (uploadedGraphicRef.current) {
                         const aspectRatio = img.width / img.height;
                         let newWidth = 120;
@@ -158,6 +161,25 @@ const KonvaLayer = ({
         }
         return pos;
     };
+
+    // Calculate center position for the path
+    const centerX = containerWidth / 2;
+    const centerY = containerHeight / 2;
+
+    // Centering path on canvas
+    useEffect(() => {
+        if (boundaryPathRef.current) {
+            boundaryPathRef.current.position({
+                x: 125,
+                y: 270,
+            });
+
+            // Set scale (example: scale down by half)
+            boundaryPathRef.current.scale({ x: 1.2, y: 1.2 }); // Adjust scale values as needed
+
+            boundaryPathRef.current.getLayer().batchDraw();
+        }
+    }, [centerX, centerY]);
 
     // Function to export the canvas as a JPEG
     const handleExport = () => {
@@ -237,7 +259,7 @@ const KonvaLayer = ({
                     {/* Product Image - background */}
                     {productImage && <KonvaImage ref={productImageRef} />}
                     {/* Boundary Path - visible for development purposes */}
-                    {/* <KonvaPath
+                    <KonvaPath
                         ref={boundaryPathRef}
                         data={
                             "M40.4915 305.5C40.4915 205.5 13.8248 101.167 0.491516 61.5C-6.16229 39.5001 56.3858 11.3334 88.4915 0C93.3249 9.83333 116.392 30.3 169.992 33.5C236.992 37.5 249.492 3.50004 250.492 4.50004C302.992 3.00004 341.992 61.5 340.992 61.5C302.992 74.3 290.492 187.167 288.992 242V432C288.992 456.8 267.325 460.667 256.492 459.5C205.158 459.167 96.4915 458.7 72.4915 459.5C42.4915 460.5 40.4915 430.5 40.4915 305.5Z" // Sample rectangular path for testing
@@ -246,7 +268,7 @@ const KonvaLayer = ({
                         strokeWidth={2}
                         dash={[10, 5]} // Makes the path visible with dashed lines
                         opacity={0.5} // Reduce opacity to avoid too much distraction
-                    /> */}
+                    />
                     {/* Uploaded Graphic - draggable and scalable */}
                     {(uploadedGraphicFile || uploadedGraphicURL) && (
                         <KonvaImage
@@ -258,7 +280,7 @@ const KonvaLayer = ({
                             offsetY={60} // Set offset to scale from the center (half of the height)
                             scaleX={scale}
                             scaleY={scale}
-                            // dragBoundFunc={handleDragBoundFunc}
+                            dragBoundFunc={handleDragBoundFunc}
                             onClick={() => {
                                 console.log("Image clicked");
                                 // Add logic to show icons or actions like delete/change

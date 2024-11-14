@@ -107,6 +107,19 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     const handleGraphicUpload = async (event) => {
         const newFile = event.target.files[0];
         console.log(newFile);
+        const centeredX = purchaseData.containerWidth / 2;
+        const centeredY = purchaseData.containerHeight / 2;
+        setPurchaseData({
+            ...purchaseData,
+            sides: {
+                ...purchaseData.sides, // Keep both front and back
+                back: {
+                    ...purchaseData.sides.front, // Copy all front design properties to back
+                    xPosition: centeredX, // Set to centered position
+                    yPosition: centeredY,
+                },
+            },
+        });
         if (newFile) {
             await handleFileUpload({
                 newFile,

@@ -16,7 +16,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
 
     // Format variants for easier access
     const formattedVariants = formatVariants(product.variants);
-
+    console.log(product);
     // Set initial selection for size and color
     useEffect(() => {
         if (!selectedSize && !selectedColor) {
@@ -36,6 +36,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
 
     useEffect(() => {
         setPurchaseData({ ...purchaseData, productName: product.title, product: product });
+        console.log(product.title, product);
         // setPurchaseData({ ...purchaseData, productName: product.title, product: product });
     }, [product]);
 

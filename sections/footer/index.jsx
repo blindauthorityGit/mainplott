@@ -12,7 +12,7 @@ const Footer = () => {
         <div className="bg-blackColor w-full py-36 font-body lg:mt-24">
             <div className="container mx-auto grid grid-cols-12">
                 <div className="col-span-6">
-                    <H3 klasse="text-primaryColor-50">Atelier Buchner</H3>
+                    <H3 klasse="text-primaryColor-50">MAINPLOTT</H3>
                     <div className="mt-4">
                         <div className="flex items-center mb-2">
                             <FiMail className="text-primaryColor-50 text-2xl mr-3" />

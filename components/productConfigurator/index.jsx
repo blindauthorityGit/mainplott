@@ -20,11 +20,15 @@ export default function ProductConfigurator({ product, sizes, colorPatternIds, v
     const [currentStep, setCurrentStep] = useState(0);
     const [selectedImage, setSelectedImage] = useState(null);
 
-    const { setModalOpen } = useStore();
+    const { setModalOpen, setPurchaseData, purchaseData } = useStore();
 
     const CurrentStepComponent = stepsConfig[currentStep].component;
 
     const steps = ["Farbe / Größe", "Upload", "Design", "Optionen", "Zusammenfassung"];
+    useEffect(() => {
+        setPurchaseData({ ...purchaseData, productName: product.title, product: product });
+        console.log(product.title, product);
+    }, [product]);
 
     return (
         <StepHolder

@@ -43,6 +43,8 @@ export default function Shop({ products, collections, globalData, collection }) 
         setFilteredProducts(products.filter((product) => product.node.tags.some((tag) => activeTags.includes(tag))));
     }, [activeTags, products]);
 
+    console.log(products, collections, globalData, collection);
+
     return (
         <MainContainer>
             <div className="grid grid-cols-12">

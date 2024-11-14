@@ -73,7 +73,7 @@ export default function Sidebar({ categories }) {
     }, [setActiveTags]);
 
     return (
-        <div className="bg-white rounded-2xl my-12 p-4 shadow-md w-full lg:col-span-2 max-w-xs font-body">
+        <div className="bg-white rounded-2xl my-12 p-8 shadow-md w-full lg:col-span-3 max-w-xs font-body">
             {categories.map((category) => (
                 <div key={category.name} className="mb-4">
                     {/* Category Title */}
