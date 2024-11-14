@@ -109,6 +109,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         console.log(newFile);
         const centeredX = purchaseData.containerWidth / 2;
         const centeredY = purchaseData.containerHeight / 2;
+        console.log(centeredX, centeredY);
         setPurchaseData({
             ...purchaseData,
             sides: {
@@ -339,11 +340,20 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
             )}
             {purchaseData.sides[currentSide].uploadedGraphicFile && (
                 <div className="flex items-center gap-4 mt-4 font-body text-sm">
-                    <img
-                        className="max-h-24 rounded-[20px]"
-                        src={URL.createObjectURL(purchaseData.sides[currentSide].uploadedGraphicFile)}
-                        alt="Uploaded Preview"
-                    />
+                    {purchaseData.sides[currentSide].isPDF ? (
+                        <img
+                            className="max-h-24 rounded-[20px]"
+                            src={purchaseData.sides[currentSide].preview}
+                            alt="Uploaded Preview"
+                        />
+                    ) : (
+                        <img
+                            className="max-h-24 rounded-[20px]"
+                            src={URL.createObjectURL(purchaseData.sides[currentSide].uploadedGraphicFile)}
+                            alt="Uploaded Preview"
+                        />
+                    )}
+
                     <div className="flex flex-col gap-2">
                         <IconButton
                             onClick={() => {

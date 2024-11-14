@@ -9,6 +9,8 @@ const KonvaLayer = ({
     productImage,
     uploadedGraphicFile,
     uploadedGraphicURL,
+    pdfPreview,
+    isPDF,
     boundaries,
     position,
     setPosition,
@@ -80,6 +82,7 @@ const KonvaLayer = ({
 
     useEffect(() => {
         console.log("KONVA LOADED");
+        console.log(pdfPreview);
     }, []);
 
     // Load the uploaded graphic into the Konva image element
@@ -87,9 +90,12 @@ const KonvaLayer = ({
         if (uploadedGraphicFile || uploadedGraphicURL) {
             const img = new window.Image();
             console.log(img);
+            console.log(uploadedGraphicFile, uploadedGraphicURL);
             // Set crossOrigin to anonymous
             if (uploadedGraphicURL) {
-                img.src = uploadedGraphicURL;
+                console.log("uploadedGraphicURL here");
+
+                img.src = isPDF ? pdfPreview : uploadedGraphicURL;
                 console.log(img.src);
                 img.onload = () => {
                     setIsUploadedGraphicLoaded(true); // Update state when uploaded graphic is loaded
@@ -116,6 +122,7 @@ const KonvaLayer = ({
                 };
             } else if (uploadedGraphicFile instanceof File) {
                 const reader = new FileReader();
+                console.log("uploadedGraphicFile here");
                 reader.onload = (e) => {
                     img.src = e.target.result;
                     img.onload = () => {
@@ -170,12 +177,12 @@ const KonvaLayer = ({
     useEffect(() => {
         if (boundaryPathRef.current) {
             boundaryPathRef.current.position({
-                x: 125,
-                y: 270,
+                x: 120,
+                y: 252,
             });
 
             // Set scale (example: scale down by half)
-            boundaryPathRef.current.scale({ x: 1.2, y: 1.2 }); // Adjust scale values as needed
+            boundaryPathRef.current.scale({ x: 1.22, y: 1.25 }); // Adjust scale values as needed
 
             boundaryPathRef.current.getLayer().batchDraw();
         }
@@ -283,7 +290,6 @@ const KonvaLayer = ({
                             dragBoundFunc={handleDragBoundFunc}
                             onClick={() => {
                                 console.log("Image clicked");
-                                // Add logic to show icons or actions like delete/change
                             }}
                             onDragStart={() => setIsDraggingGraphic(true)}
                             onDragEnd={(e) => {

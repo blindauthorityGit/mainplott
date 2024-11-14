@@ -40,8 +40,6 @@ export default function CartSidebar() {
         }
     };
 
-    console.log(cartItems);
-
     return (
         <AnimatePresence>
             {isCartSidebarOpen && (

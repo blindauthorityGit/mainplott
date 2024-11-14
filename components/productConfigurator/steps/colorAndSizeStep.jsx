@@ -12,11 +12,10 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     const { purchaseData, setPurchaseData, setSelectedVariant, setSelectedImage } = useStore();
     const [selectedSize, setSelectedSize] = useState(purchaseData.selectedSize || null);
     const [selectedColor, setSelectedColor] = useState(purchaseData.selectedColor || null);
-    const [isChecked, setIsChecked] = useState(false);
+    const [isChecked, setIsChecked] = useState(purchaseData.tryout || false);
 
     // Format variants for easier access
     const formattedVariants = formatVariants(product.variants);
-    console.log(product);
     // Set initial selection for size and color
     useEffect(() => {
         if (!selectedSize && !selectedColor) {
@@ -77,7 +76,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     };
 
     const handleToggle = (newState) => {
-        setPurchaseData({ ...purchaseData, example: newState });
+        setPurchaseData({ ...purchaseData, tryout: newState });
         setIsChecked(newState);
         console.log(purchaseData);
     };

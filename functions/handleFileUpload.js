@@ -2,7 +2,9 @@
 
 import { uploadFileToTempFolder } from "@/config/firebase";
 import { analyzeImage } from "@/functions/analyzeImage";
+import { analyzePdf } from "@/functions/analyzePdf";
 import { GraphicUploadModalContent } from "@/components/modalContent";
+import PdfPreview from "@/components/pdfPreview";
 
 const handleFileUpload = async ({
     newFile,
@@ -29,18 +31,6 @@ const handleFileUpload = async ({
             const userId = purchaseData?.userId || "anonymous";
             const fileMetadata = await uploadFileToTempFolder(newFile, userId);
 
-            setPurchaseData({
-                ...purchaseData,
-                sides: {
-                    ...purchaseData.sides,
-                    [currentSide]: {
-                        ...purchaseData.sides[currentSide],
-                        uploadedGraphic: fileMetadata,
-                        uploadedGraphicFile: newFile,
-                    },
-                },
-            });
-
             if (newFile.type === "image/jpeg" || newFile.type === "image/png") {
                 const analysisResult = await analyzeImage(newFile);
                 if (analysisResult) {
@@ -48,6 +38,17 @@ const handleFileUpload = async ({
                     setDpi(analysisResult.dpi);
                 }
                 console.log(analysisResult);
+                setPurchaseData({
+                    ...purchaseData,
+                    sides: {
+                        ...purchaseData.sides,
+                        [currentSide]: {
+                            ...purchaseData.sides[currentSide],
+                            uploadedGraphic: fileMetadata,
+                            uploadedGraphicFile: newFile,
+                        },
+                    },
+                });
 
                 setModalContent(
                     <GraphicUploadModalContent
@@ -75,6 +76,37 @@ const handleFileUpload = async ({
                                 setDpi,
                             })
                         }
+                    />
+                );
+            } else if (newFile.type === "application/pdf") {
+                // Handle multi-page PDF analysis
+                console.log("PDF file detected. Extracting and analyzing the first page...");
+                const pdfAnalysisResult = await analyzePdf(newFile);
+                console.log("PDF Analysis:", pdfAnalysisResult);
+                setPurchaseData({
+                    ...purchaseData,
+                    sides: {
+                        ...purchaseData.sides,
+                        [currentSide]: {
+                            ...purchaseData.sides[currentSide],
+                            uploadedGraphic: fileMetadata,
+                            uploadedGraphicFile: newFile,
+                            isPDF: true,
+                            preview: pdfAnalysisResult.previewImage,
+                        },
+                    },
+                });
+                setModalContent(
+                    <GraphicUploadModalContent
+                        file={newFile}
+                        preview={pdfAnalysisResult.previewImage}
+                        numPages={pdfAnalysisResult.numPages}
+                        previewComponent={<PdfPreview file={newFile} />}
+                        onNewFileUpload={handleNewFileUpload} // Pass the function here
+                        steps={steps}
+                        setCurrentStep={setCurrentStep}
+                        currentStep={currentStep} // Pass the function here
+                        setModalOpen={setModalOpen} // Pass the modal control function
                     />
                 );
             }

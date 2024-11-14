@@ -33,12 +33,22 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     const isMobile = useIsMobile();
 
     const handlePrevStep = () => {
-        setCurrentStep((prev) => Math.max(prev - 1, 0));
+        if (currentStep == steps.length - 1 && purchaseData.tryout) {
+            setCurrentStep(0);
+        } else {
+            setCurrentStep((prev) => Math.max(prev - 1, 0));
+        }
     };
 
     const handleNextStep = () => {
         console.log(selectedImage);
-        setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+        if (currentStep == 0 && purchaseData.tryout) {
+            console.log("YESE");
+            setCurrentStep(steps.length - 1);
+        } else {
+            setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+        }
+        console.log(purchaseData);
     };
 
     // Set the container dimensions in Zustand when the image is being displayed
@@ -179,6 +189,8 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     uploadedGraphicURL={
                                         purchaseData.sides[purchaseData.currentSide].uploadedGraphic?.downloadURL
                                     }
+                                    isPDF={purchaseData.sides[purchaseData.currentSide].isPDF}
+                                    pdfPreview={purchaseData.sides[purchaseData.currentSide].preview}
                                     productImage={selectedImage}
                                     boundaries={
                                         {

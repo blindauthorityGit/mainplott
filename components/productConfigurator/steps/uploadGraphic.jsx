@@ -148,21 +148,32 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                     const fileMetadata = await uploadFileToTempFolder(file, userId);
                     // Save metadata to the store
 
-                    setPurchaseData({
-                        ...purchaseData,
-                        sides: {
-                            ...purchaseData.sides,
-                            [currentSide]: {
-                                ...purchaseData.sides[currentSide],
-                                uploadedGraphic: fileMetadata,
-                                uploadedGraphicFile: file,
-                            },
-                        },
-                    });
+                    // setPurchaseData({
+                    //     ...purchaseData,
+                    //     sides: {
+                    //         ...purchaseData.sides,
+                    //         [currentSide]: {
+                    //             ...purchaseData.sides[currentSide],
+                    //             uploadedGraphic: fileMetadata,
+                    //             uploadedGraphicFile: file,
+                    //         },
+                    //     },
+                    // });
                     console.log(fileMetadata);
 
                     // Determine what kind of analysis is needed based on file type
                     if (file.type === "image/jpeg" || file.type === "image/png") {
+                        setPurchaseData({
+                            ...purchaseData,
+                            sides: {
+                                ...purchaseData.sides,
+                                [currentSide]: {
+                                    ...purchaseData.sides[currentSide],
+                                    uploadedGraphic: fileMetadata,
+                                    uploadedGraphicFile: file,
+                                },
+                            },
+                        });
                         // Analyze JPEG or PNG with sharp
                         const analysisResult = await analyzeImage(file);
                         if (analysisResult) {
@@ -191,6 +202,19 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                         console.log("PDF file detected. Extracting and analyzing the first page...");
                         const pdfAnalysisResult = await analyzePdf(file);
                         console.log("PDF Analysis:", pdfAnalysisResult);
+                        setPurchaseData({
+                            ...purchaseData,
+                            sides: {
+                                ...purchaseData.sides,
+                                [currentSide]: {
+                                    ...purchaseData.sides[currentSide],
+                                    uploadedGraphic: fileMetadata,
+                                    uploadedGraphicFile: file,
+                                    isPDF: true,
+                                    preview: pdfAnalysisResult.previewImage,
+                                },
+                            },
+                        });
                         setModalContent(
                             <GraphicUploadModalContent
                                 file={file}
@@ -198,6 +222,10 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                 numPages={pdfAnalysisResult.numPages}
                                 previewComponent={<PdfPreview file={file} />}
                                 onNewFileUpload={handleNewFileUpload} // Pass the function here
+                                steps={steps}
+                                setCurrentStep={setCurrentStep}
+                                currentStep={currentStep} // Pass the function here
+                                setModalOpen={setModalOpen} // Pass the modal control function
                             />
                         );
                     }

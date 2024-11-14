@@ -106,6 +106,22 @@ export const uploadPreviewToStorage = async (previewFileBuffer, fileName) => {
         // Get download URL of the uploaded file
         const downloadURL = await getDownloadURL(storageRef);
         console.log("Preview image uploaded successfully:", downloadURL);
+
+        // Metadata to be stored in Firestore
+        const fileMetadata = {
+            fileId: uniqueId,
+            filePath,
+            downloadURL, // Include the download URL
+            uploadTime: new Date().toISOString(),
+            status: "temporary",
+        };
+
+        // Save metadata in Firestore
+        await setDoc(doc(db, "uploadedGraphics", uniqueId), fileMetadata);
+
+        // Optionally store in localStorage for session restoration
+        // localStorage.setItem("uploadedGraphic", JSON.stringify(fileMetadata));
+
         return downloadURL;
     } catch (error) {
         console.error("Error uploading preview image:", error);
