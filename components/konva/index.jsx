@@ -4,6 +4,11 @@ import useStore from "@/store/store"; // Import Zustand store
 import { Button } from "@mui/material"; // Importing a button from Material-UI for exporting the image
 import { FiZoomIn, FiZoomOut } from "react-icons/fi"; // Importing zoom icons from react-icons
 import { motion } from "framer-motion";
+import { exportCanvas } from "@/functions/exportCanvas"; // Adjust path as needed
+
+import dataURLToBlob from "@/functions/dataURLToBlob";
+
+import { uploadImageToStorage } from "@/config/firebase";
 
 const KonvaLayer = ({
     productImage,
@@ -26,7 +31,7 @@ const KonvaLayer = ({
     const boundaryPathRef = useRef(null);
 
     // Zustand store to get container dimensions
-    const { purchaseData } = useStore();
+    const { purchaseData, setSelectedImage, setConfiguredImage } = useStore();
     const { containerWidth, containerHeight } = purchaseData;
 
     // State for canvas zoom level and position
@@ -85,48 +90,31 @@ const KonvaLayer = ({
         console.log(pdfPreview);
     }, []);
 
-    // Load the uploaded graphic into the Konva image element
+    // Load the uploaded graphic into the Konva image element, with placeholder logic for PDFs
     useEffect(() => {
-        if (uploadedGraphicFile || uploadedGraphicURL) {
+        if (uploadedGraphicFile) {
+            // Prioritize uploadedGraphicFile
             const img = new window.Image();
-            console.log(img);
-            console.log(uploadedGraphicFile, uploadedGraphicURL);
-            // Set crossOrigin to anonymous
-            if (uploadedGraphicURL) {
-                console.log("uploadedGraphicURL here");
+            console.log("Using uploadedGraphicFile:", uploadedGraphicFile);
 
-                img.src = isPDF ? pdfPreview : uploadedGraphicURL;
-                console.log(img.src);
-                img.onload = () => {
-                    setIsUploadedGraphicLoaded(true); // Update state when uploaded graphic is loaded
-                    console.log("IMAGE IS LOADED");
+            // Check if the file is a PDF (placeholder for custom PDF logic)
+            if (uploadedGraphicFile.type === "application/pdf") {
+                console.log("PDF detected - applying custom logic here");
 
-                    if (uploadedGraphicRef.current) {
-                        const aspectRatio = img.width / img.height;
-                        let newWidth = 120;
-                        let newHeight = 120;
-
-                        if (aspectRatio > 1) {
-                            newHeight = newWidth / aspectRatio;
-                        } else {
-                            newWidth = newHeight * aspectRatio;
-                        }
-
-                        uploadedGraphicRef.current.width(newWidth);
-                        uploadedGraphicRef.current.height(newHeight);
-                        uploadedGraphicRef.current.image(img);
-                        uploadedGraphicRef.current.getLayer().batchDraw();
-                        transformerRef.current.nodes([uploadedGraphicRef.current]);
-                        transformerRef.current.getLayer().batchDraw();
-                    }
-                };
-            } else if (uploadedGraphicFile instanceof File) {
+                // Placeholder for PDF logic
+                // e.g., Loading from IndexedDB or handling transformed PNG
+                // Example:
+                // const pdfPreviewImage = await loadFromIndexedDB(...);
+                // img.src = pdfPreviewImage;
+            } else {
+                // Logic for image files (JPG/PNG)
                 const reader = new FileReader();
-                console.log("uploadedGraphicFile here");
+
                 reader.onload = (e) => {
-                    img.src = e.target.result;
+                    img.src = e.target.result; // Load data URL from FileReader
                     img.onload = () => {
-                        setIsUploadedGraphicLoaded(true); // Update state when uploaded graphic is loaded
+                        setIsUploadedGraphicLoaded(true); // Update state when image is loaded
+                        console.log("IMAGE LOADED FROM FILE");
 
                         if (uploadedGraphicRef.current) {
                             const aspectRatio = img.width / img.height;
@@ -148,10 +136,11 @@ const KonvaLayer = ({
                         }
                     };
                 };
-                reader.readAsDataURL(uploadedGraphicFile);
+
+                reader.readAsDataURL(uploadedGraphicFile); // Read the file as a Data URL
             }
         }
-    }, [uploadedGraphicFile, uploadedGraphicURL]);
+    }, [uploadedGraphicFile]); // Only depend on uploadedGraphicFile
 
     // Handle drag bounds based on the provided boundaries
     // Handle drag bounds based on the provided SVG path boundaries
@@ -189,22 +178,33 @@ const KonvaLayer = ({
     }, [centerX, centerY]);
 
     // Function to export the canvas as a JPEG
-    const handleExport = () => {
-        if (stageRef.current) {
-            try {
-                const dataURL = stageRef.current.toDataURL({ mimeType: "image/jpeg", quality: 1 });
-                // Check if the dataURL is valid
-                if (dataURL) {
-                    const link = document.createElement("a");
-                    link.download = "exported-design.jpg";
-                    link.href = dataURL;
-                    link.click();
-                } else {
-                    console.error("Failed to generate data URL.");
-                }
-            } catch (err) {
-                console.error("Error exporting canvas: ", err);
-            }
+    const handleExport = async () => {
+        const dataURL = exportCanvas(stageRef, transformerRef, boundaryPathRef, 1);
+
+        // Save the exported dataURL directly into session storage
+        sessionStorage.setItem("exportedProductImage", dataURL);
+
+        // Retrieve the saved session storage dataURL
+        const sessionImageURL = sessionStorage.getItem("exportedProductImage");
+
+        // Update Zustand state with the session-stored image URL
+        setConfiguredImage(sessionImageURL);
+
+        console.log("Exported image saved to sessionStorage:", sessionImageURL);
+
+        const blob = dataURLToBlob(dataURL);
+        const fileName = `product-image-${Date.now()}.png`;
+        try {
+            const downloadURL = await uploadImageToStorage(blob, fileName);
+            // Update your product data with the new image URL
+            console.log(downloadURL);
+            // setSelectedImage(downloadURL);
+            setProductData((prevData) => ({
+                ...prevData,
+                configImage: downloadURL,
+            }));
+        } catch (error) {
+            console.error("Error saving configured design:", error);
         }
     };
 

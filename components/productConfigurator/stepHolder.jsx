@@ -23,10 +23,12 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         addToCart,
         openCartSidebar,
         addCartItem,
+        configuredImage,
     } = useStore();
     const [imageHeight, setImageHeight] = useState(null);
     const [imageSize, setImageSize] = useState({ width: null, height: null });
     const [isFrontView, setIsFrontView] = useState(true); // Track if we're viewing the front or back
+    const configStepIndex = steps.findIndex((step) => step === "Design"); // Dynamically find the config step
 
     const imageRef = useRef();
     const containerRef = useRef(); // Add a reference to the container
@@ -41,7 +43,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     };
 
     const handleNextStep = () => {
-        console.log(selectedImage);
+        console.log("IMAGE", selectedImage);
         if (currentStep == 0 && purchaseData.tryout) {
             console.log("YESE");
             setCurrentStep(steps.length - 1);
@@ -64,10 +66,14 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         }
     }, [currentStep]);
 
+    //CHECK FOR COIRRECT PRODUCT IMAGE DEOPENSING IF CONFIG IS DONE OR NOT
+    const displayedImage = currentStep > configStepIndex && !purchaseData.tryout ? configuredImage : selectedImage; // Show configuredImage if past the config step, else selectedImage
+
     // SET VIEW TO FRONMT WHEN NAVIGATING
     useEffect(() => {
-        console.log(selectedImage);
-    }, [selectedImage]);
+        console.log(steps[currentStep]);
+        console.log(configStepIndex);
+    }, [steps, currentStep]);
 
     useEffect(() => {
         if (!purchaseData.position && containerRef.current) {
@@ -234,10 +240,10 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                 />
                             </motion.div>
                         ) : (
-                            selectedImage && (
+                            displayedImage && (
                                 <motion.div
                                     className="relative mix-blend-multiply"
-                                    key={selectedImage}
+                                    key={displayedImage}
                                     ref={imageRef}
                                     style={{
                                         maxHeight: isMobile ? "auto" : "860px",
@@ -252,7 +258,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     transition={{ duration: 0.3, ease: "easeInOut" }}
                                 >
                                     <img
-                                        src={selectedImage}
+                                        src={displayedImage}
                                         alt="Product Step Image"
                                         className="w-full mix-blend-multiply max-h-[380px] lg:max-h-[none]"
                                         onLoad={() => setImageHeight(imageRef.current?.clientHeight)}

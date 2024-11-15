@@ -123,6 +123,10 @@ const useStore = create((set) => ({
     setSelectedImage: (image) => set(() => ({ selectedImage: image })),
     selectedVariant: null,
     setSelectedVariant: (variant) => set(() => ({ selectedVariant: variant })),
+
+    configuredImage: null, // Initially no configured image
+    setConfiguredImage: (image) => set({ configuredImage: image }), // Set the configured image
+    resetConfiguredImage: () => set({ configuredImage: null }), // Reset the configured image
 }));
 
 export default useStore;

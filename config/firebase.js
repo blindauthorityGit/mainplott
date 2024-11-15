@@ -128,3 +128,11 @@ export const uploadPreviewToStorage = async (previewFileBuffer, fileName) => {
         throw error;
     }
 };
+
+export const uploadImageToStorage = async (blob, fileName) => {
+    const filePath = `configuredImages/${fileName}`;
+    const storageRef = ref(storage, filePath);
+
+    await uploadBytes(storageRef, blob);
+    return await getDownloadURL(storageRef);
+};

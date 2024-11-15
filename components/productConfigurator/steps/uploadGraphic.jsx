@@ -14,6 +14,9 @@ import { GraphicUploadModalContent } from "@/components/modalContent"; // Import
 import LoadingSpinner from "@/components/spinner"; // Import the loading spinner component
 import { H3 } from "@/components/typography";
 
+//IDB
+// import { saveImageToDB, getImageFromDB } from "@/indexedDB";
+
 // STORE
 import useStore from "@/store/store"; // Your Zustand store
 
@@ -40,6 +43,11 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
     const stepData = {
         title: "Grafik hochladen",
     };
+
+    async function handleImageUpload(file) {
+        const blob = new Blob([file], { type: file.type });
+        await saveImageToDB(file.name, blob); // Save image to IndexedDB
+    }
 
     useEffect(() => {
         // Set uploaded file from purchaseData when side or purchaseData changes
@@ -174,6 +182,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                 },
                             },
                         });
+
                         // Analyze JPEG or PNG with sharp
                         const analysisResult = await analyzeImage(file);
                         if (analysisResult) {
