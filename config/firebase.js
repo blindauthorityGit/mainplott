@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore/lite";
 import { getStorage, ref, uploadBytes, listAll, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
+// import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_FIREBASE,
@@ -31,6 +32,7 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 
 export { app, db, storage };
+// export const auth = getAuth(app);
 
 export const fetchFirestoreData = async (collectionName) => {
     try {
@@ -135,4 +137,24 @@ export const uploadImageToStorage = async (blob, fileName) => {
 
     await uploadBytes(storageRef, blob);
     return await getDownloadURL(storageRef);
+};
+
+export const uploadPurchaseToFirestore = async (purchaseData) => {
+    try {
+        const { customerName, ...rest } = purchaseData;
+
+        // Reference to the 'testPurchase' collection
+        const collectionRef = collection(db, "testPurchase");
+
+        // Create a document under 'testPurchase' with customerName as the document ID
+        const customerDocRef = doc(collectionRef, customerName);
+
+        // Add purchase data to the customer's document
+        await setDoc(customerDocRef, { ...rest, createdAt: new Date().toISOString() }, { merge: true });
+
+        console.log("Purchase data uploaded successfully for customer:", customerName);
+    } catch (error) {
+        console.error("Error uploading purchase data:", error);
+        throw error; // Re-throw the error to handle it in the caller
+    }
 };

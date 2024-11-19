@@ -1,4 +1,3 @@
-// schemas/startPage.js
 export default {
   name: 'aboutPage',
   title: 'About Page',
@@ -10,9 +9,33 @@ export default {
       type: 'string',
     },
     {
-      name: 'slider',
-      title: 'Slider',
-      type: 'slider', // Custom slider type defined in a separate schema
+      name: 'heroImage',
+      title: 'Hero Image',
+      type: 'image',
+      options: {
+        hotspot: true,
+      },
+    },
+    {
+      name: 'introText',
+      title: 'Intro Text',
+      type: 'array',
+      of: [{type: 'block'}],
+    },
+    {
+      name: 'gallery',
+      title: 'Gallery',
+      type: 'array',
+      of: [{type: 'image'}],
+      options: {
+        layout: 'grid',
+      },
+    },
+    {
+      name: 'moreText',
+      title: 'More Text',
+      type: 'array',
+      of: [{type: 'block'}],
     },
   ],
 }

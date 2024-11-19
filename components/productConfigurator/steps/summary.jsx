@@ -23,7 +23,7 @@ export default function OrderSummary() {
     return (
         <div className="lg:px-16 lg:mt-8 font-body">
             <H2 klasse="mb-4">Zusammenfassung</H2>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1">
                 {/* Map each item to ListElement component */}
                 {summaryData.map((item, index) => (
                     <ListElement

@@ -1,60 +1,77 @@
 import { CoverImage, ContainImage } from "../images";
 import Link from "next/link";
 import { getColorHex } from "@/libs/colors";
-import CustomCheckBox from "@/components/inputs/customCheckBox";
-
 import formatVariants from "@/functions/formatVariants";
+import { motion } from "framer-motion";
 
 function ProductCard({ product }) {
     const handle = product.node.handle;
     const title = product.node.title;
     const description = product.node.description;
-    // const price = product.node.variants.edges[0].node.price;
+
+    // Extract main category and subcategory tags
+    const mainCategoryTag = product.node.tags.find((tag) => tag.startsWith("category_"))?.replace("category_", "");
+    const subCategoryTag = product.node.tags.find((tag) => tag.startsWith("subCategory_"))?.replace("subCategory_", "");
 
     const imageNode = product.node.images.edges[0].node;
 
     // Format variants for easier access
     const formattedVariants = formatVariants(product.node.variants);
-    console.log(formattedVariants);
 
     return (
-        <Link
-            className="h-120 w-72 rounded shadow-lg mx-auto border border-palette-lighter"
-            href={`/products/${handle}`}
-            passHref
+        <motion.div
+            className="h-120 w-72 rounded-lg shadow-lg mx-auto border border-gray-200 overflow-hidden bg-white relative"
+            whileHover={{ scale: 1.05, boxShadow: "0px 12px 24px rgba(0, 0, 0, 0.15)" }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
         >
-            <div className="h-72 border-b-2 border-palette-lighter relative">
-                <ContainImage
-                    src={imageNode.originalSrc}
-                    mobileSrc={imageNode.originalSrc}
-                    alt="Cover Background"
-                    klasse={"absolute lg:rounded-[20px]"}
-                    className="aspect-[5/3] lg:aspect-[5/3] rounded-[10px] lg:rounded-[20px]"
-                />
+            {/* Tags */}
+            <div className="absolute top-2 right-2 flex flex-wrap gap-2 z-10 font-body">
+                {mainCategoryTag && (
+                    <span className="bg-primaryColor text-white text-xs px-3 py-1 rounded-full shadow-md">
+                        {mainCategoryTag}
+                    </span>
+                )}
+                {subCategoryTag && (
+                    <span className="bg-secondaryColor text-white text-xs px-3 py-1 rounded-full shadow-md">
+                        {subCategoryTag}
+                    </span>
+                )}
             </div>
-            <div className="h-48 relative">
-                <div className="font-primary text-palette-primary text-2xl pt-4 px-4 font-semibold">{title}</div>
-                {/* <div className="text-lg text-gray-600 p-4 font-primary font-light">{description}</div> */}
-                <div className="text-lg text-gray-600 p-4 font-primary font-semibold">ab EUR 29,-</div>
-                <div className=" flex justify-center space-x-4">
-                    {formattedVariants["XL"]?.colors.map(({ color }, index) => (
-                        <div
-                            key={`color-${index}`}
-                            klasse={`bg-${color}`}
-                            // onClick={() => handleColorChange(color)}
-                            className="  w-8 h-8 block rounded-full text-white"
-                            nonActiveClass=" text-black"
-                            style={{ background: getColorHex(color) }}
-                        />
-                    ))}
-                </div>
 
-                <div
-                    className="text-palette-dark font-primary font-medium text-base absolute bottom-0 right-0 mb-4 pl-8 pr-4 pb-1 pt-2 bg-palette-lighter 
-            rounded-tl-sm triangle"
-                ></div>
+            {/* Image */}
+            <Link href={`/products/${handle}`} passHref>
+                <div className="h-72 border-b-2 border-gray-200 relative cursor-pointer overflow-hidden">
+                    <ContainImage
+                        src={imageNode.originalSrc}
+                        mobileSrc={imageNode.originalSrc}
+                        alt={title}
+                        klasse={
+                            "absolute w-full h-full object-cover transition-transform duration-300 transform hover:scale-105"
+                        }
+                    />
+                </div>
+            </Link>
+
+            {/* Content */}
+            <div className="h-48 p-4 flex flex-col justify-between">
+                <div>
+                    <div className="font-primary text-palette-primary text-xl font-semibold truncate">{title}</div>
+                    <div className="text-sm text-gray-500 mt-2 line-clamp-2 font-body">{description}</div>
+                </div>
+                <div>
+                    <div className="text-lg text-gray-600 font-primary font-semibold mb-2">ab EUR 29,-</div>
+                    <div className="flex justify-center space-x-2">
+                        {formattedVariants["XL"]?.colors.map(({ color }, index) => (
+                            <div
+                                key={`color-${index}`}
+                                className="w-6 h-6 block rounded-full border-2 border-white shadow"
+                                style={{ background: getColorHex(color) }}
+                            />
+                        ))}
+                    </div>
+                </div>
             </div>
-        </Link>
+        </motion.div>
     );
 }
 

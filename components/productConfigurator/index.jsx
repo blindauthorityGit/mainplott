@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import StepHolder from "./stepHolder";
 import ColorAndSizeStep from "./steps/colorAndSizeStep";
+import ChooseWay from "./steps/chooseWay";
 import UploadGraphic from "./steps/uploadGraphic";
 import ConfigureDesign from "./steps/configureDesign";
 import DefineOptions from "./steps/defineOptions";
@@ -10,6 +11,7 @@ import useStore from "@/store/store"; // Your Zustand store
 
 const stepsConfig = [
     { id: "colorAndSize", component: ColorAndSizeStep },
+    { id: "chooseWay", component: ChooseWay },
     { id: "uploadGraphic", component: UploadGraphic },
     { id: "configureDesign", component: ConfigureDesign },
     { id: "defineOptions", component: DefineOptions },
@@ -24,7 +26,7 @@ export default function ProductConfigurator({ product, sizes, colorPatternIds, v
 
     const CurrentStepComponent = stepsConfig[currentStep].component;
 
-    const steps = ["Farbe / Größe", "Upload", "Design", "Optionen", "Zusammenfassung"];
+    const steps = ["Farbe / Größe", "Konfigurator", "Upload", "Design", "Optionen", "Zusammenfassung"];
     useEffect(() => {
         setPurchaseData({ ...purchaseData, productName: product.title, product: product });
         console.log(product.title, product);

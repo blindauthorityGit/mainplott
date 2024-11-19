@@ -144,16 +144,16 @@ export default function Menu() {
                             <nav className="hidden md:flex space-x-4">
                                 <Link
                                     onMouseEnter={() => setIsMegaMenuVisible(true)}
-                                    href="/about"
+                                    href="/services"
                                     className="text-gray-700 hover:text-gray-900"
                                 >
-                                    About
-                                </Link>
-                                <Link href="/services" className="text-gray-700 hover:text-gray-900">
                                     Services
                                 </Link>
+                                <Link href="/about" className="text-gray-700 hover:text-gray-900">
+                                    Über uns
+                                </Link>
                                 <Link href="/contact" className="text-gray-700 hover:text-gray-900">
-                                    Contact
+                                    Kontakt
                                 </Link>
                             </nav>
 

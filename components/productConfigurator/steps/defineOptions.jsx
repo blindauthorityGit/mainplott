@@ -99,34 +99,12 @@ export default function DefineOptions() {
                 <QuantitySelector quantity={quantity} setQuantity={setQuantity} />
 
                 {/* Veredelungen Dropdown */}
-                <Dropdown
+                {/* <Dropdown
                     label="Veredelungen"
                     value={veredelung}
                     onChange={handleVeredelungChange}
                     options={veredelungOptions}
-                />
-
-                {/* Coupon Code Input */}
-                {/* <div className="mb-4">
-                    <label className="block font-semibold mb-2">Gutscheincode:</label>
-                    <TextField
-                        value={coupon}
-                        onChange={(e) => setCoupon(e.target.value)}
-                        variant="outlined"
-                        placeholder="Gutscheincode eingeben"
-                        fullWidth
-                        className="!font-body !placeholder:font-body"
-                        InputProps={{
-                            endAdornment: (
-                                <InputAdornment position="end">
-                                    <Button onClick={handleCouponCheck} variant="contained" color="primary">
-                                        Prüfen
-                                    </Button>
-                                </InputAdornment>
-                            ),
-                        }}
-                    />
-                </div> */}
+                /> */}
 
                 {/* Additional Info Field */}
                 <AdditionalInfoField value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} />

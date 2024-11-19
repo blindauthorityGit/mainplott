@@ -5,9 +5,19 @@ import { FiX } from "react-icons/fi";
 import Overlay from "../modal/overlay";
 import { H2, H3, H5, P } from "@/components/typography";
 import { TextField, InputAdornment, Button } from "@mui/material";
+import { uploadPurchaseToFirestore } from "@/config/firebase"; // Import the upload function
 
 export default function CartSidebar() {
-    const { cartItems, isCartSidebarOpen, closeCartSidebar, removeCartItem, updateCartItem } = useStore();
+    const {
+        cartItems,
+        isCartSidebarOpen,
+        closeCartSidebar,
+        removeCartItem,
+        updateCartItem,
+        setModalContent,
+        setModalOpen,
+        clearCart
+    } = useStore();
     const [coupon, setCoupon] = useState("");
     const [discountApplied, setDiscountApplied] = useState(false);
     const [totalPrice, setTotalPrice] = useState(0);
@@ -39,6 +49,52 @@ export default function CartSidebar() {
             updateCartItem(id, { quantity: newQuantity });
         }
     };
+
+    const handleCheckout = async () => {
+        try {
+            closeCartSidebar();
+    
+            // Prepare purchase data
+            const cleanedCartItems = cartItems.map((item) => {
+                const cleanedSides = Object.keys(item.sides || {}).reduce((acc, sideKey) => {
+                    const { uploadedGraphicFile, ...rest } = item.sides[sideKey]; // Remove the File object
+                    acc[sideKey] = rest; // Keep the rest of the properties
+                    return acc;
+                }, {});
+            
+                return {
+                    ...item,
+                    sides: cleanedSides, // Replace sides with cleaned data
+                };
+            });
+            
+
+            console.log(cleanedCartItems)
+    
+            const purchaseData = {
+                cartItems: cleanedCartItems,
+                totalPrice,
+                customerName: "Test Kunde",
+                date: new Date().toISOString(),
+            };
+    
+            console.log("Starting Firestore upload...");
+            console.log("Data to upload:", purchaseData);
+    
+            await uploadPurchaseToFirestore(purchaseData);
+    
+            setModalContent("Vielen Dank für Ihre Bestellung!");
+            setModalOpen(true);
+            clearCart();
+    
+            console.log("Purchase data saved successfully!");
+        } catch (error) {
+            console.error("Error saving purchase data:", error);
+            setModalContent("Fehler beim Speichern der Bestellung.");
+            setModalOpen(true);
+        }
+    };
+    
 
     return (
         <AnimatePresence>
@@ -132,7 +188,12 @@ export default function CartSidebar() {
                             {discountApplied && <P klasse="!text-sm text-successColor">Rabatt von 10% angewendet!</P>}
                         </div>
 
-                        <button className="w-full mt-6 bg-primaryColor text-white py-3 rounded-lg">ZUR KASSE</button>
+                        <button
+                            onClick={handleCheckout}
+                            className="w-full mt-6 bg-primaryColor text-white py-3 rounded-lg"
+                        >
+                            ZUR KASSE
+                        </button>
                     </motion.div>
                 </>
             )}

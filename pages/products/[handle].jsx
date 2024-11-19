@@ -9,22 +9,36 @@ import ProductDetail from "../../sections/product";
 import ProductConfigurator from "../../components/productConfigurator/index.jsx";
 import Spacer from "../../layout/spacer";
 import MoreProducts from "@/sections/moreProducts";
+import FAQSection from "@/sections/faqs";
+import useStore from "@/store/store"; // Zustand store
+
 //SHOPIFY
 import { getAllProductHandles, getProductByHandle, getProductsByCategory } from "../../libs/shopify.js";
 
 // SANITY
 import client from "../../client";
 
+import { useRouter } from "next/router";
+import { BiCloudLightRain } from "react-icons/bi";
+
 export default function Product({ product, sizes, relatedProducts }) {
     useEffect(() => {
         console.log(product.productByHandle, sizes, relatedProducts);
     }, [product, relatedProducts, sizes]);
 
+    const { resetPurchaseData } = useStore(); // Add a reset function in your Zustand store
+
+    const router = useRouter();
+    const { handle } = router.query;
+    useEffect(() => {
+        // Reset the purchase data whenever the URL changes (handle changes)
+        // resetPurchaseData();
+    }, [handle]);
     return (
         <MainContainer>
             <ProductConfigurator product={product.productByHandle} sizes={sizes}></ProductConfigurator>
-            <MoreProducts relatedProducts={relatedProducts} />
-
+            <MoreProducts relatedProducts={relatedProducts} currentProductHandle={product} />
+            <FAQSection></FAQSection>
             {/* <ProductDetail image={product.productByHandle.images.edges[0].node.originalSrc}></ProductDetail> */}
         </MainContainer>
     );

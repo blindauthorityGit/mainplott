@@ -28,18 +28,21 @@ const useStore = create((set) => ({
         containerHeight: null,
         currentSide: "front",
         profiDatenCheck: false,
+        configurator: null,
         productName: "",
         product: null,
         price: 0,
         sides: {
             front: {
                 uploadedGraphic: null,
+                uploadedGraphicFile: null, // Added for file metadata
                 xPosition: 0,
                 yPosition: 0,
                 scale: 1,
             },
             back: {
                 uploadedGraphic: null,
+                uploadedGraphicFile: null, // Added for file metadata
                 xPosition: 0,
                 yPosition: 0,
                 scale: 1,
@@ -48,9 +51,47 @@ const useStore = create((set) => ({
     },
 
     setPurchaseData: (data) =>
-        set((state) => ({
-            purchaseData: { ...state.purchaseData, ...data },
-        })),
+        set((state) => {
+            const newState = { ...state.purchaseData, ...data };
+            return JSON.stringify(newState) === JSON.stringify(state.purchaseData) ? state : { purchaseData: newState };
+        }),
+
+    resetPurchaseData: (persistentData = {}) =>
+        set({
+            purchaseData: {
+                selectedSize: null,
+                containerWidth: null,
+                containerHeight: null,
+                currentSide: "front",
+                profiDatenCheck: false,
+                configurator: null,
+                productName: "",
+                product: null,
+                price: 0,
+                sides: {
+                    front: {
+                        uploadedGraphic: null,
+                        uploadedGraphicFile: null,
+                        xPosition: 0,
+                        yPosition: 0,
+                        scale: 1,
+                    },
+                    back: {
+                        uploadedGraphic: null,
+                        uploadedGraphicFile: null,
+                        xPosition: 0,
+                        yPosition: 0,
+                        scale: 1,
+                    },
+                },
+                ...persistentData, // Preserve specific values if provided
+            },
+        }),
+
+    // clearPurchaseData: () =>
+    //     set(
+    //         purchaseData: { ...state.purchaseData, ...data },
+    //     ),
 
     // Cart Items Array and Functions
     cartItems: [],
@@ -127,6 +168,18 @@ const useStore = create((set) => ({
     configuredImage: null, // Initially no configured image
     setConfiguredImage: (image) => set({ configuredImage: image }), // Set the configured image
     resetConfiguredImage: () => set({ configuredImage: null }), // Reset the configured image
+
+    // Refs for Konva components
+    stageRef: null,
+    transformerRef: null,
+    boundaryPathRef: null,
+    // Setters for the refs
+    setStageRef: (ref) => set({ stageRef: ref }),
+    setTransformerRef: (ref) => set({ transformerRef: ref }),
+    setBoundaryPathRef: (ref) => set({ boundaryPathRef: ref }),
+
+    // Clear refs (optional utility for cleanup)
+    clearRefs: () => set({ stageRef: null, transformerRef: null, boundaryPathRef: null }),
 }));
 
 export default useStore;

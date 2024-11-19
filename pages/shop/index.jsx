@@ -9,7 +9,7 @@ import ProductListings from "../../components/shop/productListings";
 import Sidebar from "../../components/shop/sidebar";
 
 //LIBS
-import { getAllProductsInCollection, getAllCollectionsWithSubcollections } from "../../libs/shopify";
+import { getAllProductsInCollection, getAllCollectionsWithSubcollections, getAllProducts } from "../../libs/shopify";
 
 //STORE
 import useStore from "../../store/store"; // Pfad zu deinem Zustand-Store
@@ -25,25 +25,22 @@ export default function Shop({ products, collections, globalData, collection }) 
         useStore();
 
     useEffect(() => {
-        // Hole die Kategorie aus der URL oder setze sie standardmäßig auf "streetwear"
         const category = router.query.cat || "streetwear";
-        console.log(category);
 
-        // Setze die aktive Kategorie im Zustand
         setActiveCategory(category);
-        setActiveSubCategory();
-    }, [router.query.cat, setActiveCategory]);
 
-    // Log the fetched data using useEffect
-    useEffect(() => {
-        setFilteredProducts(products);
-    }, [products]);
+        if (category.toLowerCase() === "all") {
+            // Show all products without filtering
+            setFilteredProducts(products);
+        } else {
+            // Filter products based on active tags
+            setFilteredProducts(
+                products.filter((product) => product.node.tags.some((tag) => activeTags.includes(tag)))
+            );
+        }
+    }, [router.query.cat, products, activeTags, setActiveCategory]);
 
-    useEffect(() => {
-        setFilteredProducts(products.filter((product) => product.node.tags.some((tag) => activeTags.includes(tag))));
-    }, [activeTags, products]);
-
-    console.log(products, collections, globalData, collection);
+    // console.log(products, collections, globalData, collection);
 
     return (
         <MainContainer>
@@ -61,27 +58,36 @@ export default function Shop({ products, collections, globalData, collection }) 
 
 // Server-side data fetching function
 export async function getServerSideProps(context) {
-    // Default category
-    let collection = "Streetwear";
-    console.log(context);
+    let products = [];
+    let collection = "Streetwear"; // Default category
+
     // Check for query parameter "cat"
     if (context.query.cat) {
-        collection = context.query.cat; // Dynamically set the collection
+        const category = context.query.cat.toLowerCase();
+        if (category === "all") {
+            // Fetch all products if "cat=all"
+            products = await getAllProducts();
+        } else {
+            // Fetch products by specific collection
+            collection = category;
+            products = await getAllProductsInCollection(collection);
+        }
+    } else {
+        // Default to fetching a specific category
+        products = await getAllProductsInCollection(collection);
     }
 
-    // Fetch the products from Shopify based on the collection
-    const products = await getAllProductsInCollection(collection);
+    // Fetch collections and global data
     const collections = await getAllCollectionsWithSubcollections();
 
     const queryGlobal = `{  
-        "shop": *[_type == "shop"][0]}
-      `; // Adjust your query as needed
+        "shop": *[_type == "shop"][0]
+    }`;
     const globalData = await client.fetch(queryGlobal);
 
-    // Return the fetched data as props
     return {
         props: {
-            products,
+            products: products || [], // Ensure products is always an array
             collections,
             globalData,
             collection,

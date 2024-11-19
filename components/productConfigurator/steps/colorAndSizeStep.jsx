@@ -16,22 +16,25 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
 
     // Format variants for easier access
     const formattedVariants = formatVariants(product.variants);
-    // Set initial selection for size and color
+    // Ensure `selectedSize` and `selectedColor` are initialized
     useEffect(() => {
-        if (!selectedSize && !selectedColor) {
-            const firstSize = Object.keys(formattedVariants)[0];
-            if (firstSize) {
-                const firstColor = formattedVariants[firstSize].colors[0]?.color;
-                setSelectedSize(firstSize);
-                setSelectedColor(firstColor);
-                setPurchaseData({ ...purchaseData, selectedSize: firstSize, selectedColor: firstColor });
-                // Set initial selected image
-                const firstImage = formattedVariants[firstSize].colors[0]?.image;
-                setSelectedImage(firstImage);
-                setActiveVariant(firstSize, firstColor);
-            }
+        const firstSize = Object.keys(formattedVariants)[0];
+        const firstColor = formattedVariants[firstSize]?.colors[0]?.color;
+
+        // Initialize `selectedSize` and `selectedColor` if not already set
+        if (!purchaseData.selectedSize || !purchaseData.selectedColor) {
+            setPurchaseData({
+                ...purchaseData,
+                selectedSize: firstSize,
+                selectedColor: firstColor,
+            });
+
+            // Set initial selected image
+            const firstImage = formattedVariants[firstSize]?.colors[0]?.image;
+            setSelectedImage(firstImage);
+            setActiveVariant(firstSize, firstColor);
         }
-    }, []);
+    }, [purchaseData.selectedSize, purchaseData.selectedColor, formattedVariants, setPurchaseData]);
 
     useEffect(() => {
         setPurchaseData({ ...purchaseData, productName: product.title, product: product });
@@ -104,7 +107,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                     <div className="flex space-x-3 mt-4 items-center gap-8 lg:mb-16">
                         <div className="left font-body font-semibold">Farbe</div>
                         <div className="right flex space-x-3">
-                            {formattedVariants[selectedSize].colors.map(({ color }, index) => (
+                            {formattedVariants[selectedSize]?.colors?.map(({ color }, index) => (
                                 <CustomCheckBox
                                     key={`color-${index}`}
                                     klasse={`bg-${color}`}

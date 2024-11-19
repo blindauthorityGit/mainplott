@@ -5,7 +5,7 @@ import Link from "next/link";
 const MainButton = ({ link, onClick, type, disabled, klasse, aklass, children, icon, ...props }) => {
     const buttonAnimation = {
         rest: { scale: 1 },
-        hover: { scale: 1.05 },
+        hover: { scale: 1.0 },
     };
 
     const textAnimation = {

@@ -156,7 +156,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
 
     return (
         <div className="flex flex-col lg:px-16 lg:mt-8 font-body">
-            <ContentWrapper data={stepData} />
+            <ContentWrapper data={stepData} showToggle />
 
             {/* Material-UI Tabs Component */}
             <Tabs
@@ -186,7 +186,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                     label="Vorderseite"
                     className="text-xl font-semibold text-textColor px-4 py-2 hover:text-primaryColor transition-colors duration-300"
                 />
-                {selectedVariant.backImageUrl && (
+                {selectedVariant?.backImageUrl && (
                     <Tab
                         label="Rückseite"
                         className="text-lg font-semibold text-textColor px-4 py-2 hover:text-primaryColor transition-colors duration-300"
@@ -203,52 +203,54 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                         mt: 1.5, // Tailwind equivalent for `mt-6`
                         px: 3, // Tailwind equivalent for `px-6`
                         py: 1, // Tailwind equivalent for `py-2`
-                        backgroundColor: "#ba979d", // Replace 'primaryColor.main' with your Tailwind color code if needed
-                        color: "white", // Text color
-                        fontFamily: "Montserrat", // Replace with your Tailwind font family if specified in your theme
-                        borderRadius: "8px", // Adjust to match your rounded-lg styling
+                        backgroundColor: "#ba979d",
+                        color: "white",
+                        fontFamily: "Montserrat",
+                        borderRadius: "8px",
                         "&:hover": {
-                            backgroundColor: "primaryColor.light", // Replace with your Tailwind hover color
+                            backgroundColor: "primaryColor.light",
                         },
-                        boxShadow: "none", // Removes Material-UI button shadow
+                        boxShadow: "none",
                     }}
                 >
                     Datei hochladen
                     <input type="file" hidden onChange={handleGraphicUpload} />
                 </Button>
+            ) : purchaseData.configurator === "template" ? (
+                <div>TEST</div>
             ) : (
                 <>
                     <div className="mb-4">
                         <P klasse="!text-sm !mb-0">X-Achse Position</P>
                         <Slider
                             value={purchaseData.sides[currentSide].xPosition}
-                            min={0} // Minimum position on the X-axis
-                            max={containerWidth} // Maximum position on the X-axis
+                            min={0}
+                            max={containerWidth}
                             onChange={handleXChange}
                             aria-labelledby="x-axis-slider"
                             sx={{
                                 "& .MuiSlider-thumb": {
-                                    backgroundColor: "#393836", // Customize the thumb color
-                                    width: 20, // Thumb width
-                                    height: 20, // Thumb height
-                                    border: "2px solid white", // Add a border for visibility
+                                    backgroundColor: "#393836",
+                                    width: 20,
+                                    height: 20,
+                                    border: "2px solid white",
                                     "&:hover, &.Mui-focusVisible": {
-                                        boxShadow: "0px 0px 0px 8px rgba(79, 70, 229, 0.16)", // Add hover/focus effect
+                                        boxShadow: "0px 0px 0px 8px rgba(79, 70, 229, 0.16)",
                                     },
                                 },
                                 "& .MuiSlider-track": {
-                                    backgroundColor: "#B0D0D3", // Track color
-                                    height: 6, // Track thickness
+                                    backgroundColor: "#B0D0D3",
+                                    height: 6,
                                     border: "none",
                                 },
                                 "& .MuiSlider-rail": {
-                                    backgroundColor: "#EBE0E1", // Rail color (default, unfilled area)
-                                    height: 6, // Rail thickness
+                                    backgroundColor: "#EBE0E1",
+                                    height: 6,
                                 },
                                 "& .MuiSlider-valueLabel": {
-                                    backgroundColor: "#4f46e5", // Background color for value label
-                                    color: "white", // Value label text color
-                                    fontSize: "0.875rem", // Font size for value label
+                                    backgroundColor: "#4f46e5",
+                                    color: "white",
+                                    fontSize: "0.875rem",
                                 },
                             }}
                         />
@@ -257,33 +259,33 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                         <P klasse="!text-sm !mb-0">Y-Achse Position</P>
                         <Slider
                             value={purchaseData.sides[currentSide].yPosition}
-                            min={0} // Minimum position on the Y-axis
-                            max={containerHeight} // Maximum position on the Y-axis
+                            min={0}
+                            max={containerHeight}
                             onChange={handleYChange}
                             aria-labelledby="y-axis-slider"
                             sx={{
                                 "& .MuiSlider-thumb": {
-                                    backgroundColor: "#393836", // Customize the thumb color
-                                    width: 20, // Thumb width
-                                    height: 20, // Thumb height
-                                    border: "2px solid white", // Add a border for visibility
+                                    backgroundColor: "#393836",
+                                    width: 20,
+                                    height: 20,
+                                    border: "2px solid white",
                                     "&:hover, &.Mui-focusVisible": {
-                                        boxShadow: "0px 0px 0px 8px rgba(79, 70, 229, 0.16)", // Add hover/focus effect
+                                        boxShadow: "0px 0px 0px 8px rgba(79, 70, 229, 0.16)",
                                     },
                                 },
                                 "& .MuiSlider-track": {
-                                    backgroundColor: "#B0D0D3", // Track color
-                                    height: 6, // Track thickness
+                                    backgroundColor: "#B0D0D3",
+                                    height: 6,
                                     border: "none",
                                 },
                                 "& .MuiSlider-rail": {
-                                    backgroundColor: "#EBE0E1", // Rail color (default, unfilled area)
-                                    height: 6, // Rail thickness
+                                    backgroundColor: "#EBE0E1",
+                                    height: 6,
                                 },
                                 "& .MuiSlider-valueLabel": {
-                                    backgroundColor: "#EBE0E1", // Background color for value label
-                                    color: "white", // Value label text color
-                                    fontSize: "0.875rem", // Font size for value label
+                                    backgroundColor: "#EBE0E1",
+                                    color: "white",
+                                    fontSize: "0.875rem",
                                 },
                             }}
                         />
@@ -299,27 +301,27 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                             aria-labelledby="scale-slider"
                             sx={{
                                 "& .MuiSlider-thumb": {
-                                    backgroundColor: "#393836", // Customize the thumb color
-                                    width: 20, // Thumb width
-                                    height: 20, // Thumb height
-                                    border: "2px solid white", // Add a border for visibility
+                                    backgroundColor: "#393836",
+                                    width: 20,
+                                    height: 20,
+                                    border: "2px solid white",
                                     "&:hover, &.Mui-focusVisible": {
-                                        boxShadow: "0px 0px 0px 8px rgba(79, 70, 229, 0.16)", // Add hover/focus effect
+                                        boxShadow: "0px 0px 0px 8px rgba(79, 70, 229, 0.16)",
                                     },
                                 },
                                 "& .MuiSlider-track": {
-                                    backgroundColor: "#B0D0D3", // Track color
-                                    height: 6, // Track thickness
+                                    backgroundColor: "#B0D0D3",
+                                    height: 6,
                                     border: "none",
                                 },
                                 "& .MuiSlider-rail": {
-                                    backgroundColor: "#EBE0E1", // Rail color (default, unfilled area)
-                                    height: 6, // Rail thickness
+                                    backgroundColor: "#EBE0E1",
+                                    height: 6,
                                 },
                                 "& .MuiSlider-valueLabel": {
-                                    backgroundColor: "#4f46e5", // Background color for value label
-                                    color: "white", // Value label text color
-                                    fontSize: "0.875rem", // Font size for value label
+                                    backgroundColor: "#4f46e5",
+                                    color: "white",
+                                    fontSize: "0.875rem",
                                 },
                             }}
                         />

@@ -32,7 +32,7 @@ export async function getAllProductsInCollection(collection) {
       collectionByHandle(handle: "${collection}") {
          id
         title
-    products (first: 3) {
+    products (first: 10) {
       edges {
         node {
           id
@@ -87,7 +87,7 @@ export async function getAllProductsInCollection(collection) {
 
 export async function getAllCollectionsWithSubcollections() {
     const query = `{
-      collections(first: 10) {   // Fetch the first 10 collections, adjust if necessary
+      collections(first: 20) {   // Fetch the first 10 collections, adjust if necessary
         id
         title
     }`;
@@ -157,6 +157,7 @@ export async function getProductByHandle(handle) {
               type
               description
           }
+    
           variants(first: 40) {
               edges {
                   node {
@@ -216,6 +217,64 @@ export async function getProductByHandle(handle) {
     console.log("Variants with Back Images:", product.variants.edges);
 
     return { ...response.data, sizes, colorPatternIds, product };
+}
+
+export async function getAllProducts() {
+    const query = `{
+        products(first: 250) {
+            edges {
+                node {
+                    id
+                    title
+                    description
+                    tags
+                    vendor
+                    handle
+                    images(first: 10) {
+                        edges {
+                            node {
+                                originalSrc
+                                altText
+                            }
+                        }
+                    }
+                    metafield(namespace: "shopify", key: "color-pattern") {
+                        value
+                        type
+                        description
+                    }
+                    variants(first: 40) {
+                        edges {
+                            node {
+                                title     
+                                selectedOptions {
+                                    name
+                                    value
+                                }
+                                image {
+                                    originalSrc
+                                    altText
+                                }
+                                metafield(namespace: "custom", key: "back_image") {
+                                    value
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }`;
+
+    try {
+        const response = await callShopify(query);
+
+        // Safely handle null or undefined responses
+        return response?.data?.products?.edges || [];
+    } catch (error) {
+        console.error("Error fetching all products:", error);
+        return [];
+    }
 }
 
 // Function to fetch back image URL based on metafield ID
@@ -279,6 +338,37 @@ export async function getProductsByCategory(categoryHandle) {
         return products;
     } catch (error) {
         console.error("Error fetching products by category:", error);
+        return [];
+    }
+}
+
+// libs/shopify.js
+
+export async function fetchMetaobjects(metaobjectGids) {
+    if (!metaobjectGids || metaobjectGids.length === 0) return [];
+
+    const query = `query GetMetaobjects($ids: [ID!]!) {
+        nodes(ids: $ids) {
+            ... on Metaobject {
+                id
+                handle
+                fields {
+                    key
+                    value
+                }
+            }
+        }
+    }`;
+
+    const variables = {
+        ids: metaobjectGids,
+    };
+
+    try {
+        const response = await callShopify(JSON.stringify({ query, variables }));
+        return response?.data?.nodes || [];
+    } catch (error) {
+        console.error("Error fetching metaobjects:", error);
         return [];
     }
 }

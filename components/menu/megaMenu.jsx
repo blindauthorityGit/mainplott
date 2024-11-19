@@ -18,10 +18,6 @@ const MegaMenu = ({ isVisible, data }) => {
         visible: { opacity: 1, y: 0 },
     };
 
-    useEffect(() => {
-        console.log(data);
-    }, [data]);
-
     return (
         <AnimatePresence>
             {isVisible && (
@@ -51,9 +47,9 @@ const MegaMenu = ({ isVisible, data }) => {
                                             className="h-40 w-full object-cover"
                                         />
                                     </div>
-
-                                    <H4 klasse="mb-4 font-bold">{item.title}</H4>
-
+                                    <Link href={`/${item.title}`}>
+                                        <H4 klasse="mb-4 font-bold">{item.title}</H4>
+                                    </Link>
                                     <div className="text-left font-body">
                                         {item?.menuItems?.map((point, i) => (
                                             <motion.div
@@ -66,7 +62,9 @@ const MegaMenu = ({ isVisible, data }) => {
                                                     alt=""
                                                     className="h-6 w-6 fill-primaryColor-400"
                                                 />
-                                                <span>{point.text}</span>
+                                                <Link href={`/${point.text}`}>
+                                                    <span>{point.text}</span>
+                                                </Link>
                                             </motion.div>
                                         ))}
                                     </div>

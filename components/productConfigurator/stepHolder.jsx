@@ -1,18 +1,27 @@
 import { motion, AnimatePresence } from "framer-motion"; // Import framer-motion for animations
-import { useState, useEffect, useRef } from "react";
+import { React, useState, useEffect, useRef, forwardRef } from "react";
 import { BiRefresh } from "react-icons/bi"; // Import the rotate icon from react-icons
 import StepIndicator from "./shared/stepIndicator";
 import useStore from "@/store/store"; // Your Zustand store
 import { StepButton } from "@/components/buttons";
+import { exportCanvas } from "@/functions/exportCanvas";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/router";
 
 //Hooks
 import useIsMobile from "@/hooks/isMobile";
 
 // Dynamically import the KonvaLayer component with no SSR
 const KonvaLayer = dynamic(() => import("@/components/konva"), { ssr: false });
+// import KonvaLayer from "@/components/konva/konvaWrapper"; // Normal import
+// import KonvaLayerWithRef from "@/components/konva/konvaWrapper"; // Adjust the path to your wrapper
 
 export default function StepHolder({ children, steps, currentStep, setCurrentStep }) {
+    const konvaLayerRef = useRef(null);
+
+    const router = useRouter();
+    const { handle } = router.query;
+
     const {
         purchaseData,
         setPurchaseData,
@@ -24,6 +33,10 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         openCartSidebar,
         addCartItem,
         configuredImage,
+        stageRef,
+        transformerRef,
+        boundaryPathRef,
+        resetPurchaseData,
     } = useStore();
     const [imageHeight, setImageHeight] = useState(null);
     const [imageSize, setImageSize] = useState({ width: null, height: null });
@@ -34,6 +47,30 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     const containerRef = useRef(); // Add a reference to the container
     const isMobile = useIsMobile();
 
+    const exportCanvasRef = useRef(null);
+
+    // Reset state when the URL changes
+    useEffect(() => {
+        if (handle) {
+            console.log("URL changed, resetting data...");
+            console.log("PÖRTSCHI", purchaseData);
+            setCurrentStep(0);
+            resetPurchaseData(); // Clear previous product state
+            setSelectedImage(null); // Reset the image to prevent old data
+            // setPurchaseData({
+            //     ...purchaseData,
+            //     currentSide: "front", // Default to front view
+            //     product: null, // Ensure product-specific data resets
+            // });
+        }
+    }, [handle]);
+
+    const handleExport = () => {
+        if (exportCanvasRef.current) {
+            exportCanvasRef.current();
+        }
+    };
+
     const handlePrevStep = () => {
         if (currentStep == steps.length - 1 && purchaseData.tryout) {
             setCurrentStep(0);
@@ -43,14 +80,16 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     };
 
     const handleNextStep = () => {
-        console.log("IMAGE", selectedImage);
         if (currentStep == 0 && purchaseData.tryout) {
-            console.log("YESE");
             setCurrentStep(steps.length - 1);
         } else {
             setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
         }
-        console.log(purchaseData);
+        if (steps[currentStep] == "Design") {
+            handleExport();
+        }
+        // const dataURL = exportCanvas(stageRef, transformerRef, boundaryPathRef, 1);
+        // console.log("DAT DATA", dataURL, stageRef.current, transformerRef, boundaryPathRef);
     };
 
     // Set the container dimensions in Zustand when the image is being displayed
@@ -62,7 +101,6 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 containerWidth: offsetWidth,
                 containerHeight: offsetHeight,
             });
-            console.log("DA ISSES", offsetWidth, offsetHeight);
         }
     }, [currentStep]);
 
@@ -70,10 +108,11 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     const displayedImage = currentStep > configStepIndex && !purchaseData.tryout ? configuredImage : selectedImage; // Show configuredImage if past the config step, else selectedImage
 
     // SET VIEW TO FRONMT WHEN NAVIGATING
-    useEffect(() => {
-        console.log(steps[currentStep]);
-        console.log(configStepIndex);
-    }, [steps, currentStep]);
+    // useEffect(() => {
+    //     console.log(steps[currentStep]);
+    //     console.log(configStepIndex);
+    //     console.log(stageRef);
+    // }, [steps, currentStep]);
 
     useEffect(() => {
         if (!purchaseData.position && containerRef.current) {
@@ -164,7 +203,11 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
     // Determine if "Next" button should be disabled
     const isNextDisabled = () => {
-        if (currentStep === 1 && !purchaseData.sides["front"].uploadedGraphic) {
+        if (steps[currentStep] === "Konfigurator" && !purchaseData.configurator) {
+            return true;
+        }
+
+        if (steps[currentStep] === "Upload" && !purchaseData.sides["front"].uploadedGraphic) {
             return true;
         }
         if (currentStep === steps.length - 1) {
@@ -179,7 +222,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
             <div className="col-span-12 lg:col-span-6 relative mb-4 lg:mb-0" ref={containerRef}>
                 <div className="w-full flex items-center justify-center lg:min-h-[840px] lg:max-h-[860px] relative">
                     <AnimatePresence mode="wait">
-                        {currentStep === 2 ? (
+                        {steps[currentStep] === "Design" ? (
                             <motion.div
                                 key="konva"
                                 variants={fadeAnimationVariants}
@@ -189,6 +232,8 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                 transition={{ duration: 0.3, ease: "easeInOut" }}
                             >
                                 <KonvaLayer
+                                    onExportReady={(fn) => (exportCanvasRef.current = fn)}
+                                    ref={konvaLayerRef}
                                     uploadedGraphicFile={
                                         purchaseData.sides[purchaseData.currentSide].uploadedGraphicFile
                                     }
@@ -310,7 +355,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                     >
                         zurück
                     </StepButton>
-                    {currentStep === 4 ? (
+                    {steps[currentStep] === "Zusammenfassung" ? (
                         <StepButton
                             onClick={() => {
                                 addCartItem({ ...purchaseData, selectedImage }), openCartSidebar();

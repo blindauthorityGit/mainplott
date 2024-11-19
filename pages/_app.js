@@ -10,6 +10,9 @@ import useStore from "@/store/store";
 import { Modal } from "../components/modal";
 import Spinner from "../components/spinner";
 
+//LIVECHAT
+import TawkChat from "@/components/tawkto";
+
 //LIBS
 import { ReactLenis, useLenis } from "../libs/lenis";
 
@@ -30,7 +33,7 @@ export default function App({ Component, pageProps }) {
             {" "}
             <ReactLenis ref={lenisRef} autoRaf={true} root options={{ lerp: 0.12 }}>
                 <Menu /> {/* The Menu component */}
-                <CartSidebar />
+                <CartSidebar /> <TawkChat />
                 <Component {...pageProps} /> <Spinner></Spinner> <Modal></Modal> <Footer></Footer>
             </ReactLenis>
         </MenuProvider>
