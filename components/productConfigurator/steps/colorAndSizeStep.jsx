@@ -127,7 +127,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                                 <div key={`color-${index}`} className="px-1 py-1">
                                     <CustomCheckBox
                                         key={`color-${index}`}
-                                        klasse={`bg-${color}`}
+                                        klasse={`bg-${color} !w-6 !h-6 lg:!w-10 lg:!h-10`}
                                         isChecked={selectedColor === color}
                                         onClick={() => handleColorChange(color)}
                                         activeClass=" border-2 border-textColor text-white"

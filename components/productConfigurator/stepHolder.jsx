@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "framer-motion"; // Import framer-motion
 import { React, useState, useEffect, useRef, forwardRef } from "react";
 import { BiRefresh } from "react-icons/bi"; // Import the rotate icon from react-icons
 import StepIndicator from "./shared/stepIndicator";
+import MobileStepNavigator from "./shared/mobileStepNavigator";
 import useStore from "@/store/store"; // Your Zustand store
 import { StepButton } from "@/components/buttons";
 import { exportCanvas } from "@/functions/exportCanvas";
@@ -78,6 +79,10 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         } else {
             setCurrentStep((prev) => Math.max(prev - 1, 0));
         }
+        // Scroll to top on mobile
+        if (isMobile) {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
     };
 
     const handleNextStep = () => {
@@ -89,9 +94,11 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         if (steps[currentStep] == "Design") {
             handleExport();
         }
+        // Scroll to top on mobile
+        if (isMobile) {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
         console.log(purchaseData);
-        // const dataURL = exportCanvas(stageRef, transformerRef, boundaryPathRef, 1);
-        // console.log("DAT DATA", dataURL, stageRef.current, transformerRef, boundaryPathRef);
     };
 
     // Set the container dimensions in Zustand when the image is being displayed
@@ -218,6 +225,22 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         return false;
     };
 
+    useEffect(() => {
+        const chatIcon = document.querySelector(".tawk-min-container");
+        console.log(chatIcon);
+        if (chatIcon) {
+            // Initial behavior: hide the chat icon on mobile
+            chatIcon.style.display = "none";
+        }
+
+        return () => {
+            // Cleanup function: reset the display property on dismount
+            if (chatIcon) {
+                chatIcon.style.display = "block"; // Default back to 'block' on dismount
+            }
+        };
+    }, [steps]);
+
     return (
         <div className="grid grid-cols-12 lg:px-24 lg:gap-4 h-full">
             {/* Left - Product Image / Konva Layer with fade in/out animation */}
@@ -287,7 +310,9 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                 />
                             </motion.div>
                         ) : (
-                            displayedImage && (
+                            displayedImage &&
+                            (!isMobile ||
+                                (steps[currentStep] !== "Konfigurator" && steps[currentStep] !== "Upload")) && (
                                 <motion.div
                                     className="relative mix-blend-multiply"
                                     key={displayedImage}
@@ -296,6 +321,8 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                         maxHeight: isMobile ? "auto" : "860px",
                                         width: isMobile ? "" : imageSize.width ? `${imageSize.width}px` : "auto",
                                         height: isMobile ? "" : imageSize.height ? `${imageSize.height}px` : "auto",
+                                        // height: imageHeight ? `${imageHeight}px` : "auto", // Use imageHeight dynamically
+
                                         objectFit: "contain",
                                     }}
                                     variants={fadeAnimationVariants}
@@ -331,6 +358,14 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 {/* Step Indicator */}
                 <div className="lg:mb-6">
                     <StepIndicator currentStep={currentStep} steps={steps} />
+                    <MobileStepNavigator
+                        steps={steps}
+                        currentStep={currentStep}
+                        setCurrentStep={setCurrentStep}
+                        handlePrevStep={handlePrevStep}
+                        handleNextStep={handleNextStep}
+                        isNextDisabled={isNextDisabled}
+                    ></MobileStepNavigator>
                 </div>
 
                 {/* Dynamic Content with entry/exit animation */}
@@ -349,7 +384,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 </div>
 
                 {/* Navigation Buttons - Positioned at the bottom */}
-                <div className="mt-auto flex justify-between">
+                <div className="mt-auto lg:flex justify-between hidden">
                     <StepButton
                         onClick={handlePrevStep}
                         klasse="px-4 py-2 bg-textColor rounded"

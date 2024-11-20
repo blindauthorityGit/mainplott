@@ -16,7 +16,9 @@ const ContentWrapper = ({ data, klasse, children, showToggle }) => {
         <div className={`${klasse} relative`}>
             {/* Heading and Button Row */}
             <div className="flex justify-between items-center">
-                <H2>{data.title}</H2>
+                <H2 klasse="!text-3xl lg:!text-6xl md:!text-3xl   lg:!text-6xl xl:!text-7xl 2xl:!text-7xl ">
+                    {data.title}
+                </H2>
                 {showToggle && (
                     <motion.button
                         onClick={handleToggle}
@@ -36,7 +38,7 @@ const ContentWrapper = ({ data, klasse, children, showToggle }) => {
             {/* Description and Children */}
             <P klasse="text-xs hidden lg:block lg:!text-sm">{data.description}</P>
             {children}
-            <P klasse="text-xs lg:hidden lg:!text-sm">{data.description}</P>
+            <P klasse="text-xs lg:hidden lg:!text-sm mt-4">{data.description}</P>
         </div>
     );
 };

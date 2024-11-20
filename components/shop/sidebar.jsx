@@ -67,7 +67,7 @@ export default function Sidebar({ categories }) {
     };
 
     return (
-        <div className="bg-white rounded-2xl hidden lg:my-12 p-8 shadow-md w-full col-span-12 lg:col-span-3 max-w-xs !font-body">
+        <div className="bg-white rounded-2xl hidden lg:block lg:my-12 p-8 shadow-md w-full col-span-12 lg:col-span-3 max-w-xs !font-body">
             <div className="sticky top-[150px]">
                 <button
                     className={`w-full  mb-4 p-2 font-bold rounded-[10px] text-center ${
