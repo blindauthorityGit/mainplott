@@ -15,19 +15,19 @@ const Footer = () => {
                     <img src={Logo.src} alt="Mainplott Logo" />
                 </div>
                 <div className="col-span-6 lg:col-span-2">
-                    <Link href="#" className="text-primaryColor-50 text-xl block font-semibold">
+                    <Link href="#" className="text-primaryColor-50 lg:text-xl block font-semibold">
                         Kontakt
                     </Link>
-                    <Link href="#" className="text-primaryColor-50 text-xl block font-semibold">
+                    <Link href="#" className="text-primaryColor-50 lg:text-xl block font-semibold">
                         Datenschutz
                     </Link>
-                    <Link href="#" className="text-primaryColor-50 text-xl block font-semibold">
+                    <Link href="#" className="text-primaryColor-50 lg:text-xl block font-semibold">
                         Impressum
                     </Link>
                 </div>
                 <div className="col-span-6 lg:col-span-2 mt-4 lg:mt-0">
-                    <div className="text-primaryColor-50 text-xl block font-semibold">MAINPLOTT</div>
-                    <div className="text-primaryColor-50 text-xl block font-regular">
+                    <div className="text-primaryColor-50 lg:text-xl block font-semibold">MAINPLOTT</div>
+                    <div className="text-primaryColor-50 lg:text-xl block font-regular">
                         Neue Straße 528
                         <br />
                         28232 Musterstadt
@@ -36,11 +36,11 @@ const Footer = () => {
                 <div className="col-span-12 lg:col-span-2 mt-8 lg:mt-0">
                     <div className="flex items-center mb-2">
                         <FiMail className="text-primaryColor-50 text-2xl mr-3" />
-                        <span className="text-primaryColor-50 text-lg">office@mainplott.de</span>
+                        <span className="text-primaryColor-50 lg:text-lg">office@mainplott.de</span>
                     </div>
                     <div className="flex items-center">
                         <FiPhone className="text-primaryColor-50 text-2xl mr-3" />
-                        <span className="text-primaryColor-50 text-lg">+43 123 456 789</span>
+                        <span className="text-primaryColor-50 lg:text-lg">+43 123 456 789</span>
                     </div>
                     <div className="flex mt-8 space-x-8">
                         <Link href="https://www.instagram.com" target="_blank" rel="noopener noreferrer">

@@ -13,30 +13,25 @@ export default function TopBar({ categories, products }) {
     const [categoryCounts, setCategoryCounts] = useState({});
     const filterRef = useRef(null);
 
+    // Calculate product counts per category and subcategory
     useEffect(() => {
         const counts = {};
-
         categories.forEach((category) => {
             const subCategoryCounts = {};
-
             category.subcategories.forEach((subCategory) => {
                 const subSubCategoryCounts = {};
-
                 subCategory.subSubcategories.forEach((subSub) => {
                     subSubCategoryCounts[subSub.name] = products.filter((product) =>
                         product.node.tags.includes(subSub.name)
                     ).length;
                 });
-
                 subCategoryCounts[subCategory.name] = Object.values(subSubCategoryCounts).reduce(
                     (sum, count) => sum + count,
                     0
                 );
             });
-
             counts[category.name] = Object.values(subCategoryCounts).reduce((sum, count) => sum + count, 0);
         });
-
         setCategoryCounts(counts);
     }, [categories, products]);
 
@@ -68,13 +63,13 @@ export default function TopBar({ categories, products }) {
     };
 
     const collapseVariants = {
-        hidden: { height: 0, opacity: 0 },
-        visible: { height: "auto", opacity: 1 },
+        hidden: { height: 0, opacity: 0, overflow: "hidden" },
+        visible: { height: "auto", opacity: 1, overflow: "hidden", transitionEnd: { overflow: "visible" } },
     };
 
-    const textVariants = {
+    const delayedTextVariants = {
         hidden: { opacity: 0 },
-        visible: { opacity: 1, transition: { delay: 0.2 } }, // Delays text appearance
+        visible: { opacity: 1, transition: { delay: 0.15 } }, // Delays text appearance after container expands
     };
 
     useEffect(() => {
@@ -147,51 +142,55 @@ export default function TopBar({ categories, products }) {
                                             transition={{ duration: 0.3, ease: "easeInOut" }}
                                             className="pl-4 mt-2"
                                         >
-                                            {category.subcategories.map((subCategory) => (
-                                                <motion.div
-                                                    key={subCategory.name}
-                                                    initial="hidden"
-                                                    animate="visible"
-                                                    exit="hidden"
-                                                    variants={textVariants}
-                                                    className="mb-2"
-                                                >
-                                                    <div className="flex space-x-2 mb-2">
-                                                        <img src={urlFor(subCategory.icon)} className="w-6" alt="" />
-                                                        <p className="font-semibold">
-                                                            {subCategory.name} ({categoryCounts[subCategory.name] || 0})
-                                                        </p>
+                                            <motion.div
+                                                initial="hidden"
+                                                animate="visible"
+                                                exit="hidden"
+                                                variants={delayedTextVariants}
+                                            >
+                                                {category.subcategories.map((subCategory) => (
+                                                    <div key={subCategory.name} className="mb-2">
+                                                        <div className="flex space-x-2 mb-2">
+                                                            <img
+                                                                src={urlFor(subCategory.icon)}
+                                                                className="w-6"
+                                                                alt=""
+                                                            />
+                                                            <p className="font-semibold">
+                                                                {subCategory.name} (
+                                                                {categoryCounts[subCategory.name] || 0})
+                                                            </p>
+                                                        </div>
+                                                        <div className="pl-4 mt-1 space-y-2">
+                                                            {subCategory.subSubcategories.map((subSub) => (
+                                                                <div
+                                                                    key={subSub.name}
+                                                                    className="flex items-center mb-2 space-x-2"
+                                                                >
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        id={subSub.name}
+                                                                        checked={activeTags.includes(subSub.name)}
+                                                                        onChange={() =>
+                                                                            handleTagChange(
+                                                                                subSub.name,
+                                                                                subCategory.name
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                    <label htmlFor={subSub.name} className="text-sm">
+                                                                        {subSub.name} (
+                                                                        {products.filter((product) =>
+                                                                            product.node.tags.includes(subSub.name)
+                                                                        ).length || 0}
+                                                                        )
+                                                                    </label>
+                                                                </div>
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                    <div className="pl-4 mt-1 space-y-2">
-                                                        {subCategory.subSubcategories.map((subSub) => (
-                                                            <motion.div
-                                                                key={subSub.name}
-                                                                initial="hidden"
-                                                                animate="visible"
-                                                                exit="hidden"
-                                                                variants={textVariants}
-                                                                className="flex items-center mb-2 space-x-2"
-                                                            >
-                                                                <input
-                                                                    type="checkbox"
-                                                                    id={subSub.name}
-                                                                    checked={activeTags.includes(subSub.name)}
-                                                                    onChange={() =>
-                                                                        handleTagChange(subSub.name, subCategory.name)
-                                                                    }
-                                                                />
-                                                                <label htmlFor={subSub.name} className="text-sm">
-                                                                    {subSub.name} (
-                                                                    {products.filter((product) =>
-                                                                        product.node.tags.includes(subSub.name)
-                                                                    ).length || 0}
-                                                                    )
-                                                                </label>
-                                                            </motion.div>
-                                                        ))}
-                                                    </div>
-                                                </motion.div>
-                                            ))}
+                                                ))}
+                                            </motion.div>
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
