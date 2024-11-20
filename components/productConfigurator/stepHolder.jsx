@@ -42,6 +42,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     const [imageSize, setImageSize] = useState({ width: null, height: null });
     const [isFrontView, setIsFrontView] = useState(true); // Track if we're viewing the front or back
     const configStepIndex = steps.findIndex((step) => step === "Design"); // Dynamically find the config step
+    const [isLoadingImage, setIsLoadingImage] = useState(false); // State to track loading
 
     const imageRef = useRef();
     const containerRef = useRef(); // Add a reference to the container

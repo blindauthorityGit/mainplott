@@ -9,7 +9,7 @@ import { H1, H3, H4, P } from "../../components/typography";
 
 const Footer = () => {
     return (
-        <div className="bg-blackColor w-full py-16 lg:py-36 font-body lg:mt-24">
+        <div className="bg-blackColor w-full px-4 lg:px-0 py-16 lg:py-36 font-body lg:mt-24">
             <div className="container mx-auto grid grid-cols-12">
                 <div className="col-span-6 lg:col-span-6">
                     <img src={Logo.src} alt="Mainplott Logo" />
