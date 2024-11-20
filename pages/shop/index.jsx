@@ -7,6 +7,7 @@ import Spacer from "../../layout/spacer";
 // import { ProductListings } from "../../components/shop";
 import ProductListings from "../../components/shop/productListings";
 import Sidebar from "../../components/shop/sidebar";
+import TopBar from "../../components/shop/topBar";
 
 //LIBS
 import { getAllProductsInCollection, getAllCollectionsWithSubcollections, getAllProducts } from "../../libs/shopify";
@@ -44,8 +45,9 @@ export default function Shop({ products, collections, globalData, collection }) 
 
     return (
         <MainContainer>
-            <div className="grid grid-cols-12">
+            <div className="grid grid-cols-12 px-4 lg:px-0">
                 <Sidebar activeCategory={collection} categories={globalData.shop.categories}></Sidebar>
+                <TopBar activeCategory={collection} categories={globalData.shop.categories}></TopBar>
                 {filteredProducts.length > 0 ? (
                     <ProductListings products={filteredProducts}></ProductListings>
                 ) : (

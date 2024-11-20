@@ -9,12 +9,12 @@ import { H1, H3, H4, P } from "../../components/typography";
 
 const Footer = () => {
     return (
-        <div className="bg-blackColor w-full py-36 font-body lg:mt-24">
+        <div className="bg-blackColor w-full py-16 lg:py-36 font-body lg:mt-24">
             <div className="container mx-auto grid grid-cols-12">
-                <div className="col-span-6">
+                <div className="col-span-6 lg:col-span-6">
                     <img src={Logo.src} alt="Mainplott Logo" />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-6 lg:col-span-2">
                     <Link href="#" className="text-primaryColor-50 text-xl block font-semibold">
                         Kontakt
                     </Link>
@@ -25,7 +25,7 @@ const Footer = () => {
                         Impressum
                     </Link>
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-6 lg:col-span-2 mt-4 lg:mt-0">
                     <div className="text-primaryColor-50 text-xl block font-semibold">MAINPLOTT</div>
                     <div className="text-primaryColor-50 text-xl block font-regular">
                         Neue Straße 528
@@ -33,7 +33,7 @@ const Footer = () => {
                         28232 Musterstadt
                     </div>
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-12 lg:col-span-2 mt-8 lg:mt-0">
                     <div className="flex items-center mb-2">
                         <FiMail className="text-primaryColor-50 text-2xl mr-3" />
                         <span className="text-primaryColor-50 text-lg">office@mainplott.de</span>

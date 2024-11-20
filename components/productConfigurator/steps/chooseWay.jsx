@@ -20,10 +20,10 @@ export default function ChooseWay() {
         title: "DESIGN PLATZIEREN",
     };
 
-    useEffect(() => {
-        console.log("Current selection:", selectedOption);
-        console.log(purchaseData);
-    }, [selectedOption]);
+    // useEffect(() => {
+    //     console.log("Current selection:", selectedOption);
+    //     console.log(purchaseData);
+    // }, [selectedOption]);
 
     return (
         <div className="lg:px-16 lg:mt-8 font-body">

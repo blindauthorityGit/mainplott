@@ -4,6 +4,8 @@ import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion"; // For animations
 import useStore from "../../store/store";
 
+import urlFor from "@/functions/urlFor";
+
 // FUNCTIONS
 import updateActiveTags from "../../functions/updateActiveTags";
 
@@ -65,10 +67,10 @@ export default function Sidebar({ categories }) {
     };
 
     return (
-        <div className="bg-white rounded-2xl my-12 p-8 shadow-md w-full lg:col-span-3 max-w-xs !font-body">
+        <div className="bg-white rounded-2xl hidden lg:my-12 p-8 shadow-md w-full col-span-12 lg:col-span-3 max-w-xs !font-body">
             <div className="sticky top-[150px]">
                 <button
-                    className={`w-full text-left mb-4 p-2 font-bold ${
+                    className={`w-full  mb-4 p-2 font-bold rounded-[10px] text-center ${
                         router.query.cat === "all" ? "bg-primaryColor text-white" : "bg-gray-200 text-black"
                     }`}
                     onClick={() => {
@@ -79,7 +81,7 @@ export default function Sidebar({ categories }) {
                         setActiveTags([]);
                     }}
                 >
-                    Show All Products
+                    ALLE PRODUKTE
                 </button>
                 {categories.map((category) => (
                     <div key={category.name} className="mb-4">
@@ -88,9 +90,12 @@ export default function Sidebar({ categories }) {
                             className="flex items-center justify-between cursor-pointer"
                             onClick={() => handleCategoryToggle(category.name)}
                         >
-                            <h4 className="text-lg font-bold">{category.name}</h4>
+                            <h4 className="text-base font-regular uppercase font-semibold tracking-wider">
+                                {category.name}
+                            </h4>
                             {openCategory === category.name ? <FiChevronUp size={20} /> : <FiChevronDown size={20} />}
                         </div>
+                        <hr className="border border-black bg-black text-black opacity-10 my-2 " />
 
                         {/* Subcategories with animation */}
                         <AnimatePresence>
@@ -103,52 +108,67 @@ export default function Sidebar({ categories }) {
                                     transition={{ duration: 0.3, ease: "easeInOut" }}
                                     className="pl-4 mt-2"
                                 >
-                                    {category.subcategories.map((subCategory) => (
-                                        <div key={subCategory.name}>
-                                            <div
-                                                className="flex items-center justify-between cursor-pointer mb-2"
-                                                onClick={() => handleSubCategoryToggle(subCategory.name)}
-                                            >
-                                                <p className="font-bold">{subCategory.name}</p>
-                                                {openSubCategory === subCategory.name ? (
-                                                    <FiChevronUp size={16} />
-                                                ) : (
-                                                    <FiChevronDown size={16} />
-                                                )}
-                                            </div>
-
-                                            {/* Sub-Subcategories with animation */}
-                                            <AnimatePresence>
-                                                {openSubCategory === subCategory.name && (
-                                                    <motion.div
-                                                        initial="hidden"
-                                                        animate="visible"
-                                                        exit="hidden"
-                                                        variants={collapseVariants}
-                                                        transition={{ duration: 0.3, ease: "easeInOut" }}
-                                                        className="pl-4 mt-2"
+                                    {category.subcategories.map(
+                                        (subCategory) => (
+                                            console.log(subCategory),
+                                            (
+                                                <div key={subCategory.name}>
+                                                    <div
+                                                        className="flex items-center space-x-4 cursor-pointer mb-2"
+                                                        onClick={() => handleSubCategoryToggle(subCategory.name)}
                                                     >
-                                                        {subCategory.subSubcategories.map((subSub) => (
-                                                            <div key={subSub.name} className="flex items-center mb-2">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    id={subSub.name}
-                                                                    className="mr-2"
-                                                                    checked={activeTags.includes(subSub.name)}
-                                                                    onChange={() =>
-                                                                        handleTagChange(subSub.name, subCategory.name)
-                                                                    }
-                                                                />
-                                                                <label htmlFor={subSub.name} className="text-base">
-                                                                    {subSub.name}
-                                                                </label>
-                                                            </div>
-                                                        ))}
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
-                                        </div>
-                                    ))}
+                                                        <img src={urlFor(subCategory.icon)} className="w-6" alt="" />
+                                                        <p className="font-semibold">{subCategory.name}</p>
+                                                        {openSubCategory === subCategory.name ? (
+                                                            <FiChevronUp size={16} />
+                                                        ) : (
+                                                            <FiChevronDown size={16} />
+                                                        )}
+                                                    </div>
+
+                                                    {/* Sub-Subcategories with animation */}
+                                                    <AnimatePresence>
+                                                        {openSubCategory === subCategory.name && (
+                                                            <motion.div
+                                                                initial="hidden"
+                                                                animate="visible"
+                                                                exit="hidden"
+                                                                variants={collapseVariants}
+                                                                transition={{ duration: 0.3, ease: "easeInOut" }}
+                                                                className="pl-4 mt-2 mb-2"
+                                                            >
+                                                                {subCategory.subSubcategories.map((subSub) => (
+                                                                    <div
+                                                                        key={subSub.name}
+                                                                        className="flex items-center mb-2"
+                                                                    >
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            id={subSub.name}
+                                                                            className="mr-2"
+                                                                            checked={activeTags.includes(subSub.name)}
+                                                                            onChange={() =>
+                                                                                handleTagChange(
+                                                                                    subSub.name,
+                                                                                    subCategory.name
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                        <label
+                                                                            htmlFor={subSub.name}
+                                                                            className="text-base"
+                                                                        >
+                                                                            {subSub.name}
+                                                                        </label>
+                                                                    </div>
+                                                                ))}
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
+                                                </div>
+                                            )
+                                        )
+                                    )}
                                 </motion.div>
                             )}
                         </AnimatePresence>

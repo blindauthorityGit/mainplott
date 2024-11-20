@@ -1,51 +1,65 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 
-// import Swiper core and required modules
-import { Navigation, Pagination, Scrollbar, A11y } from "swiper/modules";
-
+// Import Swiper core and required modules
+import { Navigation, Pagination, A11y } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 // Import Swiper styles
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-import "swiper/css/scrollbar";
 
-//COMNPONENTS
+// Components
 import Slide from "./slide";
 import { GeneralNavButton } from "../../components/buttons";
 
 const HeroSwiper = ({ data }) => {
     const [swiper, setSwiper] = useState(null);
-    const [isLastSlideLeft, setIsLastSlideLeft] = useState(true);
-    const [isLastSlideRight, setIsLastSlideRight] = useState(false);
 
-    useEffect(() => {
-        console.log(data);
-    }, [data]);
+    // Function to navigate to the previous slide
+    const goToPrevSlide = () => {
+        if (swiper) {
+            swiper.slidePrev();
+        }
+    };
+
+    // Function to navigate to the next slide
+    const goToNextSlide = () => {
+        if (swiper) {
+            swiper.slideNext();
+        }
+    };
 
     return (
-        <div className="w-full grid grid-cols-12 bg-accentColor items-center  h-3/4 lg:h-[40%] lg:rounded-[20px]">
+        <div className="w-full h-full relative bg-accentColor items-center lg:h-[40%] lg:rounded-[20px] overflow-hidden">
             <Swiper
                 modules={[Pagination, Navigation]}
                 slidesPerView={1}
-                pagination={{ clickable: true, dynamicBullets: true }}
-                onSwiper={(swiper) => {
-                    {
-                        setSwiper(swiper);
-                    }
-                }}
-                navigation
-                a11y // for accessibility
-                onSlideChange={() => console.log("Slide changed")}
-                className="h-full eventSlider col-span-12 !overflow-visible"
+                // pagination={{ clickable: true, dynamicBullets: true }}
+                onSwiper={setSwiper} // Save swiper instance
+                className="h-full w-full"
             >
-                <div className="absolute z-10 bottom-8 hidden right-8 flex space-x-4">
-                    <GeneralNavButton direction="left"></GeneralNavButton>
-                    <GeneralNavButton></GeneralNavButton>
+                {/* Custom Navigation Buttons */}
+                <div className="absolute z-10 lg:left-8 scale-50 lg:scale-100 bottom-2 top-[50%] lg:top-[46%]">
+                    <GeneralNavButton
+                        width="38"
+                        height="38"
+                        direction="left"
+                        onClick={goToPrevSlide} // Attach function
+                    />
                 </div>
+                <div className="absolute z-10 lg:right-8 right-0 bottom-2   scale-50 lg:scale-100 top-[50%] lg:top-[46%]">
+                    <GeneralNavButton
+                        width="38"
+                        height="38"
+                        direction="right"
+                        onClick={goToNextSlide} // Attach function
+                    />
+                </div>
+
+                {/* Slides */}
                 {data?.map((e, i) => (
-                    <SwiperSlide key={`swipo${i}`} className="">
+                    <SwiperSlide key={`swipo${i}`} className="w-full h-full flex overflow-visible">
                         <Slide
                             headline={e.headline}
                             text={e.text}
@@ -53,7 +67,7 @@ const HeroSwiper = ({ data }) => {
                             buttonText={e.buttonText}
                             buttonLink={e.buttonLink}
                             mobileImage={e.image}
-                        ></Slide>{" "}
+                        />
                     </SwiperSlide>
                 ))}
             </Swiper>

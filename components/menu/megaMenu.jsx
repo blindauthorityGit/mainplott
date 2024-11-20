@@ -62,7 +62,7 @@ const MegaMenu = ({ isVisible, data }) => {
                                                     alt=""
                                                     className="h-6 w-6 fill-primaryColor-400"
                                                 />
-                                                <Link href={`/${point.text}`}>
+                                                <Link href={`/${point.link}`}>
                                                     <span>{point.text}</span>
                                                 </Link>
                                             </motion.div>

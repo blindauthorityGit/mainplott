@@ -88,6 +88,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         if (steps[currentStep] == "Design") {
             handleExport();
         }
+        console.log(purchaseData);
         // const dataURL = exportCanvas(stageRef, transformerRef, boundaryPathRef, 1);
         // console.log("DAT DATA", dataURL, stageRef.current, transformerRef, boundaryPathRef);
     };

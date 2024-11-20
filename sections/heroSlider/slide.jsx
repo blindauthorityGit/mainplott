@@ -20,7 +20,7 @@ const Slide = ({ image, mobileImage, headline, text, buttonText, buttonLink, asp
 
     return (
         <div className="grid grid-cols-12 lg:px-56 relative  items-center mt-[-1rem] lg:mt-[-2rem]">
-            <div className="col-span-12 lg:col-span-6 text-center lg:text-left -mt-[4rem] z-30 px-6 lg:px-0 lg:mt-12">
+            <div className="col-span-12 lg:col-span-6 text-center lg:text-left -mt-[3rem] z-30 px-6 lg:px-0 lg:mt-12">
                 <H1>{colorLastWord(headline)}</H1>
                 <P klasse="hidden lg:block">{text}</P>
 
@@ -28,14 +28,14 @@ const Slide = ({ image, mobileImage, headline, text, buttonText, buttonLink, asp
                     {buttonText}
                 </MainButton>
             </div>
-            <div className="col-span-12 lg:col-span-6 relative order-first lg:order-last">
+            <div className="col-span-12 lg:col-span-6 relative order-first lg:order-last scale-[0.75] lg:scale-[0.85]">
                 <CoverImage
                     src={urlFor(image).url()}
                     mobileSrc={urlFor(mobileImage).url()}
                     alt="Cover Background"
                     klasse={"absolute "}
                     // style={{ }}
-                    className="aspect-[2.8/3] lg:aspect-[3/3] lg:mt-20 w-[60%] lg:w-full relative lg:static mx-auto"
+                    className="aspect-[2.8/3] lg:aspect-[3/3.25]  lg:overflow-visible lg:mt-20 w-[60%] lg:w-full relative lg:static mx-auto"
                 />
             </div>
         </div>

@@ -17,28 +17,44 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     // Format variants for easier access
     const formattedVariants = formatVariants(product.variants);
     // Ensure `selectedSize` and `selectedColor` are initialized
-    useEffect(() => {
-        const firstSize = Object.keys(formattedVariants)[0];
-        const firstColor = formattedVariants[firstSize]?.colors[0]?.color;
+    // Centralized initialization logic
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const initializeSelection = () => {
+        const firstSize = Object.keys(formattedVariants)?.[0];
+        const firstColor = formattedVariants[firstSize]?.colors?.[0]?.color;
 
-        // Initialize `selectedSize` and `selectedColor` if not already set
-        if (!purchaseData.selectedSize || !purchaseData.selectedColor) {
+        console.log(firstSize, firstColor);
+
+        if (firstSize && firstColor) {
+            setSelectedSize(firstSize);
+            setSelectedColor(firstColor);
+            setSelectedImage(formattedVariants[firstSize]?.colors?.[0]?.image);
+
+            // Update Zustand store
             setPurchaseData({
                 ...purchaseData,
                 selectedSize: firstSize,
                 selectedColor: firstColor,
             });
 
-            // Set initial selected image
-            const firstImage = formattedVariants[firstSize]?.colors[0]?.image;
-            setSelectedImage(firstImage);
+            // Set the active variant
             setActiveVariant(firstSize, firstColor);
         }
-    }, [purchaseData.selectedSize, purchaseData.selectedColor, formattedVariants, setPurchaseData]);
+    };
+
+    useEffect(() => {
+        // Initialize selection on component mount
+        console.log("HALLO", purchaseData.selectedSize, purchaseData.selectedColor);
+        console.log("HALLOIOHIOEIOHEIOHEHIOEOIH EH EH OEHEHIO");
+        if (!purchaseData.selectedSize || !purchaseData.selectedColor) {
+            initializeSelection();
+        }
+    }, [product]);
 
     useEffect(() => {
         setPurchaseData({ ...purchaseData, productName: product.title, product: product });
         console.log(product.title, product);
+
         // setPurchaseData({ ...purchaseData, productName: product.title, product: product });
     }, [product]);
 
@@ -106,22 +122,27 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                 {selectedSize && (
                     <div className="flex space-x-3 mt-4 items-center gap-8 lg:mb-16">
                         <div className="left font-body font-semibold">Farbe</div>
-                        <div className="right flex space-x-3">
+                        <div className="right flex flex-wrap -mx-1 -my-1 ">
                             {formattedVariants[selectedSize]?.colors?.map(({ color }, index) => (
-                                <CustomCheckBox
-                                    key={`color-${index}`}
-                                    klasse={`bg-${color}`}
-                                    isChecked={selectedColor === color}
-                                    onClick={() => handleColorChange(color)}
-                                    activeClass=" border-2 border-textColor text-white"
-                                    nonActiveClass=" text-black"
-                                    style={{ background: getColorHex(color) }}
-                                />
+                                <div key={`color-${index}`} className="px-1 py-1">
+                                    <CustomCheckBox
+                                        key={`color-${index}`}
+                                        klasse={`bg-${color}`}
+                                        isChecked={selectedColor === color}
+                                        onClick={() => handleColorChange(color)}
+                                        activeClass=" border-2 border-textColor text-white"
+                                        nonActiveClass=" text-black"
+                                        style={{ background: getColorHex(color) }}
+                                        label={color}
+                                        showTooltip={true} // Enable the tooltip
+                                        showLabel={false}
+                                    />{" "}
+                                </div>
                             ))}
                         </div>
                     </div>
                 )}
-                <GeneralCheckBox
+                {/* <GeneralCheckBox
                     label="Diesen Artikel ohne Personalisierung zum Probieren bestellen"
                     isChecked={isChecked}
                     onToggle={handleToggle}
@@ -130,7 +151,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                     nonActiveClass="bg-background"
                     borderColor="border-textColor"
                     checkColor="text-successColor"
-                />
+                /> */}
             </ContentWrapper>
         </div>
     );

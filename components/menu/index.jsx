@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { FaShoppingCart } from "react-icons/fa"; // Import the cart icon from react-icons
+import { FiMenu, FiX } from "react-icons/fi"; // Import burger and close icons from react-icons
+
 import { useMenu } from "../../context/menuContext";
 import MegaMenu from "./megaMenu"; // Import the MegaMenu component
 import { motion, AnimatePresence } from "framer-motion"; // Import framer-motion for animations
@@ -99,7 +101,7 @@ export default function Menu() {
 
                         {/* Burger Menu */}
                         <button onClick={() => setIsOpen(!isOpen)} className="text-gray-700 md:hidden">
-                            <span className="material-icons text-3xl">menu</span>
+                            {isOpen ? <FiX className="text-3xl" /> : <FiMenu className="text-3xl" />}
                         </button>
                     </div>
                 </div>
@@ -133,7 +135,7 @@ export default function Menu() {
             <AnimatePresence>
                 {isSticky && (
                     <motion.header
-                        className="fixed top-0 left-0 w-full bg-white shadow-lg z-50 font-body"
+                        className="fixed top-0 left-0 w-full bg-white hidden lg:block shadow-lg z-50 font-body"
                         initial={{ opacity: 0, y: -50 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -50 }}

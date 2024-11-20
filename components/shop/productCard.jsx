@@ -20,14 +20,14 @@ function ProductCard({ product }) {
 
     return (
         <motion.div
-            className="h-120 w-72 rounded-lg shadow-lg mx-auto border border-gray-200 overflow-hidden bg-white relative"
+            className="lg:h-120 lg:w-72 w-full h-full rounded-lg shadow-lg mx-auto border border-gray-200 overflow-hidden bg-white relative"
             whileHover={{ scale: 1.05, boxShadow: "0px 12px 24px rgba(0, 0, 0, 0.15)" }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
         >
             {/* Tags */}
             <div className="absolute top-2 right-2 flex flex-wrap gap-2 z-10 font-body">
                 {mainCategoryTag && (
-                    <span className="bg-primaryColor text-white text-xs px-3 py-1 rounded-full shadow-md">
+                    <span className="bg-accentColor text-textColor font-body text-xs px-3 py-1 rounded-full shadow-md">
                         {mainCategoryTag}
                     </span>
                 )}
@@ -40,7 +40,7 @@ function ProductCard({ product }) {
 
             {/* Image */}
             <Link href={`/products/${handle}`} passHref>
-                <div className="h-72 border-b-2 border-gray-200 relative cursor-pointer overflow-hidden">
+                <div className="lg:h-72 h-64 border-b-2 border-gray-200 relative cursor-pointer overflow-hidden">
                     <ContainImage
                         src={imageNode.originalSrc}
                         mobileSrc={imageNode.originalSrc}
@@ -53,14 +53,14 @@ function ProductCard({ product }) {
             </Link>
 
             {/* Content */}
-            <div className="h-48 p-4 flex flex-col justify-between">
+            <div className="h-48 lg:h-auto p-4 flex flex-col justify-between">
                 <div>
                     <div className="font-primary text-palette-primary text-xl font-semibold truncate">{title}</div>
                     <div className="text-sm text-gray-500 mt-2 line-clamp-2 font-body">{description}</div>
                 </div>
                 <div>
                     <div className="text-lg text-gray-600 font-primary font-semibold mb-2">ab EUR 29,-</div>
-                    <div className="flex justify-center space-x-2">
+                    <div className="flex  space-x-2 flex-wrap">
                         {formattedVariants["XL"]?.colors.map(({ color }, index) => (
                             <div
                                 key={`color-${index}`}
