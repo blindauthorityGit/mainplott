@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { FiChevronDown, FiChevronUp, FiFilter } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,8 +11,8 @@ export default function TopBar({ categories, products }) {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const { activeTags, setActiveTags } = useStore();
     const [categoryCounts, setCategoryCounts] = useState({});
+    const filterRef = useRef(null);
 
-    // Calculate product counts per category and subcategory
     useEffect(() => {
         const counts = {};
 
@@ -68,12 +68,30 @@ export default function TopBar({ categories, products }) {
     };
 
     const collapseVariants = {
-        hidden: { height: 0, opacity: 0, overflow: "hidden" },
-        visible: { height: "auto", opacity: 1, overflow: "hidden" },
+        hidden: { height: 0, opacity: 0 },
+        visible: { height: "auto", opacity: 1 },
     };
 
+    const textVariants = {
+        hidden: { opacity: 0 },
+        visible: { opacity: 1, transition: { delay: 0.2 } }, // Delays text appearance
+    };
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (filterRef.current && !filterRef.current.contains(event.target)) {
+                setIsFilterOpen(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
     return (
-        <div className="bg-white shadow-md sticky lg:hidden top-0 z-50 col-span-12 font-body">
+        <div className="bg-white shadow-md sticky lg:hidden top-0 z-50 col-span-12 font-body" ref={filterRef}>
             {/* Top Bar */}
             <div className="flex items-center justify-between p-4">
                 <button
@@ -130,7 +148,14 @@ export default function TopBar({ categories, products }) {
                                             className="pl-4 mt-2"
                                         >
                                             {category.subcategories.map((subCategory) => (
-                                                <div key={subCategory.name} className="mb-2">
+                                                <motion.div
+                                                    key={subCategory.name}
+                                                    initial="hidden"
+                                                    animate="visible"
+                                                    exit="hidden"
+                                                    variants={textVariants}
+                                                    className="mb-2"
+                                                >
                                                     <div className="flex space-x-2 mb-2">
                                                         <img src={urlFor(subCategory.icon)} className="w-6" alt="" />
                                                         <p className="font-semibold">
@@ -139,8 +164,12 @@ export default function TopBar({ categories, products }) {
                                                     </div>
                                                     <div className="pl-4 mt-1 space-y-2">
                                                         {subCategory.subSubcategories.map((subSub) => (
-                                                            <div
+                                                            <motion.div
                                                                 key={subSub.name}
+                                                                initial="hidden"
+                                                                animate="visible"
+                                                                exit="hidden"
+                                                                variants={textVariants}
                                                                 className="flex items-center mb-2 space-x-2"
                                                             >
                                                                 <input
@@ -158,10 +187,10 @@ export default function TopBar({ categories, products }) {
                                                                     ).length || 0}
                                                                     )
                                                                 </label>
-                                                            </div>
+                                                            </motion.div>
                                                         ))}
                                                     </div>
-                                                </div>
+                                                </motion.div>
                                             ))}
                                         </motion.div>
                                     )}

@@ -4,10 +4,12 @@ import { BasicPortableText } from "../content"; // Make sure this is exported co
 
 const InfoBox = ({ text, klasse = "", backgroundColor = "bg-accentColor" }) => {
     return (
-        <div className={`relative border-2 border-textColor rounded-[20px] p-8 text-center ${klasse}`}>
+        <div
+            className={`relative border-2 border-textColor rounded-[20px] w-[95%] lg:w-full p-8 text-center ${klasse}`}
+        >
             {/* Background div extending horizontally and vertically centered */}
             <div
-                className={`absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[110%] h-[88%] ${backgroundColor} -z-10 rounded-[20px]`}
+                className={`absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[105%] h-[88%] ${backgroundColor} -z-10 rounded-[20px]`}
             ></div>
 
             {/* Top-left quote icon */}

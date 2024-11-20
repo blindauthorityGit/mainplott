@@ -55,8 +55,10 @@ function ProductCard({ product }) {
             {/* Content */}
             <div className="h-auto lg:h-auto p-4 flex flex-col justify-between">
                 <div>
-                    <div className="font-body text-palette-primary text-lg lg:text-xl font-semibold ">{title}</div>
-                    <div className="text-xs mb-2 lg:text-sm text-gray-500  mt-2 line-clamp-2 font-body">
+                    <div className="font-body leading-tight text-palette-primary text-base lg:text-xl font-semibold ">
+                        {title}
+                    </div>
+                    <div className="text-xs mb-4 lg:mb-2 lg:text-sm text-gray-500  mt-2 line-clamp-2 font-body">
                         {description}
                     </div>
                 </div>
@@ -70,7 +72,9 @@ function ProductCard({ product }) {
                             />
                         ))}
                     </div>{" "}
-                    <div className="text-lg font-body text-gray-600 font-primary font-semibold mb-2">ab EUR 29,-</div>
+                    <div className="text-base lg:text-lg font-body text-gray-600 font-primary font-semibold mb-2 mt-4">
+                        ab EUR 29,-
+                    </div>
                 </div>
             </div>
         </motion.div>

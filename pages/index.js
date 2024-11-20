@@ -35,6 +35,7 @@ export default function Home({ sanityData, globalData }) {
             <Spacer></Spacer>
 
             <TestimonialsSection data={globalData.testimonials.testimonials}></TestimonialsSection>
+            <Spacer></Spacer>
         </MainContainer>
     );
 }
