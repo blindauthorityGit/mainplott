@@ -1,14 +1,44 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { FiChevronDown, FiChevronUp, FiFilter } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import useStore from "../../store/store";
+import urlFor from "@/functions/urlFor";
 
-export default function TopBar({ categories }) {
+export default function TopBar({ categories, products }) {
     const router = useRouter();
     const [openCategory, setOpenCategory] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const { activeTags, setActiveTags } = useStore();
+    const [categoryCounts, setCategoryCounts] = useState({});
+
+    // Calculate product counts per category and subcategory
+    useEffect(() => {
+        const counts = {};
+
+        categories.forEach((category) => {
+            const subCategoryCounts = {};
+
+            category.subcategories.forEach((subCategory) => {
+                const subSubCategoryCounts = {};
+
+                subCategory.subSubcategories.forEach((subSub) => {
+                    subSubCategoryCounts[subSub.name] = products.filter((product) =>
+                        product.node.tags.includes(subSub.name)
+                    ).length;
+                });
+
+                subCategoryCounts[subCategory.name] = Object.values(subSubCategoryCounts).reduce(
+                    (sum, count) => sum + count,
+                    0
+                );
+            });
+
+            counts[category.name] = Object.values(subCategoryCounts).reduce((sum, count) => sum + count, 0);
+        });
+
+        setCategoryCounts(counts);
+    }, [categories, products]);
 
     const handleTagChange = (subSubCat, parentSubCat) => {
         const selectedCategoryTags = categories
@@ -43,7 +73,7 @@ export default function TopBar({ categories }) {
     };
 
     return (
-        <div className="bg-white shadow-md sticky lg:hidden top-0 z-50 col-span-12">
+        <div className="bg-white shadow-md sticky lg:hidden top-0 z-50 col-span-12 font-body">
             {/* Top Bar */}
             <div className="flex items-center justify-between p-4">
                 <button
@@ -80,7 +110,9 @@ export default function TopBar({ categories }) {
                                     className="flex items-center justify-between cursor-pointer"
                                     onClick={() => handleCategoryToggle(category.name)}
                                 >
-                                    <h4 className="text-base font-semibold">{category.name}</h4>
+                                    <h4 className="text-base font-semibold">
+                                        {category.name} ({categoryCounts[category.name] || 0})
+                                    </h4>
                                     {openCategory === category.name ? (
                                         <FiChevronUp size={20} />
                                     ) : (
@@ -99,12 +131,17 @@ export default function TopBar({ categories }) {
                                         >
                                             {category.subcategories.map((subCategory) => (
                                                 <div key={subCategory.name} className="mb-2">
-                                                    <p className="font-medium">{subCategory.name}</p>
+                                                    <div className="flex space-x-2 mb-2">
+                                                        <img src={urlFor(subCategory.icon)} className="w-6" alt="" />
+                                                        <p className="font-semibold">
+                                                            {subCategory.name} ({categoryCounts[subCategory.name] || 0})
+                                                        </p>
+                                                    </div>
                                                     <div className="pl-4 mt-1 space-y-2">
                                                         {subCategory.subSubcategories.map((subSub) => (
                                                             <div
                                                                 key={subSub.name}
-                                                                className="flex items-center space-x-2"
+                                                                className="flex items-center mb-2 space-x-2"
                                                             >
                                                                 <input
                                                                     type="checkbox"
@@ -115,7 +152,11 @@ export default function TopBar({ categories }) {
                                                                     }
                                                                 />
                                                                 <label htmlFor={subSub.name} className="text-sm">
-                                                                    {subSub.name}
+                                                                    {subSub.name} (
+                                                                    {products.filter((product) =>
+                                                                        product.node.tags.includes(subSub.name)
+                                                                    ).length || 0}
+                                                                    )
                                                                 </label>
                                                             </div>
                                                         ))}

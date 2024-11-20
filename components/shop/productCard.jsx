@@ -53,22 +53,24 @@ function ProductCard({ product }) {
             </Link>
 
             {/* Content */}
-            <div className="h-48 lg:h-auto p-4 flex flex-col justify-between">
+            <div className="h-auto lg:h-auto p-4 flex flex-col justify-between">
                 <div>
-                    <div className="font-primary text-palette-primary text-xl font-semibold truncate">{title}</div>
-                    <div className="text-sm text-gray-500 mt-2 line-clamp-2 font-body">{description}</div>
+                    <div className="font-body text-palette-primary text-lg lg:text-xl font-semibold ">{title}</div>
+                    <div className="text-xs mb-2 lg:text-sm text-gray-500  mt-2 line-clamp-2 font-body">
+                        {description}
+                    </div>
                 </div>
                 <div>
-                    <div className="text-lg text-gray-600 font-primary font-semibold mb-2">ab EUR 29,-</div>
-                    <div className="flex  space-x-2 flex-wrap">
+                    <div className="flex flex-wrap gap-x-2 gap-y-2">
                         {formattedVariants["XL"]?.colors.map(({ color }, index) => (
                             <div
                                 key={`color-${index}`}
-                                className="w-6 h-6 block rounded-full border-2 border-white shadow"
+                                className="w-4 h-4 lg:w-6 lg:h-6 block rounded-full border-2 border-white shadow"
                                 style={{ background: getColorHex(color) }}
                             />
                         ))}
-                    </div>
+                    </div>{" "}
+                    <div className="text-lg font-body text-gray-600 font-primary font-semibold mb-2">ab EUR 29,-</div>
                 </div>
             </div>
         </motion.div>

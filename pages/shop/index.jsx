@@ -47,7 +47,11 @@ export default function Shop({ products, collections, globalData, collection }) 
         <MainContainer>
             <div className="grid grid-cols-12 px-4 lg:px-0">
                 <Sidebar activeCategory={collection} categories={globalData.shop.categories}></Sidebar>
-                <TopBar activeCategory={collection} categories={globalData.shop.categories}></TopBar>
+                <TopBar
+                    activeCategory={collection}
+                    products={products}
+                    categories={globalData.shop.categories}
+                ></TopBar>
                 {filteredProducts.length > 0 ? (
                     <ProductListings products={filteredProducts}></ProductListings>
                 ) : (
