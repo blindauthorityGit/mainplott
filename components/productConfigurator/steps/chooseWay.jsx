@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import useStore from "@/store/store";
 import ContentWrapper from "../components/contentWrapper";
 import { motion } from "framer-motion";
-import ChoiceCard from "@/components/ChoiceCard"; // Card component for options
+import ChoiceCard from "@/components/choiceCard"; // Card component for options
 import { FiEdit, FiGrid } from "react-icons/fi"; // Example icons
 import { H3, P } from "@/components/typography";
 
