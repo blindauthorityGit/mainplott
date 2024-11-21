@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import ContentWrapper from "../components/contentWrapper";
 import CustomCheckBox from "@/components/inputs/customCheckBox";
 import GeneralCheckBox from "@/components/inputs/generalCheckbox";
+import useIsMobile from "@/hooks/isMobile";
+import MobileColorSelector from "../mobile/colorChoose";
 
 // STORE
 import useStore from "@/store/store"; // Your Zustand store
@@ -13,6 +15,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     const [selectedSize, setSelectedSize] = useState(purchaseData.selectedSize || null);
     const [selectedColor, setSelectedColor] = useState(purchaseData.selectedColor || null);
     const [isChecked, setIsChecked] = useState(purchaseData.tryout || false);
+    const isMobile = useIsMobile();
 
     // Format variants for easier access
     const formattedVariants = formatVariants(product.variants);
@@ -102,6 +105,14 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
 
     return (
         <div className="flex flex-col lg:px-16 lg:mt-8">
+            {/* Mobile Color Selector */}
+            {isMobile && selectedSize && (
+                <MobileColorSelector
+                    colors={formattedVariants[selectedSize]?.colors}
+                    selectedColor={selectedColor}
+                    onColorChange={handleColorChange}
+                />
+            )}
             <ContentWrapper data={product}>
                 <div className="flex space-x-3 items-center gap-8 lg:mt-16">
                     <div className="left font-body font-semibold">Größe</div>
@@ -119,7 +130,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                         ))}
                     </div>
                 </div>
-                {selectedSize && (
+                {!isMobile && selectedSize && (
                     <div className="flex space-x-3 mt-4 items-center gap-8 lg:mb-16">
                         <div className="left font-body font-semibold">Farbe</div>
                         <div className="right flex flex-wrap -mx-1 -my-1 ">

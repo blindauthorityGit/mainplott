@@ -370,13 +370,17 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
                 {/* Dynamic Content with entry/exit animation */}
                 <div className="flex-grow mb-8 px-4 lg:px-0">
-                    <AnimatePresence mode="wait" initial={false}>
+                    <AnimatePresence mode="wait" layout initial={false}>
                         <motion.div
+                            layout
                             key={currentStep}
                             initial={{ opacity: 0, x: -10 }} // Slide from left for entry animation
                             animate={{ opacity: 1, x: 0 }} // Fade in and position to center
                             exit={{ opacity: 0, x: 10 }} // Slide out to the right for exit animation
                             transition={{ duration: 0.3, ease: "easeInOut" }}
+                            // style={{ willChange: "auto" }}
+                            // // Enable position layout animations
+                            // layoutScroll // Keep layout changes from affecting scrollable/fixed elements
                         >
                             {children}
                         </motion.div>
