@@ -53,6 +53,8 @@ const KonvaLayer = forwardRef(
         const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
         const [isDraggingGraphic, setIsDraggingGraphic] = useState(false);
 
+        const [lastTouchDistance, setLastTouchDistance] = useState(null);
+
         // New states to track the loaded status of images
         const [isProductImageLoaded, setIsProductImageLoaded] = useState(false);
         const [isUploadedGraphicLoaded, setIsUploadedGraphicLoaded] = useState(false);
@@ -280,8 +282,52 @@ const KonvaLayer = forwardRef(
             }
         };
 
+        const handleZoomChange = (newZoom) => {
+            setZoomLevel(newZoom);
+            if (stageRef.current) {
+                stageRef.current.scale({ x: newZoom, y: newZoom });
+                stageRef.current.batchDraw();
+            }
+        };
+
+        // Pinch-to-Zoom Logic
+        const handleTouchStart = (e) => {
+            if (e.touches.length === 2) {
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const distance = Math.sqrt(
+                    Math.pow(touch1.clientX - touch2.clientX, 2) + Math.pow(touch1.clientY - touch2.clientY, 2)
+                );
+                setLastTouchDistance(distance);
+            }
+        };
+
+        const handleTouchMove = (e) => {
+            if (e.touches.length === 2 && lastTouchDistance) {
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const distance = Math.sqrt(
+                    Math.pow(touch1.clientX - touch2.clientX, 2) + Math.pow(touch1.clientY - touch2.clientY, 2)
+                );
+
+                const zoomDelta = distance / lastTouchDistance;
+                const newZoomLevel = Math.min(Math.max(zoomLevel * zoomDelta, 1), 3); // Limit zoom between 1 and 3
+                handleZoomChange(newZoomLevel);
+                setLastTouchDistance(distance);
+            }
+        };
+
+        const handleTouchEnd = () => {
+            setLastTouchDistance(null);
+        };
+
         return (
-            <div>
+            <div
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                style={{ touchAction: "none" }}
+            >
                 <Stage
                     ref={stageRef}
                     className="mix-blend-multiply"

@@ -108,7 +108,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     // Swipe handlers with checks for enabled state
     const swipeHandlers = useSwipeable({
         onSwipedLeft: () => {
-            if (!isNextDisabled(currentStep, steps, purchaseData)) {
+            if (!isNextDisabled(currentStep, steps, purchaseData) && steps[currentStep] !== "Design") {
                 handleNextStep({
                     currentStep,
                     steps,
@@ -120,7 +120,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
             }
         },
         onSwipedRight: () => {
-            if (!isPrevDisabled(currentStep)) {
+            if (!isPrevDisabled(currentStep) && steps[currentStep] !== "Design") {
                 handlePrevStep({
                     currentStep,
                     steps,
