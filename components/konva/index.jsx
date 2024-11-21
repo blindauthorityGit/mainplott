@@ -293,26 +293,45 @@ const KonvaLayer = forwardRef(
         // Pinch-to-Zoom Logic
         const handleTouchStart = (e) => {
             if (e.touches.length === 2) {
-                const touch1 = e.touches[0];
-                const touch2 = e.touches[1];
-                const distance = Math.sqrt(
-                    Math.pow(touch1.clientX - touch2.clientX, 2) + Math.pow(touch1.clientY - touch2.clientY, 2)
-                );
+                const [touch1, touch2] = e.touches;
+                const distance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
                 setLastTouchDistance(distance);
             }
         };
 
         const handleTouchMove = (e) => {
-            if (e.touches.length === 2 && lastTouchDistance) {
-                const touch1 = e.touches[0];
-                const touch2 = e.touches[1];
-                const distance = Math.sqrt(
-                    Math.pow(touch1.clientX - touch2.clientX, 2) + Math.pow(touch1.clientY - touch2.clientY, 2)
-                );
+            if (e.touches.length === 2) {
+                const [touch1, touch2] = e.touches;
+                const distance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
 
-                const zoomDelta = distance / lastTouchDistance;
-                const newZoomLevel = Math.min(Math.max(zoomLevel * zoomDelta, 1), 3); // Limit zoom between 1 and 3
-                handleZoomChange(newZoomLevel);
+                const center = {
+                    x: (touch1.clientX + touch2.clientX) / 2,
+                    y: (touch1.clientY + touch2.clientY) / 2,
+                };
+
+                if (lastTouchDistance) {
+                    const scaleDelta = (distance - lastTouchDistance) * 0.005; // Slower zoom
+                    const newZoomLevel = Math.max(1, Math.min(zoomLevel + scaleDelta, 3));
+
+                    if (stageRef.current) {
+                        const stage = stageRef.current;
+                        const scaleFactor = newZoomLevel / zoomLevel;
+
+                        // Calculate the new position to keep the zoom centered
+                        const newPos = {
+                            x: center.x - scaleFactor * (center.x - stage.x()),
+                            y: center.y - scaleFactor * (center.y - stage.y()),
+                        };
+
+                        stage.scale({ x: newZoomLevel, y: newZoomLevel });
+                        stage.position(newPos);
+                        stage.batchDraw();
+
+                        setStagePosition(newPos);
+                        setZoomLevel(newZoomLevel);
+                    }
+                }
+
                 setLastTouchDistance(distance);
             }
         };
