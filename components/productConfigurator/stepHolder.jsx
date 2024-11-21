@@ -11,6 +11,7 @@ import { useRouter } from "next/router";
 
 //Hooks
 import useIsMobile from "@/hooks/isMobile";
+import { useSwipeable } from "react-swipeable";
 
 // Dynamically import the KonvaLayer component with no SSR
 const KonvaLayer = dynamic(() => import("@/components/konva"), { ssr: false });
@@ -100,6 +101,24 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         }
         console.log(purchaseData);
     };
+
+    // Add swipe handlers
+    const swipeHandlers = useSwipeable({
+        onSwipedLeft: () => {
+            // Swipe left -> Go to the next step
+            if (isMobile) {
+                handleNextStep();
+            }
+        },
+        onSwipedRight: () => {
+            // Swipe right -> Go to the previous step
+            if (isMobile) {
+                handlePrevStep();
+            }
+        },
+        trackTouch: true, // Ensures touch gestures are tracked
+        preventDefaultTouchmoveEvent: true, // Prevent scrolling while swiping
+    });
 
     // Set the container dimensions in Zustand when the image is being displayed
     useEffect(() => {
@@ -242,7 +261,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     }, [steps]);
 
     return (
-        <div className="grid grid-cols-12 lg:px-24 lg:gap-4 h-full">
+        <div className="grid grid-cols-12 lg:px-24 lg:gap-4 h-full" {...swipeHandlers}>
             {/* Left - Product Image / Konva Layer with fade in/out animation */}
             <div className="col-span-12 lg:col-span-6 relative mb-4 lg:mb-0" ref={containerRef}>
                 <div className="w-full flex items-center justify-center lg:min-h-[840px] lg:max-h-[860px] relative">

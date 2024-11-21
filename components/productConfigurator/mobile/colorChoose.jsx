@@ -27,15 +27,16 @@ const MobileColorSelector = ({ colors, selectedColor, onColorChange }) => {
     return createPortal(
         <div>
             {/* Floating Button */}
-            <button
-                onClick={toggleColorSelector}
-                className="absolute top-24 left-4 border-4 border-textColor text-textColor p-3 rounded-full shadow-lg z-50 flex items-center justify-center gap-2 transition-transform hover:scale-105"
-                aria-label="Choose Color"
-            >
-                <FaPalette size={24} />
-                <span className="text-sm font-semibold hidden sm:block">Colors</span>
-            </button>
-
+            <div className="absolute top-24 left-4 ">
+                <button
+                    onClick={toggleColorSelector}
+                    className=" border-4 border-textColor text-primaryColor p-3 rounded-[20px] shadow-lg z-50 flex items-center justify-center gap-2 transition-transform hover:scale-105"
+                    aria-label="Choose Color"
+                >
+                    <FaPalette size={24} />
+                </button>{" "}
+                <span className="text-xs font-semibold font-body">Farben</span>
+            </div>
             {/* Color Selector Dropdown */}
             <AnimatePresence>
                 {isOpen && (
@@ -52,8 +53,8 @@ const MobileColorSelector = ({ colors, selectedColor, onColorChange }) => {
                             {colors.map((color, index) => (
                                 <button
                                     key={`mobile-color-${index}`}
-                                    className={`w-8 h-8 rounded-full border-2 ${
-                                        selectedColor === color.color ? "border-primaryColor" : "border-gray-300"
+                                    className={`w-8 h-8 rounded-full border ${
+                                        selectedColor === color.color ? "border-textColor border-2" : "border-textColor"
                                     } hover:scale-110 transition-transform`}
                                     style={{ backgroundColor: getColorHex(color.color) }}
                                     onClick={() => {
