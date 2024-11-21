@@ -155,7 +155,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     };
 
     return (
-        <div className="flex flex-col lg:px-16 lg:mt-8 font-body">
+        <div className="flex flex-col lg:px-16 lg:mt-8 font-body ">
             <ContentWrapper data={stepData} showToggle />
 
             {/* Material-UI Tabs Component */}

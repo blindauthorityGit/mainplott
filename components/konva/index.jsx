@@ -6,6 +6,7 @@ import { FiZoomIn, FiZoomOut, FiRefreshCw } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { exportCanvas } from "@/functions/exportCanvas"; // Adjust path as needed
 import dynamic from "next/dynamic";
+import MobileSliders from "@/components/productConfigurator/mobile/mobileSliders";
 
 import dataURLToBlob from "@/functions/dataURLToBlob";
 
@@ -440,8 +441,15 @@ const KonvaLayer = forwardRef(
                     className="top-16 right-10 flex-col"
                     style={{ position: "absolute", display: "flex", gap: "10px" }}
                 >
+                    <MobileSliders
+                        containerWidth={containerWidth}
+                        containerHeight={containerHeight}
+                        zoomLevel={zoomLevel}
+                        setZoomLevel={setZoomLevel}
+                    />
+
                     <Button
-                        className="!bg-primaryColor !text-2xl"
+                        className="!bg-primaryColor !text-2xl !hidden lg:block"
                         onClick={handleZoomIn}
                         variant="contained"
                         color="primary"
@@ -449,14 +457,14 @@ const KonvaLayer = forwardRef(
                         <FiZoomIn />
                     </Button>
                     <Button
-                        className="!bg-primaryColor !text-2xl"
+                        className="!bg-primaryColor !text-2xl !hidden lg:block"
                         onClick={handleZoomOut}
                         variant="contained"
                         color="primary"
                     >
                         <FiZoomOut />
                     </Button>
-                    <Button onClick={handleResetZoom} variant="contained">
+                    <Button onClick={handleResetZoom} className=" !hidden lg:block" variant="contained">
                         <FiRefreshCw />
                     </Button>
                 </div>

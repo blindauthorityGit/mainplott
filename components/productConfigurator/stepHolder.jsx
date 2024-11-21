@@ -401,7 +401,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 </div>
 
                 {/* Dynamic Content with entry/exit animation */}
-                <div className="flex-grow mb-8 px-4 lg:px-0">
+                <div className="flex-grow mb-8 px-4 lg:px-0 !z-[-1]">
                     <AnimatePresence mode="wait" layout initial={false}>
                         <motion.div
                             layout
