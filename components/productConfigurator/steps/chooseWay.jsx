@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import useStore from "@/store/store";
 import ContentWrapper from "../components/contentWrapper";
 import { motion } from "framer-motion";
 import ChoiceCard from "@/components/choiceCard"; // Card component for options
 import { FiEdit, FiGrid } from "react-icons/fi"; // Example icons
-import { H3, P } from "@/components/typography";
+import { P } from "@/components/typography";
 
 export default function ChooseWay() {
     const { purchaseData, setPurchaseData } = useStore(); // Zustand global state
@@ -20,21 +20,11 @@ export default function ChooseWay() {
         title: "DESIGN PLATZIEREN",
     };
 
-    // useEffect(() => {
-    //     console.log("Current selection:", selectedOption);
-    //     console.log(purchaseData);
-    // }, [selectedOption]);
-
     return (
         <div className="lg:px-16 lg:mt-8 font-body">
             <ContentWrapper data={stepData}>
-                {/* Step Title */}
-                {/* <H3 klasse="!mb-6 text-center">How would you like to place your design?</H3> */}
-
                 {/* Options */}
-                <div className="flex flex-col md:flex-row gap-6 items-stretch">
-                    {/* Custom Placement */}
-                    {/* Template Placement */}
+                <div className="flex flex-wrap gap-4 justify-center">
                     <ChoiceCard
                         icon={FiGrid}
                         heading="Platzierung nach Vorlage"
@@ -42,7 +32,8 @@ export default function ChooseWay() {
                         isActive={selectedOption === "template"}
                         configuratorValue={"template"}
                         onClick={() => handleSelection("template")}
-                    />{" "}
+                        klasse="w-1/2 sm:w-auto text-center"
+                    />
                     <ChoiceCard
                         icon={FiEdit}
                         heading="Freie Platzierung"
@@ -50,12 +41,13 @@ export default function ChooseWay() {
                         isActive={selectedOption === "configurator"}
                         configuratorValue={"config"}
                         onClick={() => handleSelection("configurator")}
+                        klasse="w-1/2 sm:w-auto text-center"
                     />
                 </div>
 
                 {/* Description */}
                 <motion.div
-                    className="mt-6 text-center"
+                    className="mt-6 text-center px-4"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.3 }}

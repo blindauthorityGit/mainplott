@@ -39,7 +39,7 @@ export default function ChoiceCard({ icon: Icon, heading, description, configura
 
             {/* Main Content */}
             <motion.div
-                className={`relative w-full h-full lg:p-8 rounded-lg border-2 border-textColor flex flex-col justify-between ${
+                className={`relative w-full h-full p-4 lg:p-8 rounded-lg border-2 border-textColor flex flex-col justify-between ${
                     isActive ? "border-primaryColor" : "border-gray-300"
                 } transition-all duration-200 cursor-pointer shadow hover:shadow-lg`}
                 style={{ zIndex: 1 }}
@@ -52,10 +52,10 @@ export default function ChoiceCard({ icon: Icon, heading, description, configura
                 </div>
 
                 {/* Heading */}
-                <H4 klasse="text-xl font-bold text-textColor !text-center mb-2">{heading}</H4>
+                <H4 klasse="text-base lg:text-xl font-bold text-textColor !text-center mb-2">{heading}</H4>
 
                 {/* Description */}
-                <P klasse="text-center">{description}</P>
+                <P klasse="text-center text-xs font-body ">{description}</P>
             </motion.div>
         </div>
     );

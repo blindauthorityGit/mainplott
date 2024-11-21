@@ -13,6 +13,9 @@ import { useRouter } from "next/router";
 import useIsMobile from "@/hooks/isMobile";
 import { useSwipeable } from "react-swipeable";
 
+//FUNCTIONS
+import { isNextDisabled, isPrevDisabled, handlePrevStep, handleNextStep } from "@/functions/stepHandlers";
+
 // Dynamically import the KonvaLayer component with no SSR
 const KonvaLayer = dynamic(() => import("@/components/konva"), { ssr: false });
 // import KonvaLayer from "@/components/konva/konvaWrapper"; // Normal import
@@ -102,22 +105,32 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         console.log(purchaseData);
     };
 
-    // Add swipe handlers
+    // Swipe handlers with checks for enabled state
     const swipeHandlers = useSwipeable({
         onSwipedLeft: () => {
-            // Swipe left -> Go to the next step
-            if (isMobile) {
-                handleNextStep();
+            if (!isNextDisabled(currentStep, steps, purchaseData)) {
+                handleNextStep({
+                    currentStep,
+                    steps,
+                    setCurrentStep,
+                    purchaseData,
+                    isMobile,
+                    handleExport,
+                });
             }
         },
         onSwipedRight: () => {
-            // Swipe right -> Go to the previous step
-            if (isMobile) {
-                handlePrevStep();
+            if (!isPrevDisabled(currentStep)) {
+                handlePrevStep({
+                    currentStep,
+                    steps,
+                    setCurrentStep,
+                    isMobile,
+                });
             }
         },
-        trackTouch: true, // Ensures touch gestures are tracked
-        preventDefaultTouchmoveEvent: true, // Prevent scrolling while swiping
+        trackTouch: true,
+        preventDefaultTouchmoveEvent: true,
     });
 
     // Set the container dimensions in Zustand when the image is being displayed
@@ -407,11 +420,10 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 </div>
 
                 {/* Navigation Buttons - Positioned at the bottom */}
-                <div className="mt-auto lg:flex justify-between hidden">
+                <div className="mt-auto lg:flex justify-between hidden ">
                     <StepButton
-                        onClick={handlePrevStep}
-                        klasse="px-4 py-2 bg-textColor rounded"
-                        disabled={currentStep === 0}
+                        onClick={() => handlePrevStep(currentStep, steps, setCurrentStep, isMobile)}
+                        disabled={isPrevDisabled(currentStep)}
                     >
                         zurück
                     </StepButton>
@@ -427,10 +439,10 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                         </StepButton>
                     ) : (
                         <StepButton
-                            onClick={handleNextStep}
-                            className="px-4 py-2 bg-textColor text-white rounded"
-                            klasse="bg-textColor"
-                            disabled={isNextDisabled()}
+                            onClick={() =>
+                                handleNextStep(currentStep, steps, setCurrentStep, purchaseData, isMobile, handleExport)
+                            }
+                            disabled={isNextDisabled(currentStep, steps, purchaseData)}
                         >
                             Weiter
                         </StepButton>

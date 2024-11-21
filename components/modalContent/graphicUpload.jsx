@@ -79,14 +79,14 @@ const GraphicUploadModalContent = ({
     };
 
     return (
-        <div className="grid grid-cols-12 gap-10">
-            <div className="col-span-6 relative">
+        <div className="grid grid-cols-12 lg:gap-10">
+            <div className="col-span-12 lg:col-span-6 relative">
                 <ContainImage
                     src={isPDF ? preview : URL.createObjectURL(file)}
-                    mobileSrc={URL.createObjectURL(file)}
+                    mobileSrc={isPDF ? preview : URL.createObjectURL(file)}
                     alt="Cover Background"
                     klasse={"absolute"}
-                    className="lg:mt-20 lg:w-full relative lg:static mx-auto"
+                    className="lg:mt-20 w-full relative lg:static mx-auto"
                 />
 
                 <div className="absolute -top-4 -right-6">
@@ -102,11 +102,11 @@ const GraphicUploadModalContent = ({
                     onChange={handleFileChange}
                 />
             </div>
-            <div className="col-span-6 flex flex-col justify-center ">
+            <div className="col-span-12 lg:col-span-6 flex flex-col justify-center ">
                 <H2 klasse={hasErrors ? "!text-errorColor" : "!text-successColor"}>
                     {hasErrors ? "Vorsicht, es könnte Probleme geben" : "Super, alles in Ordnung!"}
                 </H2>
-                <p className="font-body text-gray-700 mb-8">
+                <p className="font-body text-gray-700 mb-2 lg:mb-8">
                     {hasErrors ? (
                         <span className="font-semibold">Die Qualität des Drucks könnte beinflusst sein.</span>
                     ) : (
@@ -181,16 +181,16 @@ const GraphicUploadModalContent = ({
                     Design auf garantierte Kompatibilität!
                 </Info>
             </div>
-            <div className="col-span-6 flex justify-center font-body">
+            <div className="col-span-6 flex justify-center font-body mt-2 lg:mt-0 pr-1 lg:pr-0">
                 <button
                     type="button"
                     onClick={handleUploadButtonClick}
-                    className="mt-4 px-4 py-2 bg-primaryColor z-50 text-white rounded-lg hover:bg-primaryColor-600"
+                    className="lg:mt-4 px-4 py-2 bg-primaryColor z-50 text-white rounded-lg hover:bg-primaryColor-600"
                 >
                     Neues Bild hochladen
                 </button>
             </div>
-            <div className="col-span-6">
+            <div className="col-span-6 mt-2 lg:mt-0 pl-1 lg:pl-0">
                 <StepButton
                     onClick={handleNextStep}
                     className="px-4 py-2 bg-textColor text-white rounded"
