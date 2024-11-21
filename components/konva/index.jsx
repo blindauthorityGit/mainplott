@@ -341,12 +341,7 @@ const KonvaLayer = forwardRef(
         };
 
         return (
-            <div
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                style={{ touchAction: "none" }}
-            >
+            <div>
                 <Stage
                     ref={stageRef}
                     className="mix-blend-multiply"
@@ -360,6 +355,10 @@ const KonvaLayer = forwardRef(
                     onDragEnd={handleStageDragEnd}
                     onMouseOver={handleMouseOver}
                     onMouseOut={handleMouseOut}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    style={{ touchAction: "none" }}
                 >
                     <Layer>
                         {/* Product Image - background */}
