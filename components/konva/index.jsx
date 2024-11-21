@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } f
 import { Stage, Layer, Image as KonvaImage, Transformer, Path as KonvaPath } from "react-konva";
 import useStore from "@/store/store"; // Import Zustand store
 import { Button } from "@mui/material"; // Importing a button from Material-UI for exporting the image
-import { FiZoomIn, FiZoomOut } from "react-icons/fi"; // Importing zoom icons from react-icons
+import { FiZoomIn, FiZoomOut, FiRefreshCw } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { exportCanvas } from "@/functions/exportCanvas"; // Adjust path as needed
 import dynamic from "next/dynamic";
@@ -291,6 +291,7 @@ const KonvaLayer = forwardRef(
         };
 
         // Pinch-to-Zoom Logic
+        // Pinch Zoom Functions
         const handleTouchStart = (e) => {
             if (e.touches.length === 2) {
                 const [touch1, touch2] = e.touches;
@@ -304,20 +305,19 @@ const KonvaLayer = forwardRef(
                 const [touch1, touch2] = e.touches;
                 const distance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
 
-                const center = {
-                    x: (touch1.clientX + touch2.clientX) / 2,
-                    y: (touch1.clientY + touch2.clientY) / 2,
-                };
-
                 if (lastTouchDistance) {
-                    const scaleDelta = (distance - lastTouchDistance) * 0.005; // Slower zoom
+                    const scaleDelta = (distance - lastTouchDistance) * 0.002; // Slower zoom
                     const newZoomLevel = Math.max(1, Math.min(zoomLevel + scaleDelta, 3));
 
                     if (stageRef.current) {
                         const stage = stageRef.current;
                         const scaleFactor = newZoomLevel / zoomLevel;
 
-                        // Calculate the new position to keep the zoom centered
+                        const center = {
+                            x: (touch1.clientX + touch2.clientX) / 2,
+                            y: (touch1.clientY + touch2.clientY) / 2,
+                        };
+
                         const newPos = {
                             x: center.x - scaleFactor * (center.x - stage.x()),
                             y: center.y - scaleFactor * (center.y - stage.y()),
@@ -331,7 +331,6 @@ const KonvaLayer = forwardRef(
                         setZoomLevel(newZoomLevel);
                     }
                 }
-
                 setLastTouchDistance(distance);
             }
         };
@@ -340,8 +339,25 @@ const KonvaLayer = forwardRef(
             setLastTouchDistance(null);
         };
 
+        // Reset Zoom and Position
+        const handleResetZoom = () => {
+            setZoomLevel(1);
+            setStagePosition({ x: 0, y: 0 });
+            stageRef.current.scale({ x: 1, y: 1 });
+            stageRef.current.position({ x: 0, y: 0 });
+            stageRef.current.batchDraw();
+        };
+
+        // Prevent dragging at minimum zoom level
+        const isDraggable = zoomLevel > 1;
+
         return (
-            <div>
+            <div
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                style={{ touchAction: "none" }}
+            >
                 <Stage
                     ref={stageRef}
                     className="mix-blend-multiply"
@@ -349,16 +365,12 @@ const KonvaLayer = forwardRef(
                     height={containerHeight}
                     scaleX={zoomLevel}
                     scaleY={zoomLevel}
-                    draggable={!isDraggingGraphic}
+                    draggable={!isDraggingGraphic && isDraggable}
                     x={stagePosition.x}
                     y={stagePosition.y}
                     onDragEnd={handleStageDragEnd}
                     onMouseOver={handleMouseOver}
                     onMouseOut={handleMouseOut}
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
-                    style={{ touchAction: "none" }}
                 >
                     <Layer>
                         {/* Product Image - background */}
@@ -443,6 +455,9 @@ const KonvaLayer = forwardRef(
                         color="primary"
                     >
                         <FiZoomOut />
+                    </Button>
+                    <Button onClick={handleResetZoom} variant="contained">
+                        <FiRefreshCw />
                     </Button>
                 </div>
                 {/* <Button variant="contained" color="primary" onClick={handleExport} style={{ marginTop: "20px" }}>
