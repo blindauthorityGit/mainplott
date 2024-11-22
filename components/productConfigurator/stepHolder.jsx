@@ -427,6 +427,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                     <StepButton
                         onClick={() => handlePrevStep(currentStep, steps, setCurrentStep, isMobile)}
                         disabled={isPrevDisabled(currentStep)}
+                        klasse="bg-textColor"
                     >
                         zurück
                     </StepButton>
@@ -446,6 +447,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                 handleNextStep(currentStep, steps, setCurrentStep, purchaseData, isMobile, handleExport)
                             }
                             disabled={isNextDisabled(currentStep, steps, purchaseData)}
+                            klasse="bg-textColor"
                         >
                             Weiter
                         </StepButton>
