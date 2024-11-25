@@ -157,6 +157,12 @@ export async function getProductByHandle(handle) {
               type
               description
           }
+
+             templatePositions: metafield(namespace: "template", key: "positions") {
+      value
+      type
+      description
+    }
     
           variants(first: 40) {
               edges {

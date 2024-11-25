@@ -5,6 +5,8 @@ import useStore from "@/store/store";
 import ContentWrapper from "../components/contentWrapper";
 import { FiX, FiInfo } from "react-icons/fi";
 import { IconButton } from "@/components/buttons"; // Adjust import path as needed
+import CustomRadioButton from "@/components/inputs/customRadioButton";
+
 // import { handleShowDetails, handleDeleteUpload } from "@/functions/fileHandlers";
 
 // Importing the trash, info, and refresh icons
@@ -29,10 +31,13 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     const [uploadError, setUploadError] = useState(null);
     const [uploadedFile, setUploadedFile] = useState(null);
 
+    const currentSide = activeTab === 0 ? "front" : "back";
+
+    //fr radio buttons
+    const [selectedValue, setSelectedValue] = useState(purchaseData.sides[currentSide]?.position || "");
+
     const containerWidth = purchaseData.containerWidth || 500; // Set a default value for safety
     const containerHeight = purchaseData.containerHeight || 500;
-
-    const currentSide = activeTab === 0 ? "front" : "back";
 
     const handleXChange = (event, newValue) => {
         setPurchaseData({
@@ -154,6 +159,32 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         // description: "Passen Sie das Design auf dem Produkt an.",
     };
 
+    console.log("IS HIER JSON", JSON.parse(product.templatePositions.value).properties);
+
+    const positions = JSON.parse(product.templatePositions.value).properties;
+
+    //radio buttons
+    const handleChange = (value, posX, posY) => {
+        console.log(value);
+
+        // Update the selected value state
+        setSelectedValue(value);
+
+        // Update the purchaseData dynamically based on the current side
+        setPurchaseData({
+            ...purchaseData,
+            sides: {
+                ...purchaseData.sides,
+                [currentSide]: {
+                    ...purchaseData.sides[currentSide], // Preserve existing data for the current side
+                    position: value, // Update the position with the selected value
+                    xPosition: posX,
+                    yPosition: posY,
+                },
+            },
+        });
+    };
+
     return (
         <div className="flex flex-col lg:px-16 lg:mt-8 font-body ">
             <ContentWrapper data={stepData} showToggle />
@@ -217,7 +248,20 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                     <input type="file" hidden onChange={handleGraphicUpload} />
                 </Button>
             ) : purchaseData.configurator === "template" ? (
-                <div>TEST</div>
+                <div className="flex flex-col space-y-2">
+                    {positions[currentSide].default.map((option, index) => (
+                        <CustomRadioButton
+                            key={`radio${index}`}
+                            id={option.name}
+                            name="custom-radio-group"
+                            label={option.name}
+                            icon={option.icon}
+                            value={option.name}
+                            checked={selectedValue === option.name}
+                            onChange={() => handleChange(option.name, option.position.x, option.position.y)} // Pass additional parameters
+                        />
+                    ))}
+                </div>
             ) : (
                 <>
                     <div className="mb-4">

@@ -53,6 +53,27 @@ const KonvaLayer = forwardRef(
         const [zoomLevel, setZoomLevel] = useState(1);
         const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
         const [isDraggingGraphic, setIsDraggingGraphic] = useState(false);
+        const [isGraphicDraggable, setIsGraphicDraggable] = useState(purchaseData.configurator !== "template");
+        const [showTransformer, setShowTransformer] = useState(purchaseData.configurator !== "template");
+
+        useEffect(() => {
+            // Update draggability and transformer visibility when configurator changes
+            setIsGraphicDraggable(purchaseData.configurator !== "template");
+            setShowTransformer(purchaseData.configurator !== "template");
+
+            // Reset transformer when switching modes
+            if (transformerRef.current && uploadedGraphicRef.current) {
+                transformerRef.current.nodes([]);
+                transformerRef.current.getLayer().batchDraw();
+            }
+        }, [purchaseData.configurator]);
+
+        useEffect(() => {
+            if (uploadedGraphicRef.current && showTransformer) {
+                transformerRef.current.nodes([uploadedGraphicRef.current]);
+                transformerRef.current.getLayer().batchDraw();
+            }
+        }, [showTransformer]);
 
         const [lastTouchDistance, setLastTouchDistance] = useState(null);
 
@@ -162,8 +183,8 @@ const KonvaLayer = forwardRef(
                                 uploadedGraphicRef.current.height(newHeight);
                                 uploadedGraphicRef.current.image(img);
                                 uploadedGraphicRef.current.getLayer().batchDraw();
-                                transformerRef.current.nodes([uploadedGraphicRef.current]);
-                                transformerRef.current.getLayer().batchDraw();
+                                transformerRef?.current?.nodes([uploadedGraphicRef.current]);
+                                transformerRef?.current?.getLayer().batchDraw();
                             }
                         };
                     };
@@ -244,6 +265,22 @@ const KonvaLayer = forwardRef(
                 onExportReady(handleExport);
             }
         }, [onExportReady]);
+
+        const handleGraphicDragEnd = (e) => {
+            if (isGraphicDraggable) {
+                setPosition({ x: e.target.x(), y: e.target.y() });
+            }
+        };
+
+        const handleGraphicTransformEnd = (e) => {
+            if (isGraphicDraggable) {
+                const newScale = Math.min(e.target.scaleX(), 2.5);
+                setScale(newScale);
+                e.target.scaleX(newScale);
+                e.target.scaleY(newScale);
+                e.target.getLayer().batchDraw();
+            }
+        };
 
         // Function to handle zoom change
         const handleZoomIn = () => {
@@ -350,7 +387,7 @@ const KonvaLayer = forwardRef(
         };
 
         // Prevent dragging at minimum zoom level
-        const isDraggable = zoomLevel > 1;
+        const isDraggable = true;
 
         return (
             <div
@@ -402,23 +439,17 @@ const KonvaLayer = forwardRef(
                                 onClick={() => {
                                     console.log("Image clicked");
                                 }}
-                                onDragStart={() => setIsDraggingGraphic(true)}
-                                onDragEnd={(e) => {
-                                    setPosition({ x: e.target.x(), y: e.target.y() });
-                                    setIsDraggingGraphic(false);
+                                onDragStart={() => {
+                                    if (purchaseData.configurator !== "template") {
+                                        setIsDraggingGraphic(true);
+                                    }
                                 }}
-                                onTransformEnd={(e) => {
-                                    // Scale is applied via transform, hence we update the state
-                                    const newScale = Math.min(e.target.scaleX(), 2.5); // Cap the scale at 2.5
-                                    setScale(newScale);
-                                    e.target.scaleX(newScale);
-                                    e.target.scaleY(newScale);
-                                    e.target.getLayer().batchDraw();
-                                }}
+                                onDragEnd={handleGraphicDragEnd}
+                                onTransformEnd={handleGraphicTransformEnd}
                             />
                         )}
                         {/* Transformer - Only apply if a graphic is present */}
-                        {(uploadedGraphicFile || uploadedGraphicURL) && (
+                        {(uploadedGraphicFile || uploadedGraphicURL) && showTransformer && (
                             <Transformer
                                 ref={transformerRef}
                                 boundBoxFunc={(oldBox, newBox) => {
@@ -449,7 +480,7 @@ const KonvaLayer = forwardRef(
                     />
 
                     <Button
-                        className="!bg-primaryColor !text-2xl !hidden lg:block"
+                        className="!bg-textColor !text-2xl !hidden lg:!block"
                         onClick={handleZoomIn}
                         variant="contained"
                         color="primary"
@@ -457,14 +488,14 @@ const KonvaLayer = forwardRef(
                         <FiZoomIn />
                     </Button>
                     <Button
-                        className="!bg-primaryColor !text-2xl !hidden lg:block"
+                        className="!bg-textColor !text-2xl !hidden lg:!block"
                         onClick={handleZoomOut}
                         variant="contained"
                         color="primary"
                     >
                         <FiZoomOut />
                     </Button>
-                    <Button onClick={handleResetZoom} className=" !hidden lg:block" variant="contained">
+                    <Button onClick={handleResetZoom} className=" !hidden lg:!block" variant="contained">
                         <FiRefreshCw />
                     </Button>
                 </div>

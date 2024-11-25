@@ -115,7 +115,7 @@ export default function MobileSliders({ containerWidth, containerHeight, zoomLev
     return (
         <div>
             {/* Floating Buttons for Sliders */}
-            <div className="fixed top-4 right-4 flex flex-col gap-4 z-50">
+            <div className="fixed top-4 right-4 flex flex-col gap-4 z-50 lg:hidden">
                 {controls.map((control) => (
                     <button
                         key={control.key}
