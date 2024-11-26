@@ -8,8 +8,10 @@ import AdditionalInfoField from "@/components/inputs/infoField";
 import { H3, P } from "@/components/typography";
 import { motion } from "framer-motion";
 import GeneralCheckBox from "@/components/inputs/generalCheckbox";
+import formatVariants from "@/functions/formatVariants"; // Function for formatting variants
+import NumberInputField from "@/components/inputs/numberInputField"; // Adjust the import path as necessary
 
-export default function DefineOptions() {
+export default function DefineOptions({ product }) {
     const { purchaseData, setPurchaseData } = useStore(); // Zustand global state
     const [isChecked, setIsChecked] = useState(purchaseData.profiDatenCheck || false); // Initialize based on Zustand state
 
@@ -19,6 +21,10 @@ export default function DefineOptions() {
     const [price, setPrice] = useState(0);
     const [discountApplied, setDiscountApplied] = useState(false);
     const [additionalInfo, setAdditionalInfo] = useState("");
+
+    const formattedVariants = formatVariants(product.variants);
+
+    console.log(formattedVariants);
 
     const stepData = {
         title: "Lookin' good",
@@ -97,6 +103,16 @@ export default function DefineOptions() {
             <ContentWrapper data={stepData}>
                 {/* Quantity Selector */}
                 <QuantitySelector quantity={quantity} setQuantity={setQuantity} />
+                {Object.keys(formattedVariants).map((item) => (
+                    <NumberInputField
+                        key={item}
+                        label={item}
+                        value={0}
+                        // onIncrement={() => handleIncrement(item.id)}
+                        // onDecrement={() => handleDecrement(item.id)}
+                        // onChange={(e) => handleInputChange(item.id, e.target.value)}
+                    />
+                ))}
 
                 {/* Veredelungen Dropdown */}
                 {/* <Dropdown

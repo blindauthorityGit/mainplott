@@ -60,11 +60,14 @@ const KonvaLayer = forwardRef(
             // Update draggability and transformer visibility when configurator changes
             setIsGraphicDraggable(purchaseData.configurator !== "template");
             setShowTransformer(purchaseData.configurator !== "template");
-
+            console.log(purchaseData.configurator !== "template");
             // Reset transformer when switching modes
             if (transformerRef.current && uploadedGraphicRef.current) {
                 transformerRef.current.nodes([]);
                 transformerRef.current.getLayer().batchDraw();
+            }
+            if (purchaseData.configurator == "template") {
+                handleResetZoom();
             }
         }, [purchaseData.configurator]);
 
@@ -403,7 +406,7 @@ const KonvaLayer = forwardRef(
                     height={containerHeight}
                     scaleX={zoomLevel}
                     scaleY={zoomLevel}
-                    draggable={!isDraggingGraphic && isDraggable}
+                    draggable={isDraggable}
                     x={stagePosition.x}
                     y={stagePosition.y}
                     onDragEnd={handleStageDragEnd}
@@ -428,7 +431,7 @@ const KonvaLayer = forwardRef(
                         {(uploadedGraphicFile || uploadedGraphicURL) && (
                             <KonvaImage
                                 ref={uploadedGraphicRef}
-                                draggable
+                                draggable={isGraphicDraggable} // Disable dragging in template mode
                                 x={position.x}
                                 y={position.y}
                                 offsetX={60} // Set offset to scale from the center (half of the width)

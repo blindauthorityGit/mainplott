@@ -155,7 +155,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     };
 
     const stepData = {
-        title: "Design anpassen",
+        title: purchaseData.configurator == "template" ? "Vorlage wählen" : "Design platzieren",
         // description: "Passen Sie das Design auf dem Produkt an.",
     };
 

@@ -52,7 +52,7 @@ export default function ChooseWay() {
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.3 }}
                 >
-                    {selectedOption === "configurator" ? (
+                    {selectedOption == "configurator" ? (
                         <P>
                             In the next step, you can use the configurator to drag, resize, and position your graphic
                             wherever you like.
