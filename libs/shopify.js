@@ -168,6 +168,10 @@ export async function getProductByHandle(handle) {
               edges {
                   node {
                       title     
+                         priceV2 {
+                          amount
+                          currencyCode
+                      }
                       selectedOptions {
                           name
                           value

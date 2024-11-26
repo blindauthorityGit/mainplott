@@ -28,20 +28,29 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
 
         console.log(firstSize, firstColor);
 
-        if (firstSize && firstColor) {
-            setSelectedSize(firstSize);
-            setSelectedColor(firstColor);
-            setSelectedImage(formattedVariants[firstSize]?.colors?.[0]?.image);
+        if (purchaseData.variants.size && purchaseData.variants.color) {
+            setSelectedSize(purchaseData.variants.size);
+            setSelectedColor(purchaseData.variants.color);
+            // setSelectedImage(
+            //     formattedVariants[purchaseData.variants.size]?.colors?.[purchaseData.variants.color]?.image
+            // );
+            setActiveVariant(purchaseData.variants.size, purchaseData.variants.color);
+        } else {
+            if (firstSize && firstColor) {
+                setSelectedSize(firstSize);
+                setSelectedColor(firstColor);
+                setSelectedImage(formattedVariants[firstSize]?.colors?.[0]?.image);
 
-            // Update Zustand store
-            setPurchaseData({
-                ...purchaseData,
-                selectedSize: firstSize,
-                selectedColor: firstColor,
-            });
+                // Update Zustand store
+                setPurchaseData({
+                    ...purchaseData,
+                    selectedSize: firstSize,
+                    selectedColor: firstColor,
+                });
 
-            // Set the active variant
-            setActiveVariant(firstSize, firstColor);
+                // Set the active variant
+                setActiveVariant(firstSize, firstColor);
+            }
         }
     };
 
@@ -75,26 +84,61 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     };
 
     // Handle size change
+    // Handle size change
     const handleSizeChange = (size) => {
         setSelectedSize(size);
-        setPurchaseData({ ...purchaseData, selectedSize: size });
-        // Update selected image when size changes
-        const firstColor = formattedVariants[size].colors[0]?.color;
-        const firstImage = formattedVariants[size].colors[0]?.image;
+
+        // Get the first available color for the new size
+        const firstColor = formattedVariants[size]?.colors?.[0]?.color || null;
+        const firstImage = formattedVariants[size]?.colors?.[0]?.image || null;
+
         setSelectedImage(firstImage);
         setSelectedColor(firstColor);
+
+        // Update purchaseData without overwriting unrelated sizes
+        const updatedVariants = {
+            ...purchaseData.variants, // Preserve existing variants
+            [size]: {
+                ...purchaseData.variants?.[size], // Preserve existing data for this size
+                size: size,
+                color: firstColor, // Update to the first color of the new size
+                quantity: purchaseData.variants?.[size]?.quantity || 1, // Preserve quantity or default to 1
+            },
+        };
+
+        setPurchaseData({
+            ...purchaseData,
+            variants: updatedVariants,
+        });
+
         setActiveVariant(size, firstColor);
+        console.log(purchaseData);
     };
 
     // Handle color change
     const handleColorChange = (color) => {
         setSelectedColor(color);
-        setPurchaseData({ ...purchaseData, selectedColor: color });
-        // Update selected image when color changes
-        const image = formattedVariants[selectedSize]?.colors.find((c) => c.color === color)?.image;
+
+        // Update purchaseData for the currently selected size without overwriting unrelated sizes
+        const updatedVariants = {
+            ...purchaseData.variants, // Preserve existing variants
+            [selectedSize]: {
+                ...purchaseData.variants?.[selectedSize], // Preserve existing data for this size
+                color: color, // Update color only
+            },
+        };
+
+        setPurchaseData({
+            ...purchaseData,
+            variants: updatedVariants,
+        });
+
+        // Update selected image for the new color
+        const image = formattedVariants[selectedSize]?.colors.find((c) => c.color === color)?.image || null;
         setSelectedImage(image);
-        // Set the active variant in Zustand store
+
         setActiveVariant(selectedSize, color);
+        console.log(purchaseData);
     };
 
     const handleToggle = (newState) => {

@@ -21,14 +21,11 @@ export default function DefineOptions({ product }) {
     const [price, setPrice] = useState(0);
     const [discountApplied, setDiscountApplied] = useState(false);
     const [additionalInfo, setAdditionalInfo] = useState("");
+    const stepData = {
+        title: "Staffelung",
+    };
 
     const formattedVariants = formatVariants(product.variants);
-
-    console.log(formattedVariants);
-
-    const stepData = {
-        title: "Lookin' good",
-    };
 
     const veredelungOptions = [
         { label: "Druck", value: "druck" },
@@ -70,7 +67,6 @@ export default function DefineOptions({ product }) {
     }, [quantity, veredelung, coupon, discountApplied, isChecked, price]);
 
     useEffect(() => {
-        console.log(price);
         setPurchaseData({
             ...purchaseData,
             price: price,
@@ -78,7 +74,6 @@ export default function DefineOptions({ product }) {
     }, [price]);
 
     useEffect(() => {
-        console.log(price);
         setPurchaseData({
             ...purchaseData,
             quantity: quantity,
@@ -102,18 +97,63 @@ export default function DefineOptions({ product }) {
         <div className="lg:px-16 lg:mt-8 font-body">
             <ContentWrapper data={stepData}>
                 {/* Quantity Selector */}
-                <QuantitySelector quantity={quantity} setQuantity={setQuantity} />
-                {Object.keys(formattedVariants).map((item) => (
-                    <NumberInputField
-                        key={item}
-                        label={item}
-                        value={0}
-                        // onIncrement={() => handleIncrement(item.id)}
-                        // onDecrement={() => handleDecrement(item.id)}
-                        // onChange={(e) => handleInputChange(item.id, e.target.value)}
-                    />
-                ))}
+                {/* <QuantitySelector quantity={quantity} setQuantity={setQuantity} /> */}
+                {Object.keys(formattedVariants).map((size) => {
+                    const currentVariant = purchaseData.variants?.[size] || {
+                        size,
+                        color: purchaseData.variants?.color || null, // Default color if not set
+                        quantity: 0, // Default quantity
+                    };
+                    console.log(size);
+                    console.log(purchaseData.variants?.[size]);
 
+                    return (
+                        <NumberInputField
+                            key={size}
+                            label={size}
+                            value={currentVariant.quantity} // Prefill with the current quantity for this size
+                            onIncrement={() => {
+                                setPurchaseData({
+                                    ...purchaseData,
+                                    variants: {
+                                        ...purchaseData.variants, // Preserve other sizes
+                                        [size]: {
+                                            ...currentVariant, // Preserve current variant details (size, color)
+                                            quantity: currentVariant.quantity + 1, // Increment quantity
+                                        },
+                                    },
+                                });
+                            }}
+                            onDecrement={() => {
+                                if (currentVariant.quantity > 0) {
+                                    setPurchaseData({
+                                        ...purchaseData,
+                                        variants: {
+                                            ...purchaseData.variants, // Preserve other sizes
+                                            [size]: {
+                                                ...currentVariant, // Preserve current variant details (size, color)
+                                                quantity: currentVariant.quantity - 1, // Decrement quantity
+                                            },
+                                        },
+                                    });
+                                }
+                            }}
+                            onChange={(e) => {
+                                const newQuantity = parseInt(e.target.value, 10) || 0;
+                                setPurchaseData({
+                                    ...purchaseData,
+                                    variants: {
+                                        ...purchaseData.variants, // Preserve other sizes
+                                        [size]: {
+                                            ...currentVariant, // Preserve current variant details (size, color)
+                                            quantity: newQuantity, // Set new quantity
+                                        },
+                                    },
+                                });
+                            }}
+                        />
+                    );
+                })}
                 {/* Veredelungen Dropdown */}
                 {/* <Dropdown
                     label="Veredelungen"
@@ -121,11 +161,10 @@ export default function DefineOptions({ product }) {
                     onChange={handleVeredelungChange}
                     options={veredelungOptions}
                 /> */}
-
                 {/* Additional Info Field */}
-                <AdditionalInfoField value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} />
-
+                {/* <AdditionalInfoField value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} /> */}
                 {/* Profi Datencheck Checkbox */}
+                <div className="h-8"></div>
                 <GeneralCheckBox
                     label="Profi Datencheck?"
                     isChecked={isChecked}
@@ -135,7 +174,6 @@ export default function DefineOptions({ product }) {
                     borderColor="border-textColor"
                     checkColor="text-successColor"
                 />
-
                 {/* Price Display */}
                 <motion.div
                     className="mt-6"

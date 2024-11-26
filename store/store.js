@@ -48,6 +48,11 @@ const useStore = create((set) => ({
                 scale: 1,
             },
         },
+        variants: {
+            size: null,
+            color: null,
+            quantity: 0,
+        },
     },
 
     setPurchaseData: (data) =>
@@ -83,6 +88,11 @@ const useStore = create((set) => ({
                         yPosition: 0,
                         scale: 1,
                     },
+                },
+                variants: {
+                    size: null,
+                    color: null,
+                    quantity: 0,
                 },
                 ...persistentData, // Preserve specific values if provided
             },
