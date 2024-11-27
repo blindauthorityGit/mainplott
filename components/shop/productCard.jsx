@@ -20,8 +20,8 @@ function ProductCard({ product }) {
 
     return (
         <motion.div
-            className="lg:h-120 lg:w-72 w-full h-full rounded-lg shadow-lg mx-auto border border-gray-200 overflow-hidden bg-white relative"
-            whileHover={{ scale: 1.05, boxShadow: "0px 12px 24px rgba(0, 0, 0, 0.15)" }}
+            className="lg:h-120 lg:w-64 w-full h-full rounded-[20px] mx-auto border border-gray-200 overflow-hidden bg-white relative"
+            whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
         >
             {/* Tags */}
@@ -40,7 +40,7 @@ function ProductCard({ product }) {
 
             {/* Image */}
             <Link href={`/products/${handle}`} passHref>
-                <div className="lg:h-72 h-64 border-b-2 border-gray-200 relative cursor-pointer overflow-hidden">
+                <div className="lg:h-64 h-64 border-b-2 border-gray-200 relative cursor-pointer overflow-hidden">
                     <ContainImage
                         src={imageNode.originalSrc}
                         mobileSrc={imageNode.originalSrc}
@@ -63,7 +63,7 @@ function ProductCard({ product }) {
                     </div>
                 </div>
                 <div>
-                    <div className="flex flex-wrap gap-x-2 gap-y-2">
+                    {/* <div className="flex flex-wrap gap-x-2 gap-y-2">
                         {formattedVariants["XL"]?.colors.map(({ color }, index) => (
                             <div
                                 key={`color-${index}`}
@@ -71,7 +71,7 @@ function ProductCard({ product }) {
                                 style={{ background: getColorHex(color) }}
                             />
                         ))}
-                    </div>{" "}
+                    </div>{" "} */}
                     <div className="text-base lg:text-lg font-body text-gray-600 font-primary font-semibold mb-2 mt-4">
                         ab EUR 29,-
                     </div>

@@ -29,6 +29,8 @@ const colorDictionary = {
     "Off White": "#ECE8DD",
     Lilac: "#E1DFED",
     Rope: "#CAB7A8",
+    Gelb: "#FFE500",
+    Orange: "#FF8A00",
 
     // weitere Farben hinzufügen
 };

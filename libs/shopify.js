@@ -158,11 +158,29 @@ export async function getProductByHandle(handle) {
               description
           }
 
-             templatePositions: metafield(namespace: "template", key: "positions") {
-      value
-      type
-      description
-    }
+         templatePositions: metafield(namespace: "template", key: "positions") {
+          value
+          type
+         description
+          }
+
+        preisReduktion: metafield(namespace: "custom", key: "preis_reduktion") {
+          value
+          type
+         description
+          }
+
+        konfigurator: metafield(namespace: "custom", key: "konfigurator") {
+          value
+          type
+         description
+          }
+
+        simplePersonalisierung: metafield(namespace: "custom", key: "simple_personalisierung") {
+          value
+          type
+         description
+          }
     
           variants(first: 40) {
               edges {

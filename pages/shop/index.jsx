@@ -41,7 +41,7 @@ export default function Shop({ products, collections, globalData, collection }) 
         }
     }, [router.query.cat, products, activeTags, setActiveCategory]);
 
-    // console.log(products, collections, globalData, collection);
+    console.log(products, collections, globalData, collection);
 
     return (
         <MainContainer>

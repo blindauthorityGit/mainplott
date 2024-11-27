@@ -83,7 +83,7 @@ export default function Menu() {
                         {/* CTA Button */}
                         <MainButton
                             klasse="!mt-0 !max-w-[240px] !min-w-[0]"
-                            link="/shop"
+                            link="/shop?cat=all"
                             className="hidden md:inline-block  text-white "
                         >
                             Shop
@@ -173,7 +173,7 @@ export default function Menu() {
                             {/* Right Section - CTA Button, Cart */}
                             <div className="flex items-center space-x-4 md:space-x-4">
                                 {/* CTA Button */}
-                                <MainButton klasse="!mt-0 !max-w-[240px] !min-w-[0]" link="/shop">
+                                <MainButton klasse="!mt-0 !max-w-[240px] !min-w-[0]" link="/shop?cat=all">
                                     Shop
                                 </MainButton>
 

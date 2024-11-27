@@ -19,6 +19,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
 
     // Format variants for easier access
     const formattedVariants = formatVariants(product.variants);
+    console.log(formattedVariants, product.variants);
     // Ensure `selectedSize` and `selectedColor` are initialized
     // Centralized initialization logic
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -95,20 +96,18 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
         setSelectedImage(firstImage);
         setSelectedColor(firstColor);
 
-        // Update purchaseData without overwriting unrelated sizes
+        // Replace the specific size entry in purchaseData.variants
         const updatedVariants = {
-            ...purchaseData.variants, // Preserve existing variants
             [size]: {
-                ...purchaseData.variants?.[size], // Preserve existing data for this size
                 size: size,
-                color: firstColor, // Update to the first color of the new size
-                quantity: purchaseData.variants?.[size]?.quantity || 1, // Preserve quantity or default to 1
+                color: firstColor,
+                quantity: 1, // Default quantity
             },
         };
 
         setPurchaseData({
             ...purchaseData,
-            variants: updatedVariants,
+            variants: updatedVariants, // Replace the current variants object with the new one
         });
 
         setActiveVariant(size, firstColor);
@@ -116,21 +115,22 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     };
 
     // Handle color change
+    // Handle color change
     const handleColorChange = (color) => {
         setSelectedColor(color);
 
-        // Update purchaseData for the currently selected size without overwriting unrelated sizes
+        // Update only the color for the currently selected size
         const updatedVariants = {
-            ...purchaseData.variants, // Preserve existing variants
+            ...purchaseData.variants, // Preserve existing size entries
             [selectedSize]: {
-                ...purchaseData.variants?.[selectedSize], // Preserve existing data for this size
-                color: color, // Update color only
+                ...purchaseData.variants[selectedSize], // Preserve existing data for the current size
+                color: color, // Update the color
             },
         };
 
         setPurchaseData({
             ...purchaseData,
-            variants: updatedVariants,
+            variants: updatedVariants, // Update the entire variants object
         });
 
         // Update selected image for the new color
@@ -178,22 +178,27 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                     <div className="flex space-x-3 mt-4 items-center gap-8 lg:mb-16">
                         <div className="left font-body font-semibold">Farbe</div>
                         <div className="right flex flex-wrap -mx-1 -my-1 ">
-                            {formattedVariants[selectedSize]?.colors?.map(({ color }, index) => (
-                                <div key={`color-${index}`} className="px-1 py-1">
-                                    <CustomCheckBox
-                                        key={`color-${index}`}
-                                        klasse={`bg-${color} !w-6 !h-6 lg:!w-10 lg:!h-10`}
-                                        isChecked={selectedColor === color}
-                                        onClick={() => handleColorChange(color)}
-                                        activeClass=" border-2 border-textColor text-white"
-                                        nonActiveClass=" text-black"
-                                        style={{ background: getColorHex(color) }}
-                                        label={color}
-                                        showTooltip={true} // Enable the tooltip
-                                        showLabel={false}
-                                    />{" "}
-                                </div>
-                            ))}
+                            {formattedVariants[selectedSize]?.colors?.map(
+                                ({ color }, index) => (
+                                    console.log(getColorHex(color)),
+                                    (
+                                        <div key={`color-${index}`} className="px-1 py-1">
+                                            <CustomCheckBox
+                                                key={`color-${index}`}
+                                                klasse={`bg-${color} !w-6 !h-6 lg:!w-10 lg:!h-10`}
+                                                isChecked={selectedColor === color}
+                                                onClick={() => handleColorChange(color)}
+                                                activeClass=" border-2 border-textColor text-white"
+                                                nonActiveClass=" text-black"
+                                                style={{ background: getColorHex(color) }}
+                                                label={color}
+                                                showTooltip={true} // Enable the tooltip
+                                                showLabel={false}
+                                            />{" "}
+                                        </div>
+                                    )
+                                )
+                            )}
                         </div>
                     </div>
                 )}

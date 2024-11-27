@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+
 import StepHolder from "./stepHolder";
 import ColorAndSizeStep from "./steps/colorAndSizeStep";
 import ChooseWay from "./steps/chooseWay";
@@ -21,8 +23,15 @@ const stepsConfig = [
 export default function ProductConfigurator({ product, sizes, colorPatternIds, variants }) {
     const [currentStep, setCurrentStep] = useState(0);
     const [selectedImage, setSelectedImage] = useState(null);
+    const router = useRouter();
 
-    const { setModalOpen, setPurchaseData, purchaseData } = useStore();
+    useEffect(() => {
+        // Reset purchaseData on URL change
+        console.log("I DID A RESET");
+        resetPurchaseData();
+    }, [router.asPath]); // Trigger effect when URL changes
+
+    const { setModalOpen, setPurchaseData, purchaseData, resetPurchaseData } = useStore();
 
     const CurrentStepComponent = stepsConfig[currentStep].component;
 

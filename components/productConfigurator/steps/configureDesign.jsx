@@ -159,9 +159,9 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         // description: "Passen Sie das Design auf dem Produkt an.",
     };
 
-    console.log("IS HIER JSON", JSON.parse(product.templatePositions.value).properties);
+    // console.log("IS HIER JSON", JSON.parse(product.templatePositions.value).properties);
 
-    const positions = JSON.parse(product.templatePositions.value).properties;
+    const positions = product?.templatePositions ? JSON.parse(product?.templatePositions?.value).properties : null;
 
     //radio buttons
     const handleChange = (value, posX, posY) => {

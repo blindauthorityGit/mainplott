@@ -36,10 +36,13 @@ export default function Product({ product, sizes, relatedProducts }) {
     }, [handle]);
     return (
         <MainContainer>
-            <ProductConfigurator product={product.productByHandle} sizes={sizes}></ProductConfigurator>
+            {product.productByHandle?.konfigurator?.value ? (
+                <ProductConfigurator product={product.productByHandle} sizes={sizes}></ProductConfigurator>
+            ) : (
+                "Manche wollen Bubus"
+            )}
             <MoreProducts relatedProducts={relatedProducts} currentProductHandle={product} />
             <FAQSection></FAQSection>
-            {/* <ProductDetail image={product.productByHandle.images.edges[0].node.originalSrc}></ProductDetail> */}
         </MainContainer>
     );
 }

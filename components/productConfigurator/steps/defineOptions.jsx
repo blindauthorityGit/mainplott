@@ -9,6 +9,7 @@ import { H3, P } from "@/components/typography";
 import { motion } from "framer-motion";
 import GeneralCheckBox from "@/components/inputs/generalCheckbox";
 import formatVariants from "@/functions/formatVariants"; // Function for formatting variants
+import { calculateTotalPrice } from "@/functions/calculateTotalPrice"; // Function for formatting variants
 import NumberInputField from "@/components/inputs/numberInputField"; // Adjust the import path as necessary
 
 export default function DefineOptions({ product }) {
@@ -20,7 +21,10 @@ export default function DefineOptions({ product }) {
     const [coupon, setCoupon] = useState("");
     const [price, setPrice] = useState(0);
     const [discountApplied, setDiscountApplied] = useState(false);
+    const [appliedDiscountPercentage, setAppliedDiscountPercentage] = useState(0); // Track the applied discount percentage
+
     const [additionalInfo, setAdditionalInfo] = useState("");
+
     const stepData = {
         title: "Staffelung",
     };
@@ -74,11 +78,23 @@ export default function DefineOptions({ product }) {
     }, [price]);
 
     useEffect(() => {
-        setPurchaseData({
-            ...purchaseData,
-            quantity: quantity,
-        });
-    }, [quantity]);
+        // Parse discount data from product
+        const discountData = product.preisReduktion ? JSON.parse(product.preisReduktion.value).discounts : null;
+
+        // Calculate total price with discount handling
+        const { totalPrice, appliedDiscountPercentage } = calculateTotalPrice(
+            purchaseData.variants,
+            product,
+            discountData,
+            setDiscountApplied
+        );
+        setPrice(totalPrice);
+        setAppliedDiscountPercentage(appliedDiscountPercentage); // Update the discount percentage
+    }, [purchaseData, product]);
+
+    useEffect(() => {
+        console.log("WEIR HABEN DISCOUNT");
+    }, [discountApplied]);
 
     // Handle Veredelung change
     const handleVeredelungChange = (event) => setVeredelung(event.target.value);
@@ -96,16 +112,19 @@ export default function DefineOptions({ product }) {
     return (
         <div className="lg:px-16 lg:mt-8 font-body">
             <ContentWrapper data={stepData}>
+                {/* Discounts List */}
+
                 {/* Quantity Selector */}
                 {/* <QuantitySelector quantity={quantity} setQuantity={setQuantity} /> */}
                 {Object.keys(formattedVariants).map((size) => {
                     const currentVariant = purchaseData.variants?.[size] || {
                         size,
-                        color: purchaseData.variants?.color || null, // Default color if not set
+                        color:
+                            purchaseData.variants?.[size]?.color || formattedVariants[size]?.colors?.[0]?.color || null, // Fetch size-specific color
                         quantity: 0, // Default quantity
                     };
-                    console.log(size);
-                    console.log(purchaseData.variants?.[size]);
+                    // console.log(size);
+                    // console.log(purchaseData.variants?.[size]);
 
                     return (
                         <NumberInputField
@@ -174,15 +193,33 @@ export default function DefineOptions({ product }) {
                     borderColor="border-textColor"
                     checkColor="text-successColor"
                 />
+
                 {/* Price Display */}
                 <motion.div
-                    className="mt-6"
+                    className="mt-6 flex"
                     initial={{ scale: 1 }}
                     animate={{ scale: discountApplied ? 1.1 : 1 }}
                     transition={{ duration: 0.3 }}
                 >
-                    <H3 klasse="!mb-2">EUR {price.toFixed(2)}</H3>
-                    <P klasse="!text-sm text-successColor">{discountApplied && "Rabatt von 10% angewendet!"}</P>
+                    <div>
+                        <H3 klasse="!mb-2">EUR {price}</H3>
+                        <P klasse="!text-xs text-successColor">
+                            {discountApplied && `Rabatt von ${appliedDiscountPercentage.toFixed(2)}% angewendet!`}
+                        </P>
+                    </div>
+                    {product.preisReduktion && (
+                        <div className="mt-4 pl-16">
+                            <ul className=" text-xs text-textColor !font-body">
+                                {JSON.parse(product.preisReduktion.value).discounts.map((discount, index) => (
+                                    <li key={index}>
+                                        {discount.maxQuantity
+                                            ? `Von ${discount.minQuantity} bis ${discount.maxQuantity} Stück: ${discount.discountPercentage}% Rabatt`
+                                            : `Ab ${discount.minQuantity} Stück: ${discount.discountPercentage}% Rabatt`}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </motion.div>
             </ContentWrapper>
         </div>

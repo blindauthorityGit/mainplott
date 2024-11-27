@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useStore from "@/store/store";
-import { FiX } from "react-icons/fi";
+import { FiTrash2, FiX } from "react-icons/fi";
 import Overlay from "../modal/overlay";
 import { H2, H3, H5, P } from "@/components/typography";
 import { TextField, InputAdornment, Button } from "@mui/material";
@@ -16,7 +16,7 @@ export default function CartSidebar() {
         updateCartItem,
         setModalContent,
         setModalOpen,
-        clearCart
+        clearCart,
     } = useStore();
     const [coupon, setCoupon] = useState("");
     const [discountApplied, setDiscountApplied] = useState(false);
@@ -24,9 +24,11 @@ export default function CartSidebar() {
 
     // Calculate the total price with or without discount
     useEffect(() => {
-        const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const subtotal = cartItems.reduce((sum, item) => sum + Number(item.price), 0);
         setTotalPrice(discountApplied ? subtotal * 0.9 : subtotal); // 10% discount if applied
     }, [cartItems, discountApplied]);
+
+    console.log(cartItems);
 
     // Handle coupon code verification
     const handleCouponCheck = () => {
@@ -53,7 +55,7 @@ export default function CartSidebar() {
     const handleCheckout = async () => {
         try {
             closeCartSidebar();
-    
+
             // Prepare purchase data
             const cleanedCartItems = cartItems.map((item) => {
                 const cleanedSides = Object.keys(item.sides || {}).reduce((acc, sideKey) => {
@@ -61,32 +63,31 @@ export default function CartSidebar() {
                     acc[sideKey] = rest; // Keep the rest of the properties
                     return acc;
                 }, {});
-            
+
                 return {
                     ...item,
                     sides: cleanedSides, // Replace sides with cleaned data
                 };
             });
-            
 
-            console.log(cleanedCartItems)
-    
+            console.log(cleanedCartItems);
+
             const purchaseData = {
                 cartItems: cleanedCartItems,
                 totalPrice,
                 customerName: "Test Kunde",
                 date: new Date().toISOString(),
             };
-    
+
             console.log("Starting Firestore upload...");
             console.log("Data to upload:", purchaseData);
-    
+
             await uploadPurchaseToFirestore(purchaseData);
-    
+
             setModalContent("Vielen Dank für Ihre Bestellung!");
             setModalOpen(true);
             clearCart();
-    
+
             console.log("Purchase data saved successfully!");
         } catch (error) {
             console.error("Error saving purchase data:", error);
@@ -94,7 +95,6 @@ export default function CartSidebar() {
             setModalOpen(true);
         }
     };
-    
 
     return (
         <AnimatePresence>
@@ -117,7 +117,7 @@ export default function CartSidebar() {
                             <FiX className="text-3xl" />
                         </button>
 
-                        <H2 className="text-2xl font-bold mb-4">Ihr Einkaufswagen</H2>
+                        {/* <H2 className="text-2xl font-bold mb-4">Ihr Einkaufswagen</H2> */}
 
                         <div className="flex-1 overflow-y-auto">
                             {cartItems.length > 0 ? (
@@ -126,11 +126,16 @@ export default function CartSidebar() {
                                         <img src={item.selectedImage} alt={item.productName} className="w-16 mr-4" />
                                         <div className="flex-1">
                                             <H5 klasse="!mb-2">{item.productName}</H5>
-                                            <p className="text-sm">Color: {item.selectedColor || "N/A"}</p>
-                                            <p className="text-sm">Size: {item.selectedSize || "N/A"}</p>
-                                            <p className="text-sm">Price: €{(item.price * item.quantity).toFixed(2)}</p>
+                                            <p className="text-sm">Farbe: {item.selectedColor || "N/A"}</p>
+                                            <p className="text-sm">
+                                                Menge:{" "}
+                                                {Object.entries(item.variants || {}).map(([size, details]) => (
+                                                    <span key={size}>{` ${details.quantity}x (${size})`}</span>
+                                                ))}
+                                            </p>
+                                            <p className="text-sm">Preis: € {item.price}</p>
                                         </div>
-                                        <div className="flex items-center mt-2">
+                                        {/* <div className="flex items-center mt-2">
                                             <button
                                                 onClick={() =>
                                                     handleDecrementQuantity(item.id, item.quantity, item.unitPrice)
@@ -148,12 +153,12 @@ export default function CartSidebar() {
                                             >
                                                 +
                                             </button>
-                                        </div>
+                                        </div> */}
                                         <button
                                             onClick={() => removeCartItem(item.id)}
                                             className="text-red-500 hover:text-red-700"
                                         >
-                                            <FiX className="text-lg" />
+                                            <FiTrash2 className="text-lg" />
                                         </button>
                                     </div>
                                 ))
@@ -184,7 +189,7 @@ export default function CartSidebar() {
 
                         {/* Total Price */}
                         <div className="mt-4 mb-6">
-                            <H3 klasse="!mb-2">Gesamtsumme: €{totalPrice.toFixed(2)}</H3>
+                            <H3 klasse="!mb-2">Gesamtsumme: €{totalPrice}</H3>
                             {discountApplied && <P klasse="!text-sm text-successColor">Rabatt von 10% angewendet!</P>}
                         </div>
 

@@ -20,7 +20,7 @@ export default function TopBar({ categories, products }) {
             const subCategoryCounts = {};
             category.subcategories.forEach((subCategory) => {
                 const subSubCategoryCounts = {};
-                subCategory.subSubcategories.forEach((subSub) => {
+                subCategory?.subSubcategories?.forEach((subSub) => {
                     subSubCategoryCounts[subSub.name] = products.filter((product) =>
                         product.node.tags.includes(subSub.name)
                     ).length;
