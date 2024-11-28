@@ -7,10 +7,13 @@ import LogoLeiste from "../../sections/logoLeiste";
 import { MainContainer } from "../../layout/container";
 import ProductDetail from "../../sections/product";
 import ProductConfigurator from "../../components/productConfigurator/index.jsx";
+import SimpleConfigurator from "../../components/simpleConfigurator";
 import Spacer from "../../layout/spacer";
 import MoreProducts from "@/sections/moreProducts";
 import FAQSection from "@/sections/faqs";
 import useStore from "@/store/store"; // Zustand store
+// import { BasicPortableText } from "@/components/content";
+import RichTextRenderer from "@/components/richTextRenderer";
 
 //SHOPIFY
 import { getAllProductHandles, getProductByHandle, getProductsByCategory } from "../../libs/shopify.js";
@@ -23,24 +26,34 @@ import { BiCloudLightRain } from "react-icons/bi";
 
 export default function Product({ product, sizes, relatedProducts }) {
     useEffect(() => {
-        console.log(product.productByHandle, sizes, relatedProducts);
+        console.log();
     }, [product, relatedProducts, sizes]);
 
     const { resetPurchaseData } = useStore(); // Add a reset function in your Zustand store
 
     const router = useRouter();
-    const { handle } = router.query;
+    const { handle } = router.query; // Extract the product handle from the URL
+
     useEffect(() => {
-        // Reset the purchase data whenever the URL changes (handle changes)
-        // resetPurchaseData();
-    }, [handle]);
+        resetPurchaseData(); // Clear purchaseData when a new product is loaded
+    }, [handle]); // Dependency ensures reset runs only on handle change
+
     return (
         <MainContainer>
-            {product.productByHandle?.konfigurator?.value ? (
+            {product.productByHandle?.konfigurator?.value == "true" ? (
                 <ProductConfigurator product={product.productByHandle} sizes={sizes}></ProductConfigurator>
             ) : (
-                "Manche wollen Bubus"
+                <SimpleConfigurator product={product.productByHandle}></SimpleConfigurator>
             )}
+            {product.productByHandle?.detailbeschreibung?.value ? (
+                <div className="lg:px-24 lg:w-3/4 lg:mt-16 font-body !text-textColor">
+                    <RichTextRenderer
+                        richText={JSON.parse(product.productByHandle.detailbeschreibung.value)}
+                    ></RichTextRenderer>
+                </div>
+            ) : (
+                "null"
+            )}{" "}
             <MoreProducts relatedProducts={relatedProducts} currentProductHandle={product} />
             <FAQSection></FAQSection>
         </MainContainer>

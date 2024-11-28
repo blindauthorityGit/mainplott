@@ -156,7 +156,7 @@ export default function Sidebar({ categories }) {
                                                                         />
                                                                         <label
                                                                             htmlFor={subSub.name}
-                                                                            className="text-base"
+                                                                            className="text-sm"
                                                                         >
                                                                             {subSub.name}
                                                                         </label>

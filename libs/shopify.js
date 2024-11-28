@@ -176,7 +176,18 @@ export async function getProductByHandle(handle) {
          description
           }
 
+        textPersonalisierung: metafield(namespace: "custom", key: "text_inputbox") {
+          value
+          type
+         description
+          }
         simplePersonalisierung: metafield(namespace: "custom", key: "simple_personalisierung") {
+          value
+          type
+         description
+          }
+    
+        detailbeschreibung: metafield(namespace: "custom", key: "detailbeschreibung") {
           value
           type
          description

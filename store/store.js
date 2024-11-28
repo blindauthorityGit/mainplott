@@ -29,6 +29,8 @@ const useStore = create((set) => ({
         currentSide: "front",
         profiDatenCheck: false,
         configurator: null,
+        quantity: 1,
+        personalisierung: null,
         productName: "",
         product: null,
         price: 0,
@@ -70,8 +72,10 @@ const useStore = create((set) => ({
                 currentSide: "front",
                 profiDatenCheck: false,
                 configurator: null,
+                personalisierung: null,
                 productName: "",
                 product: null,
+                quantity: 0,
                 price: 0,
                 sides: {
                     front: {
