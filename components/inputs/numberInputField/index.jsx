@@ -1,29 +1,40 @@
 import React from "react";
-import { Button, TextField } from "@mui/material";
 
 const NumberInputField = ({ label, value, onIncrement, onDecrement, onChange }) => {
     return (
         <>
-            <div
-                className="flex items-center gap-4 mb-1"
-                // style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}
-            >
-                <span style={{ flex: "1", fontWeight: "bold" }}>{label}</span>
-                <Button variant="outlined" onClick={onDecrement} style={{ minWidth: "40px" }}>
+            <div className="flex items-center gap-4 mb-1 text-sm">
+                {/* Label */}
+                <span className="flex-1 font-bold">{label}</span>
+
+                {/* Decrement Button */}
+                <button
+                    onClick={onDecrement}
+                    className="w-10 h-8 flex items-center justify-center border rounded text-lg font-semibold bg-gray-200 hover:bg-gray-300"
+                >
                     -
-                </Button>
-                <TextField
+                </button>
+
+                {/* Number Input */}
+                <input
                     type="number"
                     value={value}
                     onChange={onChange}
-                    inputProps={{ min: 0 }}
-                    style={{ width: "60px" }}
+                    min="0"
+                    className="w-16 h-8 text-center border rounded text-lg text-sm"
                 />
-                <Button variant="outlined" onClick={onIncrement} style={{ minWidth: "40px" }}>
+
+                {/* Increment Button */}
+                <button
+                    onClick={onIncrement}
+                    className="w-10 h-8 flex items-center justify-center border rounded text-lg font-semibold bg-gray-200 hover:bg-gray-300"
+                >
                     +
-                </Button>
-            </div>{" "}
-            <hr className="bg-textColor mb-1 text-textColor border-textColor  w-full opacity-30" />
+                </button>
+            </div>
+
+            {/* Divider */}
+            <hr className="bg-textColor mb-1 text-textColor border-textColor w-full opacity-30" />
         </>
     );
 };

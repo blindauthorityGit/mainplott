@@ -4,6 +4,8 @@ import { getColorHex } from "@/libs/colors";
 import formatVariants from "@/functions/formatVariants";
 import { motion } from "framer-motion";
 
+import calculateLowestPrice from "@/functions/calculateLowestPrice";
+
 function ProductCard({ product }) {
     const handle = product.node.handle;
     const title = product.node.title;
@@ -13,10 +15,12 @@ function ProductCard({ product }) {
     const mainCategoryTag = product.node.tags.find((tag) => tag.startsWith("category_"))?.replace("category_", "");
     const subCategoryTag = product.node.tags.find((tag) => tag.startsWith("subCategory_"))?.replace("subCategory_", "");
 
-    const imageNode = product.node.images.edges[0].node;
+    const imageNode = product.node?.images?.edges[0]?.node;
 
     // Format variants for easier access
     const formattedVariants = formatVariants(product.node.variants);
+
+    console.log("NODESS", product.node.variants);
 
     return (
         <motion.div
@@ -42,8 +46,8 @@ function ProductCard({ product }) {
             <Link href={`/products/${handle}`} passHref>
                 <div className="lg:h-64 h-64 border-b-2 border-gray-200 relative cursor-pointer overflow-hidden">
                     <ContainImage
-                        src={imageNode.originalSrc}
-                        mobileSrc={imageNode.originalSrc}
+                        src={imageNode?.originalSrc}
+                        mobileSrc={imageNode?.originalSrc}
                         alt={title}
                         klasse={
                             "absolute w-full h-full object-cover transition-transform duration-300 transform hover:scale-105"
@@ -73,7 +77,8 @@ function ProductCard({ product }) {
                         ))}
                     </div>{" "} */}
                     <div className="text-base lg:text-lg font-body text-gray-600 font-primary font-semibold mb-2 mt-4">
-                        ab EUR 29,-
+                        {/* ab EUR 29,- */}
+                        {calculateLowestPrice(product.node.variants.edges)}
                     </div>
                 </div>
             </div>

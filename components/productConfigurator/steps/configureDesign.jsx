@@ -6,6 +6,9 @@ import ContentWrapper from "../components/contentWrapper";
 import { FiX, FiInfo } from "react-icons/fi";
 import { IconButton } from "@/components/buttons"; // Adjust import path as needed
 import CustomRadioButton from "@/components/inputs/customRadioButton";
+import VeredelungTable from "@/components/infoTable/veredlungsTable";
+
+import generateVeredelungsPrice from "@/functions/generateVeredelungPrice";
 
 // import { handleShowDetails, handleDeleteUpload } from "@/functions/fileHandlers";
 
@@ -14,7 +17,7 @@ import handleDeleteUpload from "@/functions/handleDeleteUpload";
 import handleShowDetails from "@/functions/handleShowDetail";
 import handleFileUpload from "@/functions/handleFileUpload";
 
-export default function ConfigureDesign({ product, setCurrentStep, steps, currentStep }) {
+export default function ConfigureDesign({ product, setCurrentStep, steps, currentStep, veredelungen }) {
     const {
         purchaseData,
         setPurchaseData,
@@ -155,7 +158,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     };
 
     const stepData = {
-        title: purchaseData.configurator == "template" ? "Vorlage wählen" : "Design platzieren",
+        title: purchaseData.configurator == "template" ? "Vorlage wählen" : "Platzierung",
         // description: "Passen Sie das Design auf dem Produkt an.",
     };
 
@@ -184,6 +187,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
             },
         });
     };
+
+    console.log("EDEL", veredelungen);
 
     return (
         <div className="flex flex-col lg:px-16 lg:mt-8 font-body ">
@@ -385,46 +390,51 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 />
             )}
             {purchaseData.sides[currentSide].uploadedGraphicFile && (
-                <div className="flex items-center gap-4 mt-4 font-body text-sm">
-                    {purchaseData.sides[currentSide].isPDF ? (
-                        <img
-                            className="max-h-24 rounded-[20px]"
-                            src={purchaseData.sides[currentSide].preview}
-                            alt="Uploaded Preview"
-                        />
-                    ) : (
-                        <img
-                            className="max-h-24 rounded-[20px]"
-                            src={URL.createObjectURL(purchaseData.sides[currentSide].uploadedGraphicFile)}
-                            alt="Uploaded Preview"
-                        />
-                    )}
+                <div className="flex items-center space-x-4">
+                    <div className="flex items-center gap-4 mt-4 font-body text-sm">
+                        {purchaseData.sides[currentSide].isPDF ? (
+                            <img
+                                className="max-h-24 rounded-[20px]"
+                                src={purchaseData.sides[currentSide].preview}
+                                alt="Uploaded Preview"
+                            />
+                        ) : (
+                            <img
+                                className="max-h-24 rounded-[20px]"
+                                src={URL.createObjectURL(purchaseData.sides[currentSide].uploadedGraphicFile)}
+                                alt="Uploaded Preview"
+                            />
+                        )}
 
-                    <div className="flex flex-col gap-2">
-                        <IconButton
-                            onClick={() => {
-                                handleDeleteUpload({ purchaseData, setPurchaseData, currentSide }),
-                                    setCopyFrontToBack(false);
-                            }}
-                            icon={FiX}
-                            label="Löschen"
-                            bgColor="bg-errorColor"
-                            hoverColor="hover:bg-red-600"
-                            textColor="text-white"
-                        />
-                        <IconButton
-                            onClick={() => {
-                                handleShowDetails({
-                                    uploadedFile: purchaseData.sides[currentSide].uploadedGraphicFile,
-                                    setModalOpen: setModalOpen,
-                                });
-                            }}
-                            icon={FiInfo}
-                            label="Details anzeigen"
-                            bgColor="bg-infoColor"
-                            hoverColor="hover:bg-primaryColor-600"
-                            textColor="text-white"
-                        />
+                        <div className="flex flex-col gap-2">
+                            <IconButton
+                                onClick={() => {
+                                    handleDeleteUpload({ purchaseData, setPurchaseData, currentSide }),
+                                        setCopyFrontToBack(false);
+                                }}
+                                icon={FiX}
+                                label="Löschen"
+                                bgColor="bg-errorColor"
+                                hoverColor="hover:bg-red-600"
+                                textColor="text-white"
+                            />
+                            <IconButton
+                                onClick={() => {
+                                    handleShowDetails({
+                                        uploadedFile: purchaseData.sides[currentSide].uploadedGraphicFile,
+                                        setModalOpen: setModalOpen,
+                                    });
+                                }}
+                                icon={FiInfo}
+                                label="Details anzeigen"
+                                bgColor="bg-infoColor"
+                                hoverColor="hover:bg-primaryColor-600"
+                                textColor="text-white"
+                            />
+                        </div>
+                    </div>
+                    <div className="info pl-2">
+                        <VeredelungTable brustData={veredelungen.front} rueckenData={veredelungen.back} />
                     </div>
                 </div>
             )}

@@ -28,12 +28,19 @@
 //     return totalPrice;
 // }
 
-export const calculateTotalPrice = (variants, product, discountData, setDiscountApplied) => {
+export const calculateTotalPrice = (
+    variants,
+    product,
+    discountData,
+    setDiscountApplied,
+    veredelungen = {}, // Default to an empty object
+    purchaseData
+) => {
     let totalQuantity = 0;
     let totalPrice = 0;
     let appliedDiscountPercentage = 0; // Track applied discount percentage
 
-    // Calculate total price and total quantity
+    // Calculate total price and total quantity for the base product
     Object.values(variants).forEach((variant) => {
         const variantPrice = product.variants.edges.find(
             (v) =>
@@ -47,7 +54,43 @@ export const calculateTotalPrice = (variants, product, discountData, setDiscount
         }
     });
 
-    // Apply discounts if discount data is provided
+    // Add Veredelung prices and calculate price per piece for each side
+    const veredelungSides = ["front", "back"]; // Keys to check in the `veredelungen` object
+    let veredelungTotal = 0;
+    const veredelungPerPiece = {}; // Store price per piece for each side
+
+    veredelungSides.forEach((side) => {
+        if (purchaseData.sides[side]?.uploadedGraphic || purchaseData.sides[side]?.uploadedGraphicFile) {
+            console.log(`Veredelung for ${side} exists.`);
+            const veredelungData = veredelungen[side]; // Access Veredelung data directly by key
+
+            if (veredelungData) {
+                const { price, preisReduktion } = veredelungData;
+
+                // Add base Veredelung price
+                let sideTotal = totalQuantity * parseFloat(price);
+                let sidePricePerPiece = parseFloat(price); // Default price per piece
+
+                // Check for discounts on Veredelung
+                const applicableDiscount = preisReduktion.discounts.find(
+                    (tier) =>
+                        totalQuantity >= tier.minQuantity &&
+                        (tier.maxQuantity === null || totalQuantity <= tier.maxQuantity)
+                );
+
+                if (applicableDiscount) {
+                    const discountPercentage = applicableDiscount.discountPercentage / 100;
+                    sidePricePerPiece = parseFloat(price) * (1 - discountPercentage); // Discounted price per piece
+                    sideTotal = totalQuantity * sidePricePerPiece;
+                }
+
+                veredelungTotal += sideTotal;
+                veredelungPerPiece[side] = sidePricePerPiece.toFixed(2); // Save price per piece for the side
+            }
+        }
+    });
+
+    // Apply discounts for the base product if discount data is provided
     if (discountData) {
         const applicableDiscount = discountData.find(
             (tier) =>
@@ -57,15 +100,21 @@ export const calculateTotalPrice = (variants, product, discountData, setDiscount
         if (applicableDiscount) {
             appliedDiscountPercentage = applicableDiscount.discountPercentage; // Set applied discount percentage
             const discountPercentage = applicableDiscount.discountPercentage / 100;
-            const discountedPrice = totalPrice * (1 - discountPercentage);
+            totalPrice = totalPrice * (1 - discountPercentage);
 
-            // Flag discount state
             setDiscountApplied(true);
-            return { totalPrice: discountedPrice.toFixed(2), appliedDiscountPercentage };
         }
+    } else {
+        setDiscountApplied(false);
     }
 
-    // No discount applied
-    setDiscountApplied(false);
-    return { totalPrice: totalPrice.toFixed(2), appliedDiscountPercentage: 0 };
+    // Combine base product price and Veredelung price
+    const finalPrice = totalPrice + veredelungTotal;
+
+    return {
+        totalPrice: finalPrice.toFixed(2),
+        appliedDiscountPercentage,
+        veredelungTotal: veredelungTotal.toFixed(2),
+        veredelungPerPiece, // Include per-piece price for each Veredelung side
+    };
 };

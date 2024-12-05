@@ -19,57 +19,52 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
 
     // Format variants for easier access
     const formattedVariants = formatVariants(product.variants);
-    console.log(formattedVariants, product.variants);
+    console.log(product.variants, formattedVariants);
+    // console.log(formattedVariants, product.variants);
     // Ensure `selectedSize` and `selectedColor` are initialized
     // Centralized initialization logic
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    const initializeSelection = () => {
-        const firstSize = Object.keys(formattedVariants)?.[0];
-        const firstColor = formattedVariants[firstSize]?.colors?.[0]?.color;
+    useEffect(() => {
+        const initializeSelection = () => {
+            const firstSize = Object.keys(formattedVariants)?.[0];
+            const firstColor = formattedVariants[firstSize]?.colors?.[0]?.color;
 
-        console.log(firstSize, firstColor);
+            if (!purchaseData.selectedSize || !purchaseData.selectedColor) {
+                const initialSize = purchaseData.selectedSize || firstSize;
+                const initialColor = purchaseData.selectedColor || firstColor;
 
-        if (purchaseData.variants.size && purchaseData.variants.color) {
-            setSelectedSize(purchaseData.variants.size);
-            setSelectedColor(purchaseData.variants.color);
-            // setSelectedImage(
-            //     formattedVariants[purchaseData.variants.size]?.colors?.[purchaseData.variants.color]?.image
-            // );
-            setActiveVariant(purchaseData.variants.size, purchaseData.variants.color);
-        } else {
-            if (firstSize && firstColor) {
-                setSelectedSize(firstSize);
-                setSelectedColor(firstColor);
-                setSelectedImage(formattedVariants[firstSize]?.colors?.[0]?.image);
+                setSelectedSize(initialSize);
+                setSelectedColor(initialColor);
 
-                // Update Zustand store
+                // Set the first image and active variant
+                setSelectedImage(formattedVariants[initialSize]?.colors?.[0]?.image);
+                setActiveVariant(initialSize, initialColor);
+
+                // Initialize purchaseData with proper variants
                 setPurchaseData({
                     ...purchaseData,
-                    selectedSize: firstSize,
-                    selectedColor: firstColor,
+                    selectedSize: initialSize,
+                    selectedColor: initialColor,
+                    productName: product.title,
+                    product,
+                    variants: {
+                        ...purchaseData.variants,
+                        [initialSize]: {
+                            size: initialSize,
+                            color: initialColor,
+                            quantity: purchaseData.variants?.[initialSize]?.quantity || 1,
+                        },
+                    },
                 });
-
-                // Set the active variant
-                setActiveVariant(firstSize, firstColor);
             }
-        }
-    };
+        };
+
+        initializeSelection();
+    }, [product, formattedVariants]);
 
     useEffect(() => {
-        // Initialize selection on component mount
-        console.log("HALLO", purchaseData.selectedSize, purchaseData.selectedColor);
-        console.log("HALLOIOHIOEIOHEIOHEHIOEOIH EH EH OEHEHIO");
-        if (!purchaseData.selectedSize || !purchaseData.selectedColor) {
-            initializeSelection();
-        }
-    }, [product]);
-
-    useEffect(() => {
-        setPurchaseData({ ...purchaseData, productName: product.title, product: product });
-        console.log(product.title, product);
-
-        // setPurchaseData({ ...purchaseData, productName: product.title, product: product });
-    }, [product]);
+        console.log(purchaseData);
+    }, [purchaseData]);
 
     // Function to set the active variant
     const setActiveVariant = (size, color) => {
@@ -107,6 +102,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
 
         setPurchaseData({
             ...purchaseData,
+            selectedSize: size,
             variants: updatedVariants, // Replace the current variants object with the new one
         });
 
@@ -130,6 +126,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
 
         setPurchaseData({
             ...purchaseData,
+            selectedColor: color,
             variants: updatedVariants, // Update the entire variants object
         });
 
@@ -178,27 +175,23 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                     <div className="flex space-x-3 mt-4 items-center gap-8 lg:mb-16">
                         <div className="left font-body font-semibold">Farbe</div>
                         <div className="right flex flex-wrap -mx-1 -my-1 ">
-                            {formattedVariants[selectedSize]?.colors?.map(
-                                ({ color }, index) => (
-                                    console.log(getColorHex(color)),
-                                    (
-                                        <div key={`color-${index}`} className="px-1 py-1">
-                                            <CustomCheckBox
-                                                key={`color-${index}`}
-                                                klasse={`bg-${color} !w-6 !h-6 lg:!w-10 lg:!h-10`}
-                                                isChecked={selectedColor === color}
-                                                onClick={() => handleColorChange(color)}
-                                                activeClass=" border-2 border-textColor text-white"
-                                                nonActiveClass=" text-black"
-                                                style={{ background: getColorHex(color) }}
-                                                label={color}
-                                                showTooltip={true} // Enable the tooltip
-                                                showLabel={false}
-                                            />{" "}
-                                        </div>
-                                    )
-                                )
-                            )}
+                            {formattedVariants[selectedSize]?.colors?.map(({ color }, index) => (
+                                // console.log(getColorHex(color)),
+                                <div key={`color-${index}`} className="px-1 py-1">
+                                    <CustomCheckBox
+                                        key={`color-${index}`}
+                                        klasse={`bg-${color} !w-6 !h-6 lg:!w-10 lg:!h-10`}
+                                        isChecked={selectedColor === color}
+                                        onClick={() => handleColorChange(color)}
+                                        activeClass=" border-2 border-textColor text-white"
+                                        nonActiveClass=" text-black"
+                                        style={{ background: getColorHex(color) }}
+                                        label={color}
+                                        showTooltip={true} // Enable the tooltip
+                                        showLabel={false}
+                                    />{" "}
+                                </div>
+                            ))}
                         </div>
                     </div>
                 )}

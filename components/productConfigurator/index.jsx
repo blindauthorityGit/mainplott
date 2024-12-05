@@ -20,14 +20,14 @@ const stepsConfig = [
     { id: "summary", component: Summary },
 ];
 
-export default function ProductConfigurator({ product, sizes, colorPatternIds, variants }) {
+export default function ProductConfigurator({ product, sizes, colorPatternIds, variants, veredelungen }) {
     const [currentStep, setCurrentStep] = useState(0);
     const [selectedImage, setSelectedImage] = useState(null);
     const router = useRouter();
 
     useEffect(() => {
         // Reset purchaseData on URL change
-        console.log("I DID A RESET");
+        console.log("I DID A RESET", veredelungen);
         resetPurchaseData();
     }, [router.asPath]); // Trigger effect when URL changes
 
@@ -59,6 +59,7 @@ export default function ProductConfigurator({ product, sizes, colorPatternIds, v
                 steps={steps}
                 currentStep={currentStep}
                 variants={variants}
+                veredelungen={veredelungen}
             />
         </StepHolder>
     );

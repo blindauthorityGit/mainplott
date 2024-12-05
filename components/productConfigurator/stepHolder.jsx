@@ -55,6 +55,8 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
     const exportCanvasRef = useRef(null);
 
+    const [resetKonvaZoom, setResetKonvaZoom] = useState(null); // Store the reset function
+
     // Reset state when the URL changes
     useEffect(() => {
         if (handle) {
@@ -98,6 +100,10 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         if (steps[currentStep] == "Design") {
             handleExport();
         }
+        if (steps[currentStep] === "Design" && resetKonvaZoom) {
+            resetKonvaZoom(); // Trigger reset
+        }
+
         // Scroll to top on mobile
         if (isMobile) {
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -297,6 +303,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     uploadedGraphicURL={
                                         purchaseData.sides[purchaseData.currentSide].uploadedGraphic?.downloadURL
                                     }
+                                    resetHandler={setResetKonvaZoom} // Pass the state setter to store the reset function
                                     isPDF={purchaseData.sides[purchaseData.currentSide].isPDF}
                                     pdfPreview={purchaseData.sides[purchaseData.currentSide].preview}
                                     productImage={selectedImage}

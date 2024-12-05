@@ -26,7 +26,7 @@ import { BiCloudLightRain } from "react-icons/bi";
 
 export default function Product({ product, sizes, relatedProducts }) {
     useEffect(() => {
-        console.log();
+        console.log("PRÖÖÖDUKT", product);
     }, [product, relatedProducts, sizes]);
 
     const { resetPurchaseData } = useStore(); // Add a reset function in your Zustand store
@@ -41,7 +41,11 @@ export default function Product({ product, sizes, relatedProducts }) {
     return (
         <MainContainer>
             {product.productByHandle?.konfigurator?.value == "true" ? (
-                <ProductConfigurator product={product.productByHandle} sizes={sizes}></ProductConfigurator>
+                <ProductConfigurator
+                    product={product.productByHandle}
+                    veredelungen={product.parsedVeredelungData}
+                    sizes={sizes}
+                ></ProductConfigurator>
             ) : (
                 <SimpleConfigurator product={product.productByHandle}></SimpleConfigurator>
             )}
@@ -83,7 +87,7 @@ export async function getStaticProps({ params }) {
         return { notFound: true };
     }
 
-    console.log("TAGS", product.productByHandle.tags);
+    console.log("TAGS", product);
 
     const categoryTag = product.productByHandle.tags.find((tag) => tag.startsWith("category_"));
     const category = categoryTag ? categoryTag.replace("category_", "") : null;

@@ -10,6 +10,8 @@ import { MainButton } from "../buttons";
 import useStore from "@/store/store"; // Import Zustand store
 import urlFor from "../../functions/urlFor";
 
+import LogoSM from "@/assets/logoSM.png";
+
 export default function Menu() {
     const [isOpen, setIsOpen] = useState(false);
     const [isMegaMenuVisible, setIsMegaMenuVisible] = useState(false); // State for MegaMenu visibility
@@ -162,11 +164,7 @@ export default function Menu() {
                             {/* Center Section - Logo with Home Link */}
                             <div className="flex-1 text-center md:flex-none md:text-left">
                                 <Link href="/" className="text-2xl font-bold text-gray-900">
-                                    <img
-                                        src={urlFor(menuData.logo).url()}
-                                        alt="Logo"
-                                        className="h-20 inline-block mx-auto md:mx-0"
-                                    />
+                                    <img src={LogoSM.src} alt="Logo" className="h-12 inline-block mx-auto md:mx-0" />
                                 </Link>
                             </div>
 

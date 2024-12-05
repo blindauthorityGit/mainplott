@@ -1,0 +1,1 @@
+export { VeredelungTable } from "./veredlungsTable";

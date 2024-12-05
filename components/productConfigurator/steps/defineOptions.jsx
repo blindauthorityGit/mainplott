@@ -12,14 +12,15 @@ import formatVariants from "@/functions/formatVariants"; // Function for formatt
 import { calculateTotalPrice } from "@/functions/calculateTotalPrice"; // Function for formatting variants
 import NumberInputField from "@/components/inputs/numberInputField"; // Adjust the import path as necessary
 
-export default function DefineOptions({ product }) {
+export default function DefineOptions({ product, veredelungen }) {
     const { purchaseData, setPurchaseData } = useStore(); // Zustand global state
     const [isChecked, setIsChecked] = useState(purchaseData.profiDatenCheck || false); // Initialize based on Zustand state
 
     const [quantity, setQuantity] = useState(1);
-    const [veredelung, setVeredelung] = useState("");
+
     const [coupon, setCoupon] = useState("");
     const [price, setPrice] = useState(0);
+    const [veredelungPiece, setVeredelungPiece] = useState(0);
     const [discountApplied, setDiscountApplied] = useState(false);
     const [appliedDiscountPercentage, setAppliedDiscountPercentage] = useState(0); // Track the applied discount percentage
 
@@ -46,30 +47,6 @@ export default function DefineOptions({ product }) {
         });
     };
 
-    // Fetch the price based on product configuration
-    const fetchPrice = () => {
-        let basePrice = 50;
-        let veredelungMultiplier = veredelung ? 1.2 : 1;
-        let profiCheckMultiplier = isChecked ? 1.15 : 1;
-        let totalPrice = basePrice * quantity * veredelungMultiplier * profiCheckMultiplier;
-
-        // Apply discount if coupon code is valid
-        if (coupon.toLowerCase() === "billige" && discountApplied) {
-            totalPrice *= 0.9; // 10% discount
-        }
-
-        setPrice(totalPrice);
-        // Update the price in Zustand store directly after setting it locally
-        setPurchaseData((prevData) => ({
-            ...prevData,
-            price: totalPrice,
-        }));
-    };
-
-    useEffect(() => {
-        fetchPrice();
-    }, [quantity, veredelung, coupon, discountApplied, isChecked, price]);
-
     useEffect(() => {
         setPurchaseData({
             ...purchaseData,
@@ -82,12 +59,16 @@ export default function DefineOptions({ product }) {
         const discountData = product.preisReduktion ? JSON.parse(product.preisReduktion.value).discounts : null;
 
         // Calculate total price with discount handling
-        const { totalPrice, appliedDiscountPercentage } = calculateTotalPrice(
+        const { totalPrice, appliedDiscountPercentage, veredelungTotal, veredelungPerPiece } = calculateTotalPrice(
             purchaseData.variants,
             product,
             discountData,
-            setDiscountApplied
+            setDiscountApplied,
+            veredelungen,
+            purchaseData
         );
+        console.log(veredelungTotal, veredelungPerPiece);
+        setVeredelungPiece(veredelungPerPiece);
         setPrice(totalPrice);
         setAppliedDiscountPercentage(appliedDiscountPercentage); // Update the discount percentage
     }, [purchaseData, product]);
@@ -203,9 +184,15 @@ export default function DefineOptions({ product }) {
                 >
                     <div>
                         <H3 klasse="!mb-2">EUR {price}</H3>
-                        <P klasse="!text-xs text-successColor">
-                            {discountApplied && `Rabatt von ${appliedDiscountPercentage.toFixed(2)}% angewendet!`}
+                        <P klasse="!text-xs">
+                            {veredelungPiece.front > 0 && `inkl. EUR ${veredelungPiece.front} Druck Brust`}
                         </P>
+                        <P klasse="!text-xs">
+                            {veredelungPiece.back > 0 && `inkl. EUR ${veredelungPiece.back} Druck Rücken`}
+                        </P>
+                        {/* <P klasse="!text-xs text-successColor">
+                            {discountApplied && `Rabatt von ${appliedDiscountPercentage.toFixed(2)}% angewendet!`}
+                        </P> */}
                     </div>
                     {product.preisReduktion && (
                         <div className="mt-4 pl-16">

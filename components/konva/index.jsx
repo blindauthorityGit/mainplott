@@ -27,6 +27,7 @@ const KonvaLayer = forwardRef(
             scale,
             setScale,
             initialPosition,
+            resetHandler,
         },
         ref
     ) => {
@@ -234,6 +235,8 @@ const KonvaLayer = forwardRef(
 
         // Function to export the canvas as a JPEG
         const handleExport = async () => {
+            handleResetZoom();
+
             const dataURL = exportCanvas(stageRef, transformerRef, boundaryPathRef, 1);
 
             // Save the exported dataURL directly into session storage
@@ -262,6 +265,49 @@ const KonvaLayer = forwardRef(
                 console.error("Error saving configured design:", error);
             }
         };
+        // const handleExport = async () => {
+        //     console.log("I ÖXPORT DA SHIT");
+        //     const sides = ["front", "back"];
+        //     const exportedImages = {};
+
+        //     for (const side of sides) {
+        //         if (purchaseData.sides[side]?.uploadedGraphic || purchaseData.sides[side]?.uploadedGraphicFile) {
+        //             // Update the purchaseData to reflect the current side
+        //             setPurchaseData((prev) => ({
+        //                 ...prev,
+        //                 currentSide: side,
+        //             }));
+
+        //             // Allow a small delay to ensure the canvas updates before export
+        //             await new Promise((resolve) => setTimeout(resolve, 100));
+
+        //             // Export the canvas for the current side
+        //             const dataURL = exportCanvas(stageRef, transformerRef, boundaryPathRef, 1);
+        //             console.log(dataURL);
+        //             // Convert the dataURL to a blob
+        //             const blob = dataURLToBlob(dataURL);
+        //             const fileName = `product-${side}-${Date.now()}.png`;
+
+        //             try {
+        //                 const downloadURL = await uploadImageToStorage(blob, fileName);
+        //                 exportedImages[side] = downloadURL;
+
+        //                 // Save each exported image to sessionStorage (optional)
+        //                 sessionStorage.setItem(`exportedImage_${side}`, dataURL);
+        //             } catch (error) {
+        //                 console.error(`Error exporting ${side} image:`, error);
+        //             }
+        //         }
+        //     }
+
+        //     // Set the exported images in Zustand
+        //     setPurchaseData((prev) => ({
+        //         ...prev,
+        //         exportedImages,
+        //     }));
+
+        //     console.log("Exported images:", exportedImages);
+        // };
 
         useEffect(() => {
             if (onExportReady) {
@@ -388,6 +434,13 @@ const KonvaLayer = forwardRef(
             stageRef.current.position({ x: 0, y: 0 });
             stageRef.current.batchDraw();
         };
+
+        useEffect(() => {
+            if (resetHandler) {
+                console.log("§RESETTTER");
+                resetHandler(() => handleResetZoom());
+            }
+        }, [resetHandler]);
 
         // Prevent dragging at minimum zoom level
         const isDraggable = true;

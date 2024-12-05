@@ -157,47 +157,41 @@ export async function getProductByHandle(handle) {
               type
               description
           }
-
-         templatePositions: metafield(namespace: "template", key: "positions") {
-          value
-          type
-         description
+          templatePositions: metafield(namespace: "template", key: "positions") {
+              value
+              type
+              description
           }
-
-        preisReduktion: metafield(namespace: "custom", key: "preis_reduktion") {
-          value
-          type
-         description
+          preisReduktion: metafield(namespace: "custom", key: "preis_reduktion") {
+              value
+              type
+              description
           }
-
-        konfigurator: metafield(namespace: "custom", key: "konfigurator") {
-          value
-          type
-         description
+          konfigurator: metafield(namespace: "custom", key: "konfigurator") {
+              value
+              type
+              description
           }
-
-        textPersonalisierung: metafield(namespace: "custom", key: "text_inputbox") {
-          value
-          type
-         description
+          textPersonalisierung: metafield(namespace: "custom", key: "text_inputbox") {
+              value
+              type
+              description
           }
-        simplePersonalisierung: metafield(namespace: "custom", key: "simple_personalisierung") {
-          value
-          type
-         description
+          simplePersonalisierung: metafield(namespace: "custom", key: "simple_personalisierung") {
+              value
+              type
+              description
           }
-    
-        detailbeschreibung: metafield(namespace: "custom", key: "detailbeschreibung") {
-          value
-          type
-         description
+          detailbeschreibung: metafield(namespace: "custom", key: "detailbeschreibung") {
+              value
+              type
+              description
           }
-    
-          variants(first: 40) {
+          variants(first: 80) {
               edges {
                   node {
                       title     
-                         priceV2 {
+                      priceV2 {
                           amount
                           currencyCode
                       }
@@ -218,6 +212,7 @@ export async function getProductByHandle(handle) {
       }
   }`;
 
+    // Fetch the main product data
     const response = await callShopify(query);
     const product = response.data.productByHandle;
 
@@ -253,14 +248,121 @@ export async function getProductByHandle(handle) {
         node: variant,
     }));
 
-    console.log("Variants with Back Images:", product.variants.edges);
+    // Fetch Veredelung Brust and Rücken products by handle or tags
+    const veredelungQueryBrust = `{
+  products(first: 1, query: "veredelung-brust") {
+    edges {
+      node {
+        title
+        handle
 
-    return { ...response.data, sizes, colorPatternIds, product };
+        preisReduktion: metafield(namespace: "custom", key: "preis_reduktion") {
+          value
+          type
+          description
+        }
+
+        variants(first: 1) {
+          edges {
+            node {
+              price  {
+                amount
+                currencyCode
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+`;
+    const veredelungQueryRuecken = `{
+  products(first: 1, query: "veredelung-rucken") {
+    edges {
+      node {
+        title
+        handle
+
+        preisReduktion: metafield(namespace: "custom", key: "preis_reduktion") {
+          value
+          type
+          description
+        }
+
+        variants(first: 1) {
+          edges {
+            node {
+              price  {
+                amount
+                currencyCode
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+`;
+
+    const veredelungBrustResponse = await callShopify(veredelungQueryBrust);
+    const veredelungRueckenResponse = await callShopify(veredelungQueryRuecken);
+
+    console.log("BRUST", veredelungBrustResponse.data.products.edges);
+    console.log("RÜCKEN", veredelungRueckenResponse.data.products.edges);
+
+    function parseVeredelungEdges(edges) {
+        return edges.map((edge) => {
+            const product = edge.node;
+
+            return {
+                title: product.title,
+                handle: product.handle,
+                preisReduktion: product.preisReduktion ? JSON.parse(product.preisReduktion.value) : null, // Parse the preisReduktion JSON value if it exists
+                price: product.variants.edges[0]?.node.price.amount || null, // Fetch the price amount
+                currency: product.variants.edges[0]?.node.price.currencyCode || null, // Fetch the currency
+            };
+        });
+    }
+
+    // Combine both responses into a neat package
+    function parseVeredelungData(veredelungBrustEdges, veredelungRueckenEdges) {
+        return {
+            front: parseVeredelungEdges(veredelungBrustEdges)[0], // Process and return the first (and only) entry
+            back: parseVeredelungEdges(veredelungRueckenEdges)[0], // Same for Rücken
+        };
+    }
+    const parsedVeredelungData = parseVeredelungData(
+        veredelungBrustResponse.data.products.edges,
+        veredelungRueckenResponse.data.products.edges
+    );
+
+    console.log("Parsed Veredelung Data:", parsedVeredelungData);
+    // Parse the Veredelung products
+    // const veredelungProducts = veredelungResponse.data.products.edges.map((edge) => ({
+    //     title: edge.node.title,
+    //     handle: edge.node.handle,
+    //     price: edge.node.variants.edges[0]?.node.priceV2.amount || 0,
+    // }));
+
+    // // console.log("Variants with Back Images:", product.variants.edges);
+    // console.log("Veredelung Products:", veredelungProducts);
+
+    return {
+        ...response.data,
+        sizes,
+        colorPatternIds,
+        product,
+        parsedVeredelungData,
+        // veredelungProducts, // Include in the final response
+    };
 }
 
 export async function getAllProducts() {
     const query = `{
-        products(first: 250) {
+           products(first: 250, query: "-tag:veredelung") { 
+
             edges {
                 node {
                     id
@@ -286,6 +388,10 @@ export async function getAllProducts() {
                         edges {
                             node {
                                 title     
+                                  priceV2 {
+                          amount
+                          currencyCode
+                      }
                                 selectedOptions {
                                     name
                                     value
