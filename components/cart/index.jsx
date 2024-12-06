@@ -24,11 +24,11 @@ export default function CartSidebar() {
 
     // Calculate the total price with or without discount
     useEffect(() => {
-        const subtotal = cartItems.reduce((sum, item) => sum + Number(item.price), 0);
-        setTotalPrice(discountApplied ? subtotal * 0.9 : subtotal); // 10% discount if applied
+        const subtotal = cartItems.reduce((sum, item) => sum + Number(item.totalPrice), 0);
+        setTotalPrice(subtotal.toFixed(2)); // 10% discount if applied
     }, [cartItems, discountApplied]);
 
-    console.log(cartItems);
+    // console.log(cartItems);
 
     // Handle coupon code verification
     const handleCouponCheck = () => {
@@ -96,6 +96,8 @@ export default function CartSidebar() {
         }
     };
 
+    console.log(cartItems);
+
     return (
         <AnimatePresence>
             {isCartSidebarOpen && (
@@ -126,14 +128,18 @@ export default function CartSidebar() {
                                         <img src={item.selectedImage} alt={item.productName} className="w-16 mr-4" />
                                         <div className="flex-1">
                                             <H5 klasse="!mb-2">{item.productName}</H5>
-                                            <p className="text-sm">Farbe: {item.selectedColor || "N/A"}</p>
+                                            {item.configurator && (
+                                                <p className="text-sm">Farbe: {item.selectedColor || "N/A"}</p>
+                                            )}
                                             <p className="text-sm">
                                                 Menge:{" "}
-                                                {Object.entries(item.variants || {}).map(([size, details]) => (
-                                                    <span key={size}>{` ${details.quantity}x (${size})`}</span>
-                                                ))}
+                                                {item.configurator
+                                                    ? Object.entries(item.variants || {}).map(([size, details]) => (
+                                                          <span key={size}>{` ${details.quantity}x (${size})`}</span>
+                                                      ))
+                                                    : item.quantity}
                                             </p>
-                                            <p className="text-sm">Preis: € {item.price}</p>
+                                            <p className="text-sm">Preis: € {item.totalPrice}</p>
                                         </div>
                                         {/* <div className="flex items-center mt-2">
                                             <button

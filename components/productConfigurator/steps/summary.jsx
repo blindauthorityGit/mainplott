@@ -15,7 +15,7 @@ export default function OrderSummary() {
             value: `${Object.values(purchaseData.sides).filter((e) => e.uploadedGraphic).length} Motive (Seiten)`,
         },
         // { label: "Veredelungen", value: purchaseData.veredelungen || "Keine" },
-        { label: "Profi Datencheck", value: purchaseData.dataCheck ? "Ja" : "Nein" },
+        { label: "Profi Datencheck", value: purchaseData.profiDatenCheck ? "Ja" : "Nein" },
     ];
 
     // Extract sizes and quantities
@@ -56,7 +56,14 @@ export default function OrderSummary() {
             {/* Final Price */}
             <div className="mt-8">
                 <P klasse="text-lg font-semibold mb-4">Gesamtpreis:</P>
-                <H3 klasse="text-xl">EUR {purchaseData.price}</H3>
+                <H3 klasse="text-xl">EUR {purchaseData.totalPrice}</H3>
+                <P klasse="!text-sm">
+                    {purchaseData.veredelungTotal && `Davon EUR ${purchaseData.veredelungTotal} für Verdelungen`}
+                </P>
+                <P klasse="!text-sm">
+                    {purchaseData.profiDatenCheck &&
+                        `Davon EUR ${purchaseData.profiDatenCheckPrice}.00 für Profi DatenCheck`}
+                </P>
             </div>
         </div>
     );

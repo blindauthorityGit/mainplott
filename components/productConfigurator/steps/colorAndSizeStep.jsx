@@ -28,6 +28,9 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
         const initializeSelection = () => {
             const firstSize = Object.keys(formattedVariants)?.[0];
             const firstColor = formattedVariants[firstSize]?.colors?.[0]?.color;
+            const firstID = formattedVariants[firstSize]?.colors?.[0]?.id;
+
+            console.log(firstID);
 
             if (!purchaseData.selectedSize || !purchaseData.selectedColor) {
                 const initialSize = purchaseData.selectedSize || firstSize;
@@ -53,6 +56,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                             size: initialSize,
                             color: initialColor,
                             quantity: purchaseData.variants?.[initialSize]?.quantity || 1,
+                            id: firstID,
                         },
                     },
                 });

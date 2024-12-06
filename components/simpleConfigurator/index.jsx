@@ -49,6 +49,14 @@ export default function SimpleConfigurator({ product }) {
         }
     };
 
+    const handleTextChange = (newValue) => {
+        setInputValue(newValue);
+        setPurchaseData({
+            ...purchaseData,
+            personalisierungsText: newValue, // Update the customization text in Zustand
+        });
+    };
+
     return (
         <div className="grid grid-cols-12 lg:px-24 lg:gap-4 h-full">
             {/* Left - Product Image */}
@@ -108,7 +116,7 @@ export default function SimpleConfigurator({ product }) {
                                 <P klasse="lg:!text-sm">{product?.textPersonalisierung?.value}</P>
                                 <CustomTextField
                                     value={inputValue}
-                                    onChange={(newValue) => setInputValue(newValue)}
+                                    onChange={handleTextChange}
                                     maxLength={80}
                                     placeholder="Personalisierung...."
                                 ></CustomTextField>
@@ -130,6 +138,13 @@ export default function SimpleConfigurator({ product }) {
                     <div className="mt-auto lg:flex justify-end hidden lg:px-16 lg:mt-8">
                         <StepButton
                             onClick={() => {
+                                setPurchaseData({
+                                    ...purchaseData,
+                                    product: product,
+                                    productName: product.title,
+                                    totalPrice: Number(price) * (purchaseData.quantity || 1).toFixed(2),
+                                    // price: selectedVariant.node.priceV2.amount,
+                                });
                                 addCartItem({ ...purchaseData, selectedImage }), openCartSidebar();
                             }}
                             className="px-4 py-2 !bg-successColor text-white rounded"

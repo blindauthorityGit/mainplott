@@ -20,7 +20,14 @@ const stepsConfig = [
     { id: "summary", component: Summary },
 ];
 
-export default function ProductConfigurator({ product, sizes, colorPatternIds, variants, veredelungen }) {
+export default function ProductConfigurator({
+    product,
+    sizes,
+    colorPatternIds,
+    variants,
+    veredelungen,
+    profiDatenCheck,
+}) {
     const [currentStep, setCurrentStep] = useState(0);
     const [selectedImage, setSelectedImage] = useState(null);
     const router = useRouter();
@@ -60,6 +67,7 @@ export default function ProductConfigurator({ product, sizes, colorPatternIds, v
                 currentStep={currentStep}
                 variants={variants}
                 veredelungen={veredelungen}
+                profiDatenCheck={profiDatenCheck}
             />
         </StepHolder>
     );

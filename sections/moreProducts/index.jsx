@@ -5,7 +5,7 @@ export default function MoreProducts({ relatedProducts, currentProductHandle }) 
     if (!relatedProducts || relatedProducts.length === 0) {
         return null; // No products to display
     }
-    console.log(relatedProducts, currentProductHandle.productByHandle);
+    // console.log(relatedProducts, currentProductHandle.productByHandle);
     // Filter out the current product by its handle
     const filteredProducts = relatedProducts.filter(
         (product) => product.title !== currentProductHandle.productByHandle.title

@@ -113,11 +113,12 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     };
 
     const handleGraphicUpload = async (event) => {
+        console.log("UPLOADED");
         const newFile = event.target.files[0];
         console.log(newFile);
         const centeredX = purchaseData.containerWidth / 2;
         const centeredY = purchaseData.containerHeight / 2;
-        console.log(centeredX, centeredY);
+        console.log("SPOSITIONE", centeredX, centeredY);
         setPurchaseData({
             ...purchaseData,
             sides: {

@@ -12,7 +12,7 @@ import formatVariants from "@/functions/formatVariants"; // Function for formatt
 import { calculateTotalPrice } from "@/functions/calculateTotalPrice"; // Function for formatting variants
 import NumberInputField from "@/components/inputs/numberInputField"; // Adjust the import path as necessary
 
-export default function DefineOptions({ product, veredelungen }) {
+export default function DefineOptions({ product, veredelungen, profiDatenCheck }) {
     const { purchaseData, setPurchaseData } = useStore(); // Zustand global state
     const [isChecked, setIsChecked] = useState(purchaseData.profiDatenCheck || false); // Initialize based on Zustand state
 
@@ -25,6 +25,9 @@ export default function DefineOptions({ product, veredelungen }) {
     const [appliedDiscountPercentage, setAppliedDiscountPercentage] = useState(0); // Track the applied discount percentage
 
     const [additionalInfo, setAdditionalInfo] = useState("");
+    const [totalPrice, setTotalPrice] = useState(0);
+    const [veredelungTotal, setVeredelungTotal] = useState(0);
+    const [veredelungPerPiece, setVeredelungPerPiece] = useState({});
 
     const stepData = {
         title: "Staffelung",
@@ -40,10 +43,25 @@ export default function DefineOptions({ product, veredelungen }) {
 
     // Toggle handler to update both local state and Zustand global state
     const handleToggle = () => {
-        setIsChecked((prev) => !prev);
-        setPurchaseData({
-            ...purchaseData,
-            profiDatenCheck: !purchaseData.profiDatenCheck, // Toggle profiDatenCheck in Zustand
+        setIsChecked((prev) => {
+            const newIsChecked = !prev;
+
+            // Dynamically adjust the total price based on the checkbox state
+            const profiDatenCheckPrice = parseFloat(
+                profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.price?.amount || 0
+            );
+
+            setPrice((prevPrice) =>
+                newIsChecked ? prevPrice + profiDatenCheckPrice : prevPrice - profiDatenCheckPrice
+            );
+
+            // Update Zustand state
+            setPurchaseData({
+                ...purchaseData,
+                profiDatenCheck: newIsChecked,
+            });
+
+            return newIsChecked;
         });
     };
 
@@ -55,10 +73,8 @@ export default function DefineOptions({ product, veredelungen }) {
     }, [price]);
 
     useEffect(() => {
-        // Parse discount data from product
         const discountData = product.preisReduktion ? JSON.parse(product.preisReduktion.value).discounts : null;
 
-        // Calculate total price with discount handling
         const { totalPrice, appliedDiscountPercentage, veredelungTotal, veredelungPerPiece } = calculateTotalPrice(
             purchaseData.variants,
             product,
@@ -67,15 +83,36 @@ export default function DefineOptions({ product, veredelungen }) {
             veredelungen,
             purchaseData
         );
-        console.log(veredelungTotal, veredelungPerPiece);
-        setVeredelungPiece(veredelungPerPiece);
-        setPrice(totalPrice);
-        setAppliedDiscountPercentage(appliedDiscountPercentage); // Update the discount percentage
-    }, [purchaseData, product]);
+        console.log(totalPrice, veredelungTotal, veredelungPerPiece);
+        setTotalPrice(totalPrice);
+        setVeredelungTotal(veredelungTotal);
+        setVeredelungPerPiece(veredelungPerPiece);
 
-    useEffect(() => {
-        console.log("WEIR HABEN DISCOUNT");
-    }, [discountApplied]);
+        // Ensure profiDatenCheckPrice is a valid number
+        const profiDatenCheckPrice = isChecked
+            ? Number(profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.price?.amount || 0)
+            : 0;
+
+        // Ensure totalPrice is a number (already calculated in calculateTotalPrice)
+        const numericTotalPrice = parseFloat(totalPrice) || 0;
+
+        setPurchaseData({
+            ...purchaseData,
+            profiDatenCheckPrice: profiDatenCheckPrice,
+        });
+
+        // Properly format the price to avoid excessive decimals
+        const formattedPrice = (numericTotalPrice + profiDatenCheckPrice).toFixed(2);
+
+        setVeredelungPiece(veredelungPerPiece);
+        setPrice(parseFloat(formattedPrice)); // Ensure it stays as a number
+        setAppliedDiscountPercentage(appliedDiscountPercentage);
+    }, [purchaseData, product, isChecked]); // Include isChecked as a dependency
+
+    // Include isChecked as a dependency
+    // useEffect(() => {
+    //     setPrice(price + Number(profiDatenCheck[0].node.variants.edges[0].node.price.amount));
+    // }, [isChecked]);
 
     // Handle Veredelung change
     const handleVeredelungChange = (event) => setVeredelung(event.target.value);
@@ -89,6 +126,17 @@ export default function DefineOptions({ product, veredelungen }) {
             setDiscountApplied(false);
         }
     };
+
+    useEffect(() => {
+        setPurchaseData({
+            ...purchaseData,
+            totalPrice: price,
+            veredelungTotal: veredelungTotal,
+            veredelungPerPiece: veredelungPerPiece,
+        });
+    }, [totalPrice, veredelungTotal, veredelungPerPiece, price]);
+
+    console.log(profiDatenCheck);
 
     return (
         <div className="lg:px-16 lg:mt-8 font-body">
@@ -165,16 +213,25 @@ export default function DefineOptions({ product, veredelungen }) {
                 {/* <AdditionalInfoField value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} /> */}
                 {/* Profi Datencheck Checkbox */}
                 <div className="h-8"></div>
-                <GeneralCheckBox
-                    label="Profi Datencheck?"
-                    isChecked={isChecked}
-                    onToggle={handleToggle} // Only pass onToggle
-                    activeClass=""
-                    nonActiveClass="bg-background"
-                    borderColor="border-textColor"
-                    checkColor="text-successColor"
-                />
-
+                <div className="flex bg-accentColor p-4">
+                    {" "}
+                    <P klasse="!text-xs">
+                        Wir checken Ihre Daten nach optimaler Drucktauglichkeit
+                        <span className="font-semibold">
+                            {" "}
+                            <br />+ {profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.price?.amount} EUR
+                        </span>
+                    </P>
+                    <GeneralCheckBox
+                        label="Profi Datencheck?"
+                        isChecked={isChecked}
+                        onToggle={handleToggle} // Only pass onToggle
+                        activeClass=""
+                        nonActiveClass="bg-background"
+                        borderColor="border-textColor"
+                        checkColor="text-successColor"
+                    />
+                </div>
                 {/* Price Display */}
                 <motion.div
                     className="mt-6 flex"
@@ -195,13 +252,13 @@ export default function DefineOptions({ product, veredelungen }) {
                         </P> */}
                     </div>
                     {product.preisReduktion && (
-                        <div className="mt-4 pl-16">
-                            <ul className=" text-xs text-textColor !font-body">
+                        <div className="mt-0 pl-16 flex items-end">
+                            <ul className=" text-xs text-textColor !font-body tracking-wider">
                                 {JSON.parse(product.preisReduktion.value).discounts.map((discount, index) => (
                                     <li key={index}>
                                         {discount.maxQuantity
-                                            ? `Von ${discount.minQuantity} bis ${discount.maxQuantity} Stück: ${discount.discountPercentage}% Rabatt`
-                                            : `Ab ${discount.minQuantity} Stück: ${discount.discountPercentage}% Rabatt`}
+                                            ? `Von ${discount.minQuantity} bis ${discount.maxQuantity} Stück: EUR ${discount.price}`
+                                            : `Ab ${discount.minQuantity} Stück: EUR ${discount.price}`}
                                     </li>
                                 ))}
                             </ul>

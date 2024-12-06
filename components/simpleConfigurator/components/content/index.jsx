@@ -18,7 +18,7 @@ export default function SimpleStep({ product }) {
 
     // Format variants for easier access
     const formattedVariants = formatVariants(product.variants);
-    console.log(formattedVariants, product.variants);
+    // console.log(formattedVariants, product.variants);
     // Ensure `selectedSize` and `selectedColor` are initialized
 
     return (

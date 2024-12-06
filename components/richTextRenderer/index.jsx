@@ -5,7 +5,7 @@ const RichTextRenderer = ({ richText }) => {
         if (!node) return null;
 
         // Log the current node for debugging
-        console.log("Rendering Node:", node);
+        // console.log("Rendering Node:", node);
 
         switch (node.type) {
             case "root":

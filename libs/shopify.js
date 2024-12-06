@@ -140,6 +140,7 @@ export async function getAllProductHandles() {
 export async function getProductByHandle(handle) {
     const query = `{
       productByHandle(handle: "${handle}") {
+          id
           title
           description
           tags
@@ -190,6 +191,7 @@ export async function getProductByHandle(handle) {
           variants(first: 80) {
               edges {
                   node {
+                      id  
                       title     
                       priceV2 {
                           amount
@@ -338,16 +340,35 @@ export async function getProductByHandle(handle) {
         veredelungRueckenResponse.data.products.edges
     );
 
-    console.log("Parsed Veredelung Data:", parsedVeredelungData);
-    // Parse the Veredelung products
-    // const veredelungProducts = veredelungResponse.data.products.edges.map((edge) => ({
-    //     title: edge.node.title,
-    //     handle: edge.node.handle,
-    //     price: edge.node.variants.edges[0]?.node.priceV2.amount || 0,
-    // }));
+    const profiDatenCheckQuery = `{
+        products(first: 1, query: "profi-datencheck") {
+          edges {
+            node {
+              title
+              handle
+      
+        
+      
+              variants(first: 1) {
+                edges {
+                  node {
+                    price  {
+                      amount
+                      currencyCode
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      `;
 
-    // // console.log("Variants with Back Images:", product.variants.edges);
-    // console.log("Veredelung Products:", veredelungProducts);
+    const profiDatenCheck = await callShopify(profiDatenCheckQuery);
+    const profiDatenCheckData = profiDatenCheck.data.products.edges;
+
+    console.log("profiDatenCheck", profiDatenCheck.data.products.edges);
 
     return {
         ...response.data,
@@ -355,6 +376,7 @@ export async function getProductByHandle(handle) {
         colorPatternIds,
         product,
         parsedVeredelungData,
+        profiDatenCheckData,
         // veredelungProducts, // Include in the final response
     };
 }

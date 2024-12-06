@@ -44,6 +44,7 @@ export default function Product({ product, sizes, relatedProducts }) {
                 <ProductConfigurator
                     product={product.productByHandle}
                     veredelungen={product.parsedVeredelungData}
+                    profiDatenCheck={product.profiDatenCheckData}
                     sizes={sizes}
                 ></ProductConfigurator>
             ) : (

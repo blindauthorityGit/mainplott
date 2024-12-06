@@ -177,9 +177,9 @@ export default function Menu() {
 
                                 {/* Cart Icon with Badge */}
                                 <button className="relative hidden md:inline-flex items-center">
-                                    <FaShoppingCart className="text-3xl text-gray-700" />
+                                    <FaShoppingCart onClick={openCartSidebar} className="text-3xl text-gray-700" />
                                     {cartItems.length > 0 && (
-                                        <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full px-2 text-xs">
+                                        <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full px-2 text-xs">
                                             {cartItems.length}
                                         </span>
                                     )}
