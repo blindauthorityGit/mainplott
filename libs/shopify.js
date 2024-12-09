@@ -1,7 +1,7 @@
 import shopify from "@shopify/shopify-api";
 
-const domain = process.env.SHOPIFY_STORE_DOMAIN;
-const token = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
+const domain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN;
+const token = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN;
 
 console.log(domain, token);
 
@@ -21,10 +21,16 @@ async function callShopify(query) {
     };
 
     try {
-        const data = await fetch(fetchUrl, fetchOptions).then((response) => response.json());
+        const response = await fetch(fetchUrl, fetchOptions);
+        const data = await response.json();
+        console.log("Shopify API Response:", data); // Log full response
+        if (data.errors) {
+            console.error("Shopify API Errors:", data.errors);
+        }
         return data;
     } catch (error) {
-        throw new Error("Could not fetch products!");
+        console.error("Shopify API Error:", error.message);
+        throw new Error("Could not fetch data!");
     }
 }
 export async function getAllProductsInCollection(collection) {
@@ -255,6 +261,7 @@ export async function getProductByHandle(handle) {
   products(first: 1, query: "veredelung-brust") {
     edges {
       node {
+      id
         title
         handle
 
@@ -264,9 +271,10 @@ export async function getProductByHandle(handle) {
           description
         }
 
-        variants(first: 1) {
+        variants(first: 3) {
           edges {
             node {
+             id  
               price  {
                 amount
                 currencyCode
@@ -283,6 +291,7 @@ export async function getProductByHandle(handle) {
   products(first: 1, query: "veredelung-rucken") {
     edges {
       node {
+       id  
         title
         handle
 
@@ -295,6 +304,7 @@ export async function getProductByHandle(handle) {
         variants(first: 1) {
           edges {
             node {
+             id  
               price  {
                 amount
                 currencyCode
@@ -320,10 +330,12 @@ export async function getProductByHandle(handle) {
 
             return {
                 title: product.title,
+                id: product.id,
                 handle: product.handle,
                 preisReduktion: product.preisReduktion ? JSON.parse(product.preisReduktion.value) : null, // Parse the preisReduktion JSON value if it exists
                 price: product.variants.edges[0]?.node.price.amount || null, // Fetch the price amount
                 currency: product.variants.edges[0]?.node.price.currencyCode || null, // Fetch the currency
+                variants: product.variants || null, // Fetch the currency
             };
         });
     }
@@ -344,6 +356,7 @@ export async function getProductByHandle(handle) {
         products(first: 1, query: "profi-datencheck") {
           edges {
             node {
+             id  
               title
               handle
       
@@ -352,6 +365,8 @@ export async function getProductByHandle(handle) {
               variants(first: 1) {
                 edges {
                   node {
+
+                 id  
                     price  {
                       amount
                       currencyCode
@@ -377,6 +392,7 @@ export async function getProductByHandle(handle) {
         product,
         parsedVeredelungData,
         profiDatenCheckData,
+
         // veredelungProducts, // Include in the final response
     };
 }
@@ -537,5 +553,78 @@ export async function fetchMetaobjects(metaobjectGids) {
     } catch (error) {
         console.error("Error fetching metaobjects:", error);
         return [];
+    }
+}
+
+// libs/shopify.js
+
+export async function createCart(lineItems, cartAttributes) {
+    console.log("LINE ITEMS", lineItems);
+    console.log("cartAtributes", cartAttributes);
+
+    // Construct the query dynamically with inlined lineItems
+    const query = `
+        mutation {
+            cartCreate(input: {
+                lines: [
+                    ${lineItems
+                        .map(
+                            (item) => `{
+                        merchandiseId: "${item.variantId}",
+                        quantity: ${item.quantity},
+                        attributes: [
+                            ${
+                                item.customAttributes
+                                    ?.map((attr) => `{ key: "${attr.key}", value: "${attr.value}" }`)
+                                    .join(", ") || ""
+                            }
+                        ]
+                    }`
+                        )
+                        .join(", ")}
+                ],
+                ,
+                attributes: [
+                    ${cartAttributes.map((attr) => `{ key: "${attr.key}", value: "${attr.value}" }`).join(", ")}
+                ]
+            }) {
+                cart {
+                    id
+                    checkoutUrl
+                }
+                userErrors {
+                    field
+                    message
+                }
+            }
+        }
+    `;
+
+    console.log("Constructed Query:", query);
+
+    try {
+        const response = await callShopify(query);
+
+        if (response.errors) {
+            console.error("Shopify API Errors:", response.errors);
+            throw new Error("Invalid input for Shopify cartCreate mutation.");
+        }
+
+        const userErrors = response?.data?.cartCreate?.userErrors || [];
+        if (userErrors.length > 0) {
+            console.error("Shopify User Errors:", userErrors);
+            throw new Error(userErrors.map((error) => error.message).join(", "));
+        }
+
+        const cart = response?.data?.cartCreate?.cart;
+        if (cart?.checkoutUrl) {
+            console.log("CHECKOUT URL:", cart.checkoutUrl);
+            return cart.checkoutUrl; // Return the checkout URL
+        } else {
+            throw new Error("No checkout URL returned!");
+        }
+    } catch (error) {
+        console.error("Shopify createCart Error:", error.message);
+        throw new Error("Could not create cart");
     }
 }

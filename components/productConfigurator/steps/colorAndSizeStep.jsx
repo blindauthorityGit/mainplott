@@ -35,7 +35,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
             if (!purchaseData.selectedSize || !purchaseData.selectedColor) {
                 const initialSize = purchaseData.selectedSize || firstSize;
                 const initialColor = purchaseData.selectedColor || firstColor;
-
+                console.log(initialSize, initialColor);
                 setSelectedSize(initialSize);
                 setSelectedColor(initialColor);
 
@@ -84,13 +84,13 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     };
 
     // Handle size change
-    // Handle size change
     const handleSizeChange = (size) => {
         setSelectedSize(size);
 
         // Get the first available color for the new size
         const firstColor = formattedVariants[size]?.colors?.[0]?.color || null;
         const firstImage = formattedVariants[size]?.colors?.[0]?.image || null;
+        const firstId = formattedVariants[size]?.colors?.[0]?.id || null;
 
         setSelectedImage(firstImage);
         setSelectedColor(firstColor);
@@ -101,13 +101,16 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                 size: size,
                 color: firstColor,
                 quantity: 1, // Default quantity
+                id: firstId, // Update the variant ID
             },
         };
 
         setPurchaseData({
             ...purchaseData,
             selectedSize: size,
+            selectedColor: firstColor,
             variants: updatedVariants, // Replace the current variants object with the new one
+            selectedVariantId: firstId, // Update the selectedVariantId in purchaseData
         });
 
         setActiveVariant(size, firstColor);
@@ -115,27 +118,31 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     };
 
     // Handle color change
-    // Handle color change
     const handleColorChange = (color) => {
         setSelectedColor(color);
 
-        // Update only the color for the currently selected size
+        // Find the image and ID for the selected size and color
+        const selectedColorData = formattedVariants[selectedSize]?.colors.find((c) => c.color === color) || {};
+        const image = selectedColorData.image || null;
+        const variantId = selectedColorData.id || null;
+
+        // Update only the color and ID for the currently selected size
         const updatedVariants = {
             ...purchaseData.variants, // Preserve existing size entries
             [selectedSize]: {
                 ...purchaseData.variants[selectedSize], // Preserve existing data for the current size
                 color: color, // Update the color
+                id: variantId, // Update the variant ID
             },
         };
 
         setPurchaseData({
             ...purchaseData,
             selectedColor: color,
+            selectedVariantId: variantId, // Update the selectedVariantId in purchaseData
             variants: updatedVariants, // Update the entire variants object
         });
 
-        // Update selected image for the new color
-        const image = formattedVariants[selectedSize]?.colors.find((c) => c.color === color)?.image || null;
         setSelectedImage(image);
 
         setActiveVariant(selectedSize, color);

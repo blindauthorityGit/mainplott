@@ -55,6 +55,7 @@ export default function ProductConfigurator({
             setCurrentStep={setCurrentStep}
             selectedImage={selectedImage}
             variants={variants}
+            veredelungen={veredelungen}
         >
             <CurrentStepComponent
                 product={product}

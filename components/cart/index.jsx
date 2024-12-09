@@ -6,7 +6,9 @@ import Overlay from "../modal/overlay";
 import { H2, H3, H5, P } from "@/components/typography";
 import { TextField, InputAdornment, Button } from "@mui/material";
 import { uploadPurchaseToFirestore } from "@/config/firebase"; // Import the upload function
+import prepareLineItems from "@/functions/prepareLineItems";
 
+import { createCart } from "@/libs/shopify";
 export default function CartSidebar() {
     const {
         cartItems,
@@ -52,46 +54,93 @@ export default function CartSidebar() {
         }
     };
 
+    // const handleCheckout = async () => {
+    //     try {
+    //         closeCartSidebar();
+
+    //         // Prepare purchase data
+    //         const cleanedCartItems = cartItems.map((item) => {
+    //             const cleanedSides = Object.keys(item.sides || {}).reduce((acc, sideKey) => {
+    //                 const { uploadedGraphicFile, ...rest } = item.sides[sideKey]; // Remove the File object
+    //                 acc[sideKey] = rest; // Keep the rest of the properties
+    //                 return acc;
+    //             }, {});
+
+    //             return {
+    //                 ...item,
+    //                 sides: cleanedSides, // Replace sides with cleaned data
+    //             };
+    //         });
+
+    //         console.log(cleanedCartItems);
+
+    //         const purchaseData = {
+    //             cartItems: cleanedCartItems,
+    //             totalPrice,
+    //             customerName: "Test Kunde",
+    //             date: new Date().toISOString(),
+    //         };
+
+    //         console.log("Starting Firestore upload...");
+    //         console.log("Data to upload:", purchaseData);
+
+    //         await uploadPurchaseToFirestore(purchaseData);
+
+    //         setModalContent("Vielen Dank für Ihre Bestellung!");
+    //         setModalOpen(true);
+    //         clearCart();
+
+    //         console.log("Purchase data saved successfully!");
+    //     } catch (error) {
+    //         console.error("Error saving purchase data:", error);
+    //         setModalContent("Fehler beim Speichern der Bestellung.");
+    //         setModalOpen(true);
+    //     }
+    // };
+
     const handleCheckout = async () => {
         try {
-            closeCartSidebar();
+            const lineItems = prepareLineItems(cartItems); // Prepare line items from the cart
+            console.log("Prepared Line Items:", lineItems);
+            console.log("Cart Items:", cartItems);
 
-            // Prepare purchase data
-            const cleanedCartItems = cartItems.map((item) => {
-                const cleanedSides = Object.keys(item.sides || {}).reduce((acc, sideKey) => {
-                    const { uploadedGraphicFile, ...rest } = item.sides[sideKey]; // Remove the File object
-                    acc[sideKey] = rest; // Keep the rest of the properties
-                    return acc;
-                }, {});
+            // Extract cartAttributes from all cartItems
+            const cartAttributes = cartItems.reduce((attributes, item) => {
+                console.log(item?.configImage);
+                if (item?.sides?.front?.uploadedGraphic?.downloadURL) {
+                    attributes.push({
+                        key: `uploadedImageFront_${item.id || attributes.length}`, // Unique key per item
+                        value: item.sides.front.uploadedGraphic.downloadURL,
+                    });
+                }
+                if (item?.sides?.back?.uploadedGraphic?.downloadURL) {
+                    attributes.push({
+                        key: `uploadedImageBack_${item.id || attributes.length}`, // Unique key per item
+                        value: item.sides.back.uploadedGraphic.downloadURL,
+                    });
+                }
+                if (item?.configImage) {
+                    attributes.push({
+                        key: `fullImageURL_${item.id || attributes.length}`, // Unique key per item
+                        value: item.configImage,
+                    });
+                }
+                return attributes;
+            }, []); // Start with an empty array
 
-                return {
-                    ...item,
-                    sides: cleanedSides, // Replace sides with cleaned data
-                };
-            });
+            console.log("Cart Attributes:", cartAttributes);
 
-            console.log(cleanedCartItems);
-
-            const purchaseData = {
-                cartItems: cleanedCartItems,
-                totalPrice,
-                customerName: "Test Kunde",
-                date: new Date().toISOString(),
-            };
-
-            console.log("Starting Firestore upload...");
-            console.log("Data to upload:", purchaseData);
-
-            await uploadPurchaseToFirestore(purchaseData);
-
-            setModalContent("Vielen Dank für Ihre Bestellung!");
-            setModalOpen(true);
-            clearCart();
-
-            console.log("Purchase data saved successfully!");
+            // Call createCart API with lineItems and cartAttributes
+            const checkoutUrl = await createCart(lineItems, cartAttributes.length > 0 ? cartAttributes : undefined);
+            if (checkoutUrl) {
+                console.log("Redirecting to Checkout:", checkoutUrl);
+                // window.location.href = checkoutUrl; // Redirect to the checkout URL
+            } else {
+                throw new Error("Checkout URL not returned by Shopify API.");
+            }
         } catch (error) {
-            console.error("Error saving purchase data:", error);
-            setModalContent("Fehler beim Speichern der Bestellung.");
+            console.error("Checkout Error:", error.message);
+            setModalContent("Es gab einen Fehler beim Erstellen des Warenkorbs. Bitte versuchen Sie es erneut.");
             setModalOpen(true);
         }
     };
@@ -125,7 +174,7 @@ export default function CartSidebar() {
                             {cartItems.length > 0 ? (
                                 cartItems.map((item) => (
                                     <div key={item.id} className="flex items-center mb-8">
-                                        <img src={item.selectedImage} alt={item.productName} className="w-16 mr-4" />
+                                        <img src={item.configImage} alt={item.productName} className="w-16 mr-4" />
                                         <div className="flex-1">
                                             <H5 klasse="!mb-2">{item.productName}</H5>
                                             {item.configurator && (
@@ -139,7 +188,7 @@ export default function CartSidebar() {
                                                       ))
                                                     : item.quantity}
                                             </p>
-                                            <p className="text-sm">Preis: € {item.totalPrice}</p>
+                                            <p className="text-sm">Preis: € {item.totalPrice.toFixed(2)}</p>
                                         </div>
                                         {/* <div className="flex items-center mt-2">
                                             <button

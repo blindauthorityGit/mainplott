@@ -20,6 +20,7 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
 
     const [coupon, setCoupon] = useState("");
     const [price, setPrice] = useState(0);
+    const [pricePerPiece, setPricePerPiece] = useState(0);
     const [veredelungPiece, setVeredelungPiece] = useState(0);
     const [discountApplied, setDiscountApplied] = useState(false);
     const [appliedDiscountPercentage, setAppliedDiscountPercentage] = useState(0); // Track the applied discount percentage
@@ -43,22 +44,36 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
 
     // Toggle handler to update both local state and Zustand global state
     const handleToggle = () => {
+        const profiDatenCheckPrice = parseFloat(profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.price?.amount || 0);
+        const profiDatenCheckId = profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.id || null;
+
         setIsChecked((prev) => {
             const newIsChecked = !prev;
 
-            // Dynamically adjust the total price based on the checkbox state
-            const profiDatenCheckPrice = parseFloat(
-                profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.price?.amount || 0
-            );
-
+            // Dynamically adjust the total price
             setPrice((prevPrice) =>
                 newIsChecked ? prevPrice + profiDatenCheckPrice : prevPrice - profiDatenCheckPrice
             );
 
-            // Update Zustand state
+            // Update Zustand state directly
+            const updatedVariants = { ...purchaseData.variants };
+
+            if (newIsChecked) {
+                // Add profiDatenCheck as a separate variant
+                updatedVariants.profiDatenCheck = {
+                    id: profiDatenCheckId,
+                    price: profiDatenCheckPrice,
+                };
+            } else {
+                // Remove profiDatenCheck
+                delete updatedVariants.profiDatenCheck;
+            }
+
             setPurchaseData({
                 ...purchaseData,
                 profiDatenCheck: newIsChecked,
+                profiDatenCheckPrice: newIsChecked ? profiDatenCheckPrice : 0,
+                variants: updatedVariants,
             });
 
             return newIsChecked;
@@ -73,20 +88,42 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
     }, [price]);
 
     useEffect(() => {
+        // Update each variant with the calculated price per piece
+        const updatedVariants = Object.keys(purchaseData.variants).reduce((acc, key) => {
+            const variant = purchaseData.variants[key];
+            acc[key] = {
+                ...variant,
+                price: pricePerPiece, // Set or update the price for each variant
+            };
+            return acc;
+        }, {});
+
+        // Update purchaseData with the modified variants
+        setPurchaseData((prevPurchaseData) => ({
+            ...prevPurchaseData,
+            variants: updatedVariants,
+        }));
+    }, [pricePerPiece, purchaseData.variants]); // Trigger when pricePerPiece or variants change
+
+    useEffect(() => {
         const discountData = product.preisReduktion ? JSON.parse(product.preisReduktion.value).discounts : null;
 
-        const { totalPrice, appliedDiscountPercentage, veredelungTotal, veredelungPerPiece } = calculateTotalPrice(
-            purchaseData.variants,
-            product,
-            discountData,
-            setDiscountApplied,
-            veredelungen,
-            purchaseData
-        );
-        console.log(totalPrice, veredelungTotal, veredelungPerPiece);
+        const { totalPrice, pricePerPiece, appliedDiscountPercentage, veredelungTotal, veredelungPerPiece } =
+            calculateTotalPrice(
+                purchaseData.variants,
+                product,
+                discountData,
+                setDiscountApplied,
+                veredelungen,
+                purchaseData
+            );
+        console.log("TOTALPRICE", totalPrice);
         setTotalPrice(totalPrice);
         setVeredelungTotal(veredelungTotal);
         setVeredelungPerPiece(veredelungPerPiece);
+        setPricePerPiece(Number(pricePerPiece));
+
+        console.log(veredelungPerPiece);
 
         // Ensure profiDatenCheckPrice is a valid number
         const profiDatenCheckPrice = isChecked
@@ -151,6 +188,7 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
                         color:
                             purchaseData.variants?.[size]?.color || formattedVariants[size]?.colors?.[0]?.color || null, // Fetch size-specific color
                         quantity: 0, // Default quantity
+                        id: formattedVariants[size]?.colors?.[0]?.id || null, // Fetch size-specific ID
                     };
                     // console.log(size);
                     // console.log(purchaseData.variants?.[size]);
@@ -161,6 +199,9 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
                             label={size}
                             value={currentVariant.quantity} // Prefill with the current quantity for this size
                             onIncrement={() => {
+                                const updatedId =
+                                    formattedVariants[size]?.colors?.find((c) => c.color === currentVariant.color)
+                                        ?.id || null;
                                 setPurchaseData({
                                     ...purchaseData,
                                     variants: {
@@ -168,12 +209,17 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
                                         [size]: {
                                             ...currentVariant, // Preserve current variant details (size, color)
                                             quantity: currentVariant.quantity + 1, // Increment quantity
+                                            id: updatedId, // Update the ID
+                                            price: pricePerPiece,
                                         },
                                     },
                                 });
                             }}
                             onDecrement={() => {
                                 if (currentVariant.quantity > 0) {
+                                    const updatedId =
+                                        formattedVariants[size]?.colors?.find((c) => c.color === currentVariant.color)
+                                            ?.id || null;
                                     setPurchaseData({
                                         ...purchaseData,
                                         variants: {
@@ -181,6 +227,8 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
                                             [size]: {
                                                 ...currentVariant, // Preserve current variant details (size, color)
                                                 quantity: currentVariant.quantity - 1, // Decrement quantity
+                                                id: updatedId, // Update the ID
+                                                price: pricePerPiece,
                                             },
                                         },
                                     });
@@ -188,6 +236,9 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
                             }}
                             onChange={(e) => {
                                 const newQuantity = parseInt(e.target.value, 10) || 0;
+                                const updatedId =
+                                    formattedVariants[size]?.colors?.find((c) => c.color === currentVariant.color)
+                                        ?.id || null;
                                 setPurchaseData({
                                     ...purchaseData,
                                     variants: {
@@ -195,6 +246,8 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
                                         [size]: {
                                             ...currentVariant, // Preserve current variant details (size, color)
                                             quantity: newQuantity, // Set new quantity
+                                            id: updatedId, // Update the ID
+                                            price: pricePerPiece,
                                         },
                                     },
                                 });
@@ -240,12 +293,12 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
                     transition={{ duration: 0.3 }}
                 >
                     <div>
-                        <H3 klasse="!mb-2">EUR {price}</H3>
+                        <H3 klasse="!mb-2">EUR {totalPrice}</H3>
                         <P klasse="!text-xs">
-                            {veredelungPiece.front > 0 && `inkl. EUR ${veredelungPiece.front} Druck Brust`}
+                            {veredelungPiece.front > 0 && `inkl. EUR ${veredelungPiece.front} Druck Brust / Stk.`}
                         </P>
                         <P klasse="!text-xs">
-                            {veredelungPiece.back > 0 && `inkl. EUR ${veredelungPiece.back} Druck Rücken`}
+                            {veredelungPiece.back > 0 && `inkl. EUR ${veredelungPiece.back} Druck Rücken / Stk`}
                         </P>
                         {/* <P klasse="!text-xs text-successColor">
                             {discountApplied && `Rabatt von ${appliedDiscountPercentage.toFixed(2)}% angewendet!`}
@@ -257,8 +310,10 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
                                 {JSON.parse(product.preisReduktion.value).discounts.map((discount, index) => (
                                     <li key={index}>
                                         {discount.maxQuantity
-                                            ? `Von ${discount.minQuantity} bis ${discount.maxQuantity} Stück: EUR ${discount.price}`
-                                            : `Ab ${discount.minQuantity} Stück: EUR ${discount.price}`}
+                                            ? `Von ${discount.minQuantity} bis ${
+                                                  discount.maxQuantity
+                                              } Stück: EUR ${discount.price.toFixed(2)}`
+                                            : `Ab ${discount.minQuantity} Stück: EUR ${discount.price.toFixed(2)}`}
                                     </li>
                                 ))}
                             </ul>

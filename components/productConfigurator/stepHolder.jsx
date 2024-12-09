@@ -21,8 +21,10 @@ const KonvaLayer = dynamic(() => import("@/components/konva"), { ssr: false });
 // import KonvaLayer from "@/components/konva/konvaWrapper"; // Normal import
 // import KonvaLayerWithRef from "@/components/konva/konvaWrapper"; // Adjust the path to your wrapper
 
-export default function StepHolder({ children, steps, currentStep, setCurrentStep }) {
+export default function StepHolder({ children, steps, currentStep, setCurrentStep, veredelungen }) {
     const konvaLayerRef = useRef(null);
+
+    console.log(veredelungen);
 
     const router = useRouter();
     const { handle } = router.query;
@@ -359,7 +361,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     style={{
                                         maxHeight: isMobile ? "auto" : "860px",
                                         width: isMobile ? "" : imageSize.width ? `${imageSize.width}px` : "auto",
-                                        height: isMobile ? "" : imageSize.height ? `${imageSize.height}px` : "auto",
+                                        height: isMobile ? "" : imageSize.height ? `auto` : "auto",
                                         // height: imageHeight ? `${imageHeight}px` : "auto", // Use imageHeight dynamically
 
                                         objectFit: "contain",
@@ -441,12 +443,85 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                     {steps[currentStep] === "Zusammenfassung" ? (
                         <StepButton
                             onClick={() => {
-                                addCartItem({ ...purchaseData, selectedImage }), openCartSidebar();
+                                // Clone purchaseData to avoid mutating directly
+                                const updatedPurchaseData = { ...purchaseData };
+
+                                // Extract sides and variants
+                                const { sides, variants } = updatedPurchaseData;
+
+                                // Calculate total quantity from all product variants
+                                const totalQuantity = Object.values(variants).reduce(
+                                    (sum, variant) => sum + (variant.quantity || 0),
+                                    0
+                                );
+
+                                console.log(totalQuantity);
+
+                                // Prepare updated variants
+                                const updatedVariants = { ...variants };
+
+                                // Check each side (e.g., front and back) for graphics
+                                Object.keys(sides).forEach((sideKey) => {
+                                    const side = sides[sideKey];
+
+                                    if (side.uploadedGraphic || side.uploadedGraphicFile) {
+                                        // Get the corresponding veredelung details for this side
+                                        const veredelungDetail = veredelungen[sideKey];
+                                        console.log("Discount Tiers:", veredelungDetail.preisReduktion.discounts);
+
+                                        if (veredelungDetail) {
+                                            // Find the correct discount tier based on totalQuantity
+                                            const matchedDiscount = veredelungDetail.preisReduktion.discounts.find(
+                                                (discount) =>
+                                                    totalQuantity >= discount.minQuantity &&
+                                                    (discount.maxQuantity === null ||
+                                                        totalQuantity <= discount.maxQuantity)
+                                            );
+
+                                            if (matchedDiscount) {
+                                                // Determine the correct variant index based on the matched discount tier
+                                                const variantIndex =
+                                                    veredelungDetail.preisReduktion.discounts.indexOf(matchedDiscount);
+
+                                                // Get the corresponding variant ID from the `variants.edges`
+                                                const selectedVariant = veredelungDetail.variants.edges[variantIndex];
+
+                                                if (selectedVariant) {
+                                                    // Update the `variants` object with the correct veredelung
+                                                    updatedVariants[`${sideKey}Veredelung`] = {
+                                                        id: selectedVariant.node.id, // Correct Shopify Variant ID
+                                                        size: null, // Not size-specific for veredelung
+                                                        quantity: totalQuantity, // Quantity of the main product
+                                                        price: parseFloat(matchedDiscount.price), // Use price from discount
+                                                        title: veredelungDetail.title, // Use title for clarity
+                                                        currency: veredelungDetail.currency, // Currency
+                                                    };
+                                                } else {
+                                                    console.error("No matching variant found for the discount tier.");
+                                                }
+                                            } else {
+                                                console.error(
+                                                    "No matching discount tier found for the total quantity."
+                                                );
+                                            }
+                                        }
+                                    } else {
+                                        // Remove veredelung if no graphic exists
+                                        delete updatedVariants[`${sideKey}Veredelung`];
+                                    }
+                                });
+
+                                // Update the purchaseData with new variants
+                                updatedPurchaseData.variants = updatedVariants;
+
+                                // Add the item to the cart and open the cart sidebar
+                                addCartItem(updatedPurchaseData);
+                                openCartSidebar();
                             }}
                             className="px-4 py-2 !bg-successColor text-white rounded"
                             klasse="!bg-successColor"
                         >
-                            in den EInkaufwagen
+                            In den Einkaufswagen
                         </StepButton>
                     ) : (
                         <StepButton
