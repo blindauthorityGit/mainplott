@@ -41,16 +41,18 @@ export default function OrderSummary() {
                 ))}
 
                 {/* Sizes and Quantities */}
-                {sizeQuantityList.map((item, index) => (
-                    <ListElement
-                        width="!w-2/6"
-                        key={`size-${index}`}
-                        index={index + summaryData.length} // Offset index for unique keys
-                        label={item.label}
-                        description={item.label}
-                        value={item.value}
-                    />
-                ))}
+                {sizeQuantityList.map((item, index) =>
+                    item.value.split("")[0] == 0 || item.label.split(" ")[1] == "profiDatenCheck" ? null : (
+                        <ListElement
+                            width="!w-2/6"
+                            key={`size-${index}`}
+                            index={index + summaryData.length} // Offset index for unique keys
+                            label={item.label}
+                            description={item.label}
+                            value={item.value}
+                        />
+                    )
+                )}
             </div>
 
             {/* Final Price */}

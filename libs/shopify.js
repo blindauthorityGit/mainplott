@@ -301,7 +301,7 @@ export async function getProductByHandle(handle) {
           description
         }
 
-        variants(first: 1) {
+        variants(first: 5) {
           edges {
             node {
              id  

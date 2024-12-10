@@ -443,78 +443,75 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                     {steps[currentStep] === "Zusammenfassung" ? (
                         <StepButton
                             onClick={() => {
-                                // Clone purchaseData to avoid mutating directly
                                 const updatedPurchaseData = { ...purchaseData };
-
-                                // Extract sides and variants
                                 const { sides, variants } = updatedPurchaseData;
 
-                                // Calculate total quantity from all product variants
                                 const totalQuantity = Object.values(variants).reduce(
                                     (sum, variant) => sum + (variant.quantity || 0),
                                     0
                                 );
+                                console.log("Total Quantity:", totalQuantity);
 
-                                console.log(totalQuantity);
-
-                                // Prepare updated variants
                                 const updatedVariants = { ...variants };
+                                const sidesToProcess = ["front", "back"];
 
-                                // Check each side (e.g., front and back) for graphics
-                                Object.keys(sides).forEach((sideKey) => {
-                                    const side = sides[sideKey];
+                                sidesToProcess.forEach((sideKey) => {
+                                    const side = sides?.[sideKey];
+                                    console.log(`Processing ${sideKey}:`, side);
 
-                                    if (side.uploadedGraphic || side.uploadedGraphicFile) {
-                                        // Get the corresponding veredelung details for this side
-                                        const veredelungDetail = veredelungen[sideKey];
-                                        console.log("Discount Tiers:", veredelungDetail.preisReduktion.discounts);
+                                    if (side?.uploadedGraphic || side?.uploadedGraphicFile) {
+                                        const veredelungDetail = veredelungen?.[sideKey];
+                                        console.log(`${sideKey} Veredelung Detail:`, veredelungDetail);
 
                                         if (veredelungDetail) {
-                                            // Find the correct discount tier based on totalQuantity
                                             const matchedDiscount = veredelungDetail.preisReduktion.discounts.find(
                                                 (discount) =>
                                                     totalQuantity >= discount.minQuantity &&
                                                     (discount.maxQuantity === null ||
                                                         totalQuantity <= discount.maxQuantity)
                                             );
+                                            console.log(`${sideKey} Matched Discount:`, matchedDiscount);
 
                                             if (matchedDiscount) {
-                                                // Determine the correct variant index based on the matched discount tier
                                                 const variantIndex =
                                                     veredelungDetail.preisReduktion.discounts.indexOf(matchedDiscount);
-
-                                                // Get the corresponding variant ID from the `variants.edges`
+                                                console.log("variantIndex", variantIndex);
                                                 const selectedVariant = veredelungDetail.variants.edges[variantIndex];
+                                                console.log("vDetails", veredelungDetail.variants);
+                                                console.log(`${sideKey} Selected Variant:`, selectedVariant);
 
                                                 if (selectedVariant) {
-                                                    // Update the `variants` object with the correct veredelung
                                                     updatedVariants[`${sideKey}Veredelung`] = {
-                                                        id: selectedVariant.node.id, // Correct Shopify Variant ID
-                                                        size: null, // Not size-specific for veredelung
-                                                        quantity: totalQuantity, // Quantity of the main product
-                                                        price: parseFloat(matchedDiscount.price), // Use price from discount
-                                                        title: veredelungDetail.title, // Use title for clarity
-                                                        currency: veredelungDetail.currency, // Currency
+                                                        id: selectedVariant.node.id,
+                                                        size: null,
+                                                        quantity: totalQuantity,
+                                                        price: parseFloat(matchedDiscount.price),
+                                                        title: `${veredelungDetail.title} ${
+                                                            sideKey.charAt(0).toUpperCase() + sideKey.slice(1)
+                                                        }`,
+                                                        currency: veredelungDetail.currency,
                                                     };
+                                                    console.log(
+                                                        `Added ${sideKey}Veredelung:`,
+                                                        updatedVariants[`${sideKey}Veredelung`]
+                                                    );
                                                 } else {
-                                                    console.error("No matching variant found for the discount tier.");
+                                                    console.error(`No matching variant found for ${sideKey}.`);
                                                 }
                                             } else {
-                                                console.error(
-                                                    "No matching discount tier found for the total quantity."
-                                                );
+                                                console.error(`No matching discount for ${sideKey}.`);
                                             }
+                                        } else {
+                                            console.error(`No veredelung detail found for side: ${sideKey}`);
                                         }
                                     } else {
-                                        // Remove veredelung if no graphic exists
-                                        delete updatedVariants[`${sideKey}Veredelung`];
+                                        console.log(`No graphic for side: ${sideKey}, skipping.`);
                                     }
                                 });
 
-                                // Update the purchaseData with new variants
                                 updatedPurchaseData.variants = updatedVariants;
+                                console.log("Final Updated Variants:", updatedVariants);
 
-                                // Add the item to the cart and open the cart sidebar
                                 addCartItem(updatedPurchaseData);
                                 openCartSidebar();
                             }}

@@ -33,7 +33,7 @@ export default function Shop({ products, collections, globalData, collection }) 
         if (category.toLowerCase() === "all") {
             // Show all products without filtering
             setFilteredProducts(products);
-            console.log(products);
+            // console.log(products);
         } else {
             // Filter products based on active tags
             setFilteredProducts(
@@ -42,7 +42,7 @@ export default function Shop({ products, collections, globalData, collection }) 
         }
     }, [router.query.cat, products, activeTags, setActiveCategory]);
 
-    console.log(products, collections, globalData, collection);
+    // console.log(products, collections, globalData, collection);
 
     return (
         <MainContainer>

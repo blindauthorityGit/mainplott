@@ -2,19 +2,51 @@ const prepareLineItems = (cartItems) => {
     const lineItems = [];
 
     cartItems.forEach((item) => {
-        const { variants, profiDatenCheckPrice, veredelungPerPiece } = item;
+        const { variants, profiDatenCheckPrice, sides, personalisierungsText } = item;
 
-        // Process standard product variants
+        // Add standard product variants
         if (variants) {
             Object.keys(variants).forEach((key) => {
                 const variant = variants[key];
 
                 if (variant.id && variant.quantity > 0) {
-                    lineItems.push({
-                        variantId: variant.id,
-                        quantity: variant.quantity,
-                        customAttributes: [{ key: "price", value: variant.price?.toFixed(2) || "0.00" }],
-                    });
+                    // Check if it's a veredelung and handle sides
+                    const isVeredelung = key.toLowerCase().includes("veredelung");
+                    let customAttributes = [{ key: "price", value: variant.price?.toFixed(2) || "0.00" }];
+
+                    if (isVeredelung) {
+                        const side = key.replace("Veredelung", "").toLowerCase();
+                        const uploadedGraphic = sides?.[side]?.uploadedGraphic?.downloadURL;
+
+                        if (uploadedGraphic) {
+                            customAttributes.push({
+                                key: `uploadedGraphic_${side}`,
+                                value: uploadedGraphic,
+                            });
+                        }
+
+                        customAttributes.push({
+                            key: "title",
+                            value: `Veredelung ${side}`,
+                        });
+                    }
+
+                    // Add personalisierungsText as a custom attribute if it exists
+                    if (personalisierungsText) {
+                        customAttributes.push({
+                            key: "personalisierungsText",
+                            value: personalisierungsText,
+                        });
+                    }
+
+                    // Avoid duplicate entries
+                    if (!lineItems.find((item) => item.variantId === variant.id)) {
+                        lineItems.push({
+                            variantId: variant.id,
+                            quantity: variant.quantity,
+                            customAttributes,
+                        });
+                    }
                 }
             });
         }
@@ -22,44 +54,24 @@ const prepareLineItems = (cartItems) => {
         // Add profiDatenCheck as a separate item
         if (item.profiDatenCheck && profiDatenCheckPrice > 0) {
             const profiDatenCheckVariant = variants.profiDatenCheck;
+
             if (profiDatenCheckVariant && profiDatenCheckVariant.id) {
-                lineItems.push({
-                    variantId: profiDatenCheckVariant.id,
-                    quantity: 1,
-                    customAttributes: [
-                        { key: "title", value: "Profi Datencheck" },
-                        { key: "price", value: profiDatenCheckPrice.toFixed(2) },
-                    ],
-                });
-            }
-        }
-
-        // Add veredelungen for each side
-        if (veredelungPerPiece) {
-            Object.keys(veredelungPerPiece).forEach((side) => {
-                const veredelung = variants[`${side}Veredelung`];
-
-                if (veredelung && veredelung.id) {
-                    // Check if this veredelung is already in the line items
-                    const existingLineItem = lineItems.find((lineItem) => lineItem.variantId === veredelung.id);
-
-                    if (!existingLineItem) {
-                        lineItems.push({
-                            variantId: veredelung.id,
-                            quantity: veredelung.quantity,
-                            customAttributes: [
-                                { key: "title", value: veredelung.title || `Veredelung ${side}` },
-                                { key: "price", value: veredelung.price.toFixed(2) },
-                            ],
-                        });
-                    }
+                // Avoid duplicates for profiDatenCheck
+                if (!lineItems.find((item) => item.variantId === profiDatenCheckVariant.id)) {
+                    lineItems.push({
+                        variantId: profiDatenCheckVariant.id,
+                        quantity: 1,
+                        customAttributes: [
+                            { key: "title", value: "Profi Datencheck" },
+                            { key: "price", value: profiDatenCheckPrice.toFixed(2) },
+                        ],
+                    });
                 }
-            });
+            }
         }
     });
 
     console.log("Prepared Line Items:", lineItems);
-
     return lineItems;
 };
 

@@ -10,6 +10,7 @@ import urlFor from "@/functions/urlFor";
 import updateActiveTags from "../../functions/updateActiveTags";
 
 export default function Sidebar({ categories }) {
+    console.log("CATS", categories);
     const router = useRouter(); // Access Next.js router
     const [openCategory, setOpenCategory] = useState("Textilveredelung");
     const [openSubCategory, setOpenSubCategory] = useState("Streetwear");
@@ -19,8 +20,10 @@ export default function Sidebar({ categories }) {
     const handleTagChange = (subSubCat, parentSubCat) => {
         const currentSubCategoryTags = categories
             .find((cat) => cat.subcategories.some((sub) => sub.name === parentSubCat))
-            .subcategories.find((sub) => sub.name === parentSubCat)
-            .subSubcategories.map((subSub) => subSub.name);
+            .subcategories?.find((sub) => sub.name === parentSubCat)
+            .subSubcategories?.map((subSub) => subSub.name);
+
+        console.log(currentSubCategoryTags);
 
         let updatedTags;
         if (activeTags.includes(subSubCat)) {
@@ -108,25 +111,49 @@ export default function Sidebar({ categories }) {
                                     transition={{ duration: 0.3, ease: "easeInOut" }}
                                     className="pl-4 mt-2"
                                 >
-                                    {category.subcategories.map(
-                                        (subCategory) => (
-                                            console.log(subCategory),
-                                            (
-                                                <div key={subCategory.name}>
-                                                    <div
-                                                        className="flex items-center space-x-4 cursor-pointer mb-2"
-                                                        onClick={() => handleSubCategoryToggle(subCategory.name)}
-                                                    >
-                                                        <img src={urlFor(subCategory.icon)} className="w-6" alt="" />
-                                                        <p className="font-semibold">{subCategory.name}</p>
-                                                        {openSubCategory === subCategory.name ? (
+                                    {category.subcategories.map((subCategory) => {
+                                        // Check if subSubcategories exist
+                                        const subSubcategoriesExist =
+                                            Array.isArray(subCategory.subSubcategories) &&
+                                            subCategory.subSubcategories.length > 0;
+
+                                        return (
+                                            <div key={subCategory.name}>
+                                                {/* Subcategory Header */}
+                                                <div
+                                                    className={`flex items-center space-x-4 cursor-pointer mb-2 ${
+                                                        subSubcategoriesExist ? "cursor-pointer" : ""
+                                                    }`}
+                                                    onClick={() => {
+                                                        if (subSubcategoriesExist) {
+                                                            handleSubCategoryToggle(subCategory.name);
+                                                        }
+                                                    }}
+                                                >
+                                                    <img src={urlFor(subCategory.icon)} className="w-6" alt="" />
+                                                    <p className="font-semibold">{subCategory.name}</p>
+                                                    {subSubcategoriesExist ? (
+                                                        openSubCategory === subCategory.name ? (
                                                             <FiChevronUp size={16} />
                                                         ) : (
                                                             <FiChevronDown size={16} />
-                                                        )}
-                                                    </div>
+                                                        )
+                                                    ) : (
+                                                        // Render checkbox if no subSubcategories
+                                                        <input
+                                                            type="checkbox"
+                                                            id={subCategory.name}
+                                                            className="ml-2"
+                                                            checked={activeTags.includes(subCategory.name)}
+                                                            onChange={() =>
+                                                                handleTagChange(subCategory.name, category.name)
+                                                            }
+                                                        />
+                                                    )}
+                                                </div>
 
-                                                    {/* Sub-Subcategories with animation */}
+                                                {/* Render subSubcategories if they exist */}
+                                                {subSubcategoriesExist && (
                                                     <AnimatePresence>
                                                         {openSubCategory === subCategory.name && (
                                                             <motion.div
@@ -165,10 +192,10 @@ export default function Sidebar({ categories }) {
                                                             </motion.div>
                                                         )}
                                                     </AnimatePresence>
-                                                </div>
-                                            )
-                                        )
-                                    )}
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </motion.div>
                             )}
                         </AnimatePresence>

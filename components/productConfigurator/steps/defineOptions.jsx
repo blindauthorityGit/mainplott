@@ -44,28 +44,32 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
 
     // Toggle handler to update both local state and Zustand global state
     const handleToggle = () => {
-        const profiDatenCheckPrice = parseFloat(profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.price?.amount || 0);
+        const profiDatenCheckPrice = Number(profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.price?.amount || 0);
         const profiDatenCheckId = profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.id || null;
 
         setIsChecked((prev) => {
             const newIsChecked = !prev;
 
-            // Dynamically adjust the total price
-            setPrice((prevPrice) =>
-                newIsChecked ? prevPrice + profiDatenCheckPrice : prevPrice - profiDatenCheckPrice
-            );
+            // Ensure `totalPrice` is treated as a number
+            setTotalPrice((prevPrice) => {
+                const numericPrevPrice = parseFloat(prevPrice) || 0; // Safely parse as a number
+                const updatedPrice = newIsChecked
+                    ? numericPrevPrice + profiDatenCheckPrice
+                    : numericPrevPrice - profiDatenCheckPrice;
 
-            // Update Zustand state directly
+                console.log("Updated Total Price:", updatedPrice);
+                return updatedPrice.toFixed(2); // Return the updated price as a fixed number
+            });
+
+            // Update Zustand state
             const updatedVariants = { ...purchaseData.variants };
 
             if (newIsChecked) {
-                // Add profiDatenCheck as a separate variant
                 updatedVariants.profiDatenCheck = {
                     id: profiDatenCheckId,
                     price: profiDatenCheckPrice,
                 };
             } else {
-                // Remove profiDatenCheck
                 delete updatedVariants.profiDatenCheck;
             }
 
@@ -293,7 +297,7 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
                     transition={{ duration: 0.3 }}
                 >
                     <div>
-                        <H3 klasse="!mb-2">EUR {totalPrice}</H3>
+                        <H3 klasse="!mb-2">EUR {price.toFixed(2)}</H3>
                         <P klasse="!text-xs">
                             {veredelungPiece.front > 0 && `inkl. EUR ${veredelungPiece.front} Druck Brust / Stk.`}
                         </P>

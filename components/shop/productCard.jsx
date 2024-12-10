@@ -20,8 +20,6 @@ function ProductCard({ product }) {
     // Format variants for easier access
     const formattedVariants = formatVariants(product.node.variants);
 
-    console.log("NODESS", product.node.variants);
-
     return (
         <motion.div
             className="lg:h-120 lg:w-64 w-full h-full rounded-[20px] mx-auto border border-gray-200 overflow-hidden bg-white relative"

@@ -23,6 +23,7 @@ export default function CartSidebar() {
     const [coupon, setCoupon] = useState("");
     const [discountApplied, setDiscountApplied] = useState(false);
     const [totalPrice, setTotalPrice] = useState(0);
+    const [userNotes, setUserNotes] = useState(""); // State for user notes
 
     // Calculate the total price with or without discount
     useEffect(() => {
@@ -40,6 +41,14 @@ export default function CartSidebar() {
             alert("Ungültiger Gutscheincode");
             setDiscountApplied(false);
         }
+    };
+
+    const handleUserNotesChange = (id, note) => {
+        // Update the purchaseData in Zustand with the user's note
+        updateCartItem(id, (prevItem) => ({
+            ...prevItem,
+            note,
+        }));
     };
 
     const handleIncrementQuantity = (id, quantity, unitPrice) => {
@@ -119,7 +128,7 @@ export default function CartSidebar() {
                         value: item.sides.back.uploadedGraphic.downloadURL,
                     });
                 }
-                if (item?.configImage) {
+                if (item?.configImage && item?.configImage) {
                     attributes.push({
                         key: `fullImageURL_${item.id || attributes.length}`, // Unique key per item
                         value: item.configImage,
@@ -129,9 +138,10 @@ export default function CartSidebar() {
             }, []); // Start with an empty array
 
             console.log("Cart Attributes:", cartAttributes);
+            const cartAttributesToSend = cartAttributes.length > 0 ? cartAttributes : [];
 
             // Call createCart API with lineItems and cartAttributes
-            const checkoutUrl = await createCart(lineItems, cartAttributes.length > 0 ? cartAttributes : undefined);
+            const checkoutUrl = await createCart(lineItems, cartAttributesToSend);
             if (checkoutUrl) {
                 console.log("Redirecting to Checkout:", checkoutUrl);
                 // window.location.href = checkoutUrl; // Redirect to the checkout URL
@@ -174,7 +184,11 @@ export default function CartSidebar() {
                             {cartItems.length > 0 ? (
                                 cartItems.map((item) => (
                                     <div key={item.id} className="flex items-center mb-8">
-                                        <img src={item.configImage} alt={item.productName} className="w-16 mr-4" />
+                                        <img
+                                            src={item.configImage ? item.configImage : item.selectedImage}
+                                            alt={item.productName}
+                                            className="w-16 mr-4"
+                                        />
                                         <div className="flex-1">
                                             <H5 klasse="!mb-2">{item.productName}</H5>
                                             {item.configurator && (
@@ -188,7 +202,7 @@ export default function CartSidebar() {
                                                       ))
                                                     : item.quantity}
                                             </p>
-                                            <p className="text-sm">Preis: € {item.totalPrice.toFixed(2)}</p>
+                                            <p className="text-sm">Preis: € {Number(item.totalPrice).toFixed(2)}</p>
                                         </div>
                                         {/* <div className="flex items-center mt-2">
                                             <button
@@ -225,20 +239,13 @@ export default function CartSidebar() {
                         {/* Coupon Code Input */}
                         <div className="my-4">
                             <TextField
-                                value={coupon}
-                                onChange={(e) => setCoupon(e.target.value)}
-                                variant="outlined"
-                                placeholder="Gutscheincode eingeben"
                                 fullWidth
-                                InputProps={{
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <Button onClick={handleCouponCheck} variant="contained" color="primary">
-                                                Prüfen
-                                            </Button>
-                                        </InputAdornment>
-                                    ),
-                                }}
+                                multiline
+                                rows={4}
+                                placeholder="Ihre Anmerkungen..."
+                                value={userNotes}
+                                onChange={(e) => setUserNotes(e.target.value)}
+                                variant="outlined"
                             />
                         </div>
 

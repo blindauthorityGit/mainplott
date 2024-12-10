@@ -42,6 +42,7 @@ export default function SimpleConfigurator({ product }) {
                 selectedVariant: selectedVariant.node,
                 price: selectedVariant.node.priceV2.amount,
             });
+            setPrice(selectedVariant.node.priceV2.amount);
 
             if (selectedVariant.node.image?.originalSrc) {
                 setSelectedImage(selectedVariant.node.image.originalSrc);
@@ -128,7 +129,16 @@ export default function SimpleConfigurator({ product }) {
                                             quantity: newQuantity,
                                         })
                                     }
-                                ></QuantitySelector>
+                                    onQuantityChange={(newQuantity) => {
+                                        // Handle any additional logic you need when the quantity changes
+                                        console.log("Quantity changed:", newQuantity);
+                                        setPurchaseData({
+                                            ...purchaseData,
+                                            quantity: newQuantity,
+                                        });
+                                    }}
+                                />
+
                                 <H3 klasse="!mb-2 mt-8">
                                     EUR {(Number(price) * (purchaseData.quantity || 1)).toFixed(2)}
                                 </H3>
@@ -138,14 +148,35 @@ export default function SimpleConfigurator({ product }) {
                     <div className="mt-auto lg:flex justify-end hidden lg:px-16 lg:mt-8">
                         <StepButton
                             onClick={() => {
-                                setPurchaseData({
+                                const updatedVariants = {
+                                    ...purchaseData.variants,
+                                    mainVariant: {
+                                        id: product.variants.edges[0].node.id, // Assuming the first variant is used
+                                        quantity: purchaseData.quantity > 0 ? purchaseData.quantity : 1,
+                                        attributes: [
+                                            {
+                                                key: "personalisierung",
+                                                value: purchaseData.personalisierungsText || "", // Add the personalisierungsText
+                                            },
+                                        ],
+                                    },
+                                };
+
+                                const updatedPurchaseData = {
                                     ...purchaseData,
+                                    variants: updatedVariants,
+                                    quantity: purchaseData.quantity > 0 ? purchaseData.quantity : 1,
                                     product: product,
                                     productName: product.title,
-                                    totalPrice: Number(price) * (purchaseData.quantity || 1).toFixed(2),
-                                    // price: selectedVariant.node.priceV2.amount,
-                                });
-                                addCartItem({ ...purchaseData, selectedImage }), openCartSidebar();
+                                    totalPrice: Number(price) * (purchaseData.quantity || 1),
+                                };
+
+                                // Update Zustand store with the prepared data
+                                setPurchaseData(updatedPurchaseData);
+
+                                // Add the item to the cart and open the sidebar
+                                addCartItem({ ...updatedPurchaseData, selectedImage });
+                                openCartSidebar();
                             }}
                             className="px-4 py-2 !bg-successColor text-white rounded"
                             klasse="!bg-successColor"
