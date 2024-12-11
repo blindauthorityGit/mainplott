@@ -3,7 +3,7 @@ import { Slider, Tabs, Tab, Checkbox, FormControlLabel, Button } from "@mui/mate
 import { P } from "@/components/typography";
 import useStore from "@/store/store";
 import ContentWrapper from "../components/contentWrapper";
-import { FiX, FiInfo } from "react-icons/fi";
+import { FiX, FiInfo, FiGitCommit, FiMaximize } from "react-icons/fi";
 import { IconButton } from "@/components/buttons"; // Adjust import path as needed
 import CustomRadioButton from "@/components/inputs/customRadioButton";
 import VeredelungTable from "@/components/infoTable/veredlungsTable";
@@ -12,10 +12,13 @@ import generateVeredelungsPrice from "@/functions/generateVeredelungPrice";
 
 // import { handleShowDetails, handleDeleteUpload } from "@/functions/fileHandlers";
 
-// Importing the trash, info, and refresh icons
+// FUNCTIONS
 import handleDeleteUpload from "@/functions/handleDeleteUpload";
 import handleShowDetails from "@/functions/handleShowDetail";
 import handleFileUpload from "@/functions/handleFileUpload";
+import getImagePlacement from "@/functions/getImagePlacement";
+import { centerVertically, centerHorizontally } from "@/functions/centerFunctions";
+import resetScale from "@/functions/resetScale"; // Import the resetScale function
 
 export default function ConfigureDesign({ product, setCurrentStep, steps, currentStep, veredelungen }) {
     const {
@@ -41,6 +44,13 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
 
     const containerWidth = purchaseData.containerWidth || 500; // Set a default value for safety
     const containerHeight = purchaseData.containerHeight || 500;
+
+    useEffect(() => {
+        setPurchaseData({
+            ...purchaseData,
+            currentSide: "front",
+        });
+    }, []);
 
     const handleXChange = (event, newValue) => {
         setPurchaseData({
@@ -88,6 +98,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
             currentSide: newValue === 0 ? "front" : "back",
         });
     };
+
     const handleCopyFrontToBack = (event) => {
         const isChecked = event.target.checked;
         setCopyFrontToBack(isChecked);
@@ -115,21 +126,40 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     const handleGraphicUpload = async (event) => {
         console.log("UPLOADED");
         const newFile = event.target.files[0];
-        console.log(newFile);
-        const centeredX = purchaseData.containerWidth / 2;
-        const centeredY = purchaseData.containerHeight / 2;
-        console.log("SPOSITIONE", centeredX, centeredY);
-        setPurchaseData({
-            ...purchaseData,
-            sides: {
-                ...purchaseData.sides, // Keep both front and back
-                back: {
-                    ...purchaseData.sides.front, // Copy all front design properties to back
-                    xPosition: centeredX, // Set to centered position
-                    yPosition: centeredY,
+
+        const image = new Image();
+        image.src = URL.createObjectURL(newFile);
+        console.log(purchaseData.containerWidth, purchaseData.containerHeight);
+        image.onload = () => {
+            const imageWidth = image.width;
+            const imageHeight = image.height;
+            console.log(purchaseData.containerWidth, purchaseData.containerHeight, imageWidth, imageHeight);
+            const { x, y } = getImagePlacement({
+                containerWidth: purchaseData.containerWidth,
+                containerHeight: purchaseData.containerHeight,
+                imageNaturalWidth: image.width,
+                imageNaturalHeight: image.height,
+            });
+            console.log("MEINE FUNCTION", x, y, currentSide);
+            // Calculate centered position
+            const centeredX = (purchaseData.containerWidth - imageWidth) / 2;
+            const centeredY = (purchaseData.containerHeight - imageHeight) / 2;
+
+            console.log("SPOSITIONE", centeredX, centeredY);
+
+            setPurchaseData({
+                ...purchaseData,
+                sides: {
+                    ...purchaseData.sides,
+                    [currentSide]: {
+                        ...purchaseData.sides[currentSide],
+                        xPosition: x,
+                        yPosition: y,
+                    },
                 },
-            },
-        });
+            });
+        };
+
         if (newFile) {
             await handleFileUpload({
                 newFile,
@@ -138,7 +168,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 setUploadedFile,
                 setPurchaseData,
                 setModalOpen,
-                setShowSpinner, // Optionally create a spinner state to handle UI feedback
+                setShowSpinner,
                 setModalContent,
                 setUploading,
                 setUploadError,
@@ -272,109 +302,133 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 <>
                     <div className="mb-4">
                         <P klasse="!text-sm !mb-0">X-Achse Position</P>
-                        <Slider
-                            value={purchaseData.sides[currentSide].xPosition}
-                            min={0}
-                            max={containerWidth}
-                            onChange={handleXChange}
-                            aria-labelledby="x-axis-slider"
-                            sx={{
-                                "& .MuiSlider-thumb": {
-                                    backgroundColor: "#393836",
-                                    width: 20,
-                                    height: 20,
-                                    border: "2px solid white",
-                                    "&:hover, &.Mui-focusVisible": {
-                                        boxShadow: "0px 0px 0px 8px rgba(79, 70, 229, 0.16)",
+                        <div className="flex space-x-4">
+                            <Slider
+                                value={purchaseData.sides[currentSide].xPosition}
+                                min={0}
+                                max={containerWidth}
+                                onChange={handleXChange}
+                                aria-labelledby="x-axis-slider"
+                                sx={{
+                                    "& .MuiSlider-thumb": {
+                                        backgroundColor: "#393836",
+                                        width: 20,
+                                        height: 20,
+                                        border: "2px solid white",
+                                        "&:hover, &.Mui-focusVisible": {
+                                            boxShadow: "0px 0px 0px 8px rgba(79, 70, 229, 0.16)",
+                                        },
                                     },
-                                },
-                                "& .MuiSlider-track": {
-                                    backgroundColor: "#B0D0D3",
-                                    height: 6,
-                                    border: "none",
-                                },
-                                "& .MuiSlider-rail": {
-                                    backgroundColor: "#EBE0E1",
-                                    height: 6,
-                                },
-                                "& .MuiSlider-valueLabel": {
-                                    backgroundColor: "#4f46e5",
-                                    color: "white",
-                                    fontSize: "0.875rem",
-                                },
-                            }}
-                        />
+                                    "& .MuiSlider-track": {
+                                        backgroundColor: "#B0D0D3",
+                                        height: 6,
+                                        border: "none",
+                                    },
+                                    "& .MuiSlider-rail": {
+                                        backgroundColor: "#EBE0E1",
+                                        height: 6,
+                                    },
+                                    "& .MuiSlider-valueLabel": {
+                                        backgroundColor: "#4f46e5",
+                                        color: "white",
+                                        fontSize: "0.875rem",
+                                    },
+                                }}
+                            />
+                            <button
+                                className=" bg-textColor text-white p-2 rounded-[10px]"
+                                onClick={() => centerHorizontally({ purchaseData, setPurchaseData, currentSide })}
+                            >
+                                <FiGitCommit />
+                            </button>
+                        </div>
                     </div>
                     <div className="mb-4">
                         <P klasse="!text-sm !mb-0">Y-Achse Position</P>
-                        <Slider
-                            value={purchaseData.sides[currentSide].yPosition}
-                            min={0}
-                            max={containerHeight}
-                            onChange={handleYChange}
-                            aria-labelledby="y-axis-slider"
-                            sx={{
-                                "& .MuiSlider-thumb": {
-                                    backgroundColor: "#393836",
-                                    width: 20,
-                                    height: 20,
-                                    border: "2px solid white",
-                                    "&:hover, &.Mui-focusVisible": {
-                                        boxShadow: "0px 0px 0px 8px rgba(79, 70, 229, 0.16)",
+                        <div className="flex space-x-4">
+                            <Slider
+                                value={purchaseData.sides[currentSide].yPosition}
+                                min={0}
+                                max={containerHeight}
+                                onChange={handleYChange}
+                                aria-labelledby="y-axis-slider"
+                                sx={{
+                                    "& .MuiSlider-thumb": {
+                                        backgroundColor: "#393836",
+                                        width: 20,
+                                        height: 20,
+                                        border: "2px solid white",
+                                        "&:hover, &.Mui-focusVisible": {
+                                            boxShadow: "0px 0px 0px 8px rgba(79, 70, 229, 0.16)",
+                                        },
                                     },
-                                },
-                                "& .MuiSlider-track": {
-                                    backgroundColor: "#B0D0D3",
-                                    height: 6,
-                                    border: "none",
-                                },
-                                "& .MuiSlider-rail": {
-                                    backgroundColor: "#EBE0E1",
-                                    height: 6,
-                                },
-                                "& .MuiSlider-valueLabel": {
-                                    backgroundColor: "#EBE0E1",
-                                    color: "white",
-                                    fontSize: "0.875rem",
-                                },
-                            }}
-                        />
+                                    "& .MuiSlider-track": {
+                                        backgroundColor: "#B0D0D3",
+                                        height: 6,
+                                        border: "none",
+                                    },
+                                    "& .MuiSlider-rail": {
+                                        backgroundColor: "#EBE0E1",
+                                        height: 6,
+                                    },
+                                    "& .MuiSlider-valueLabel": {
+                                        backgroundColor: "#EBE0E1",
+                                        color: "white",
+                                        fontSize: "0.875rem",
+                                    },
+                                }}
+                            />
+                            <button
+                                className="rotate-90 bg-textColor text-white p-2 rounded-[10px]"
+                                onClick={() => centerVertically({ purchaseData, setPurchaseData, currentSide })}
+                            >
+                                <FiGitCommit />
+                            </button>
+                        </div>
                     </div>
                     <div className="mb-4">
                         <P klasse="!text-sm !mb-0">Größe</P>
-                        <Slider
-                            value={purchaseData.sides[currentSide].scale}
-                            min={0.3}
-                            max={3.5}
-                            step={0.01}
-                            onChange={handleScaleChange}
-                            aria-labelledby="scale-slider"
-                            sx={{
-                                "& .MuiSlider-thumb": {
-                                    backgroundColor: "#393836",
-                                    width: 20,
-                                    height: 20,
-                                    border: "2px solid white",
-                                    "&:hover, &.Mui-focusVisible": {
-                                        boxShadow: "0px 0px 0px 8px rgba(79, 70, 229, 0.16)",
+                        <div className="flex space-x-4">
+                            <Slider
+                                value={purchaseData.sides[currentSide].scale}
+                                min={0.3}
+                                max={3.5}
+                                step={0.01}
+                                onChange={handleScaleChange}
+                                aria-labelledby="scale-slider"
+                                sx={{
+                                    "& .MuiSlider-thumb": {
+                                        backgroundColor: "#393836",
+                                        width: 20,
+                                        height: 20,
+                                        border: "2px solid white",
+                                        "&:hover, &.Mui-focusVisible": {
+                                            boxShadow: "0px 0px 0px 8px rgba(79, 70, 229, 0.16)",
+                                        },
                                     },
-                                },
-                                "& .MuiSlider-track": {
-                                    backgroundColor: "#B0D0D3",
-                                    height: 6,
-                                    border: "none",
-                                },
-                                "& .MuiSlider-rail": {
-                                    backgroundColor: "#EBE0E1",
-                                    height: 6,
-                                },
-                                "& .MuiSlider-valueLabel": {
-                                    backgroundColor: "#4f46e5",
-                                    color: "white",
-                                    fontSize: "0.875rem",
-                                },
-                            }}
-                        />
+                                    "& .MuiSlider-track": {
+                                        backgroundColor: "#B0D0D3",
+                                        height: 6,
+                                        border: "none",
+                                    },
+                                    "& .MuiSlider-rail": {
+                                        backgroundColor: "#EBE0E1",
+                                        height: 6,
+                                    },
+                                    "& .MuiSlider-valueLabel": {
+                                        backgroundColor: "#4f46e5",
+                                        color: "white",
+                                        fontSize: "0.875rem",
+                                    },
+                                }}
+                            />
+                            <button
+                                className=" bg-textColor text-white p-2 rounded-[10px]"
+                                onClick={() => resetScale({ purchaseData, setPurchaseData, currentSide })}
+                            >
+                                <FiMaximize />
+                            </button>{" "}
+                        </div>
                     </div>
                 </>
             )}
@@ -392,6 +446,9 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
             )}
             {purchaseData.sides[currentSide].uploadedGraphicFile && (
                 <div className="flex items-center space-x-4">
+                    <div className="info">
+                        <VeredelungTable brustData={veredelungen.front} rueckenData={veredelungen.back} />
+                    </div>
                     <div className="flex items-center gap-4 mt-4 font-body text-sm">
                         {purchaseData.sides[currentSide].isPDF ? (
                             <img
@@ -433,9 +490,6 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                 textColor="text-white"
                             />
                         </div>
-                    </div>
-                    <div className="info pl-2">
-                        <VeredelungTable brustData={veredelungen.front} rueckenData={veredelungen.back} />
                     </div>
                 </div>
             )}

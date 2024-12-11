@@ -26,21 +26,25 @@ export default function Shop({ products, collections, globalData, collection }) 
         useStore();
 
     useEffect(() => {
-        const category = router.query.cat || "streetwear";
-
+        const category = router.query.cat || "streetwear"; // Default category
+        console.log("ACTIVE TAGS", activeTags);
         setActiveCategory(category);
 
         if (category.toLowerCase() === "all") {
-            // Show all products without filtering
+            // Show all products if "all" is selected
             setFilteredProducts(products);
-            // console.log(products);
         } else {
-            // Filter products based on active tags
-            setFilteredProducts(
-                products.filter((product) => product.node.tags.some((tag) => activeTags.includes(tag)))
-            );
+            // Sync active tags with filtered products
+            const filtered = products.filter((product) => activeTags.some((tag) => product.node.tags.includes(tag)));
+
+            setFilteredProducts(filtered);
+
+            // If no tags are active, set products to match the active category only
+            if (activeTags.length === 0) {
+                setFilteredProducts(products.filter((product) => product.node.tags.includes(category)));
+            }
         }
-    }, [router.query.cat, products, activeTags, setActiveCategory]);
+    }, [router.query.cat, products, activeTags]);
 
     // console.log(products, collections, globalData, collection);
 

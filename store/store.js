@@ -27,6 +27,7 @@ const useStore = create((set) => ({
         containerWidth: null,
         containerHeight: null,
         currentSide: "front",
+        design: {},
         profiDatenCheck: false,
         configurator: null,
         quantity: 1,
@@ -57,10 +58,12 @@ const useStore = create((set) => ({
         },
     },
 
-    setPurchaseData: (data) =>
+    setPurchaseData: (update) =>
         set((state) => {
-            const newState = { ...state.purchaseData, ...data };
-            return JSON.stringify(newState) === JSON.stringify(state.purchaseData) ? state : { purchaseData: newState };
+            const currentData = state.purchaseData;
+            const data = typeof update === "function" ? update(currentData) : update;
+            const newState = { ...currentData, ...data };
+            return JSON.stringify(newState) === JSON.stringify(currentData) ? state : { purchaseData: newState };
         }),
 
     resetPurchaseData: (persistentData = {}) =>
@@ -70,6 +73,7 @@ const useStore = create((set) => ({
                 containerWidth: null,
                 containerHeight: null,
                 currentSide: "front",
+                design: {},
                 profiDatenCheck: false,
                 configurator: null,
                 personalisierung: null,

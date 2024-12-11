@@ -37,7 +37,7 @@ export const exportCanvas = (stageRef, transformerRef, boundaryPathRef, scale) =
         }
         stageRef.current.batchDraw();
 
-        console.log(dataURL);
+        console.log("dataURLK", dataURL);
 
         return dataURL; // Return the dataURL instead of downloading
     } catch (err) {

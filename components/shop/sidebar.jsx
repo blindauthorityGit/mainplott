@@ -18,23 +18,28 @@ export default function Sidebar({ categories }) {
     const { activeCategory, setActiveCategory, activeTags, addTag, removeTag, setActiveTags } = useStore();
 
     const handleTagChange = (subSubCat, parentSubCat) => {
-        const currentSubCategoryTags = categories
-            .find((cat) => cat.subcategories.some((sub) => sub.name === parentSubCat))
-            .subcategories?.find((sub) => sub.name === parentSubCat)
-            .subSubcategories?.map((subSub) => subSub.name);
-
-        console.log(currentSubCategoryTags);
+        const currentSubCategoryTags =
+            categories
+                .find((cat) => cat.subcategories?.some((sub) => sub.name === parentSubCat))
+                ?.subcategories?.find((sub) => sub.name === parentSubCat)
+                ?.subSubcategories?.map((subSub) => subSub.name) || [];
 
         let updatedTags;
+
         if (activeTags.includes(subSubCat)) {
+            // Remove the tag if it's already active
             updatedTags = activeTags.filter((tag) => tag !== subSubCat);
         } else {
-            updatedTags = [...activeTags.filter((tag) => currentSubCategoryTags.includes(tag)), subSubCat];
+            // Add the tag and preserve others, including tags from unrelated subcategories
+            updatedTags = [...activeTags, subSubCat];
         }
 
         setActiveTags(updatedTags);
 
-        const concatenatedSubCats = updatedTags.join("+");
+        // Prepare the concatenated query for tags
+        const concatenatedSubCats = updatedTags.filter((tag) => currentSubCategoryTags.includes(tag)).join("+");
+
+        // Update the URL query for the active subcategory and tags
         router.push({
             pathname: router.pathname,
             query: {
@@ -47,7 +52,7 @@ export default function Sidebar({ categories }) {
 
     useEffect(() => {
         updateActiveTags(categories, activeCategory, setActiveTags);
-    }, [categories, activeCategory, setActiveTags]);
+    }, [activeCategory, setActiveTags]);
 
     const handleCategoryToggle = (category) => {
         setOpenCategory((prev) => (prev === category ? null : category));

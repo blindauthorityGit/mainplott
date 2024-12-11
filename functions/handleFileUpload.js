@@ -38,17 +38,17 @@ const handleFileUpload = async ({
                     setDpi(analysisResult.dpi);
                 }
                 console.log(analysisResult);
-                setPurchaseData({
-                    ...purchaseData,
+                setPurchaseData((prevData) => ({
+                    ...prevData,
                     sides: {
-                        ...purchaseData.sides,
+                        ...prevData.sides,
                         [currentSide]: {
-                            ...purchaseData.sides[currentSide],
+                            ...prevData.sides[currentSide],
                             uploadedGraphic: fileMetadata,
                             uploadedGraphicFile: newFile,
                         },
                     },
-                });
+                }));
 
                 setModalContent(
                     <GraphicUploadModalContent
