@@ -5,7 +5,6 @@ import generateTableData from "@/functions/generateTableData";
 function VeredelungTable({ brustData, rueckenData }) {
     const tableRows = generateTableData(brustData, rueckenData);
 
-    console.log(tableRows);
     function formatPriceString(priceStr) {
         // Example input: "7.7 EUR" or "5 EUR"
         // Remove "EUR" and trim

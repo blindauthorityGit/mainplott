@@ -120,6 +120,7 @@ const KonvaLayer = forwardRef(
         // Load the uploaded graphic and use getImagePlacement
         useEffect(() => {
             if (uploadedGraphicFile) {
+                console.log("THIS ONE GETS CALLED", purchaseData.sides.front);
                 const img = new window.Image();
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -142,6 +143,8 @@ const KonvaLayer = forwardRef(
                             uploadedGraphicRef.current.image(img);
                             uploadedGraphicRef.current.getLayer().batchDraw();
 
+                            console.log(x, y, offsetX, offsetY, finalWidth, finalHeight);
+
                             if (transformerRef.current) {
                                 transformerRef.current.nodes([uploadedGraphicRef.current]);
                                 transformerRef.current.getLayer().batchDraw();
@@ -151,27 +154,35 @@ const KonvaLayer = forwardRef(
                 };
                 reader.readAsDataURL(uploadedGraphicFile);
             }
-        }, [uploadedGraphicFile, containerWidth, containerHeight]);
+        }, [uploadedGraphicFile]);
 
-        const handleExport = async () => {
+        // const handleExport = async () => {
+        //     handleResetZoom();
+        //     console.log("GETTING EXPORETED");
+        //     const dataURL = exportCanvas(stageRef, transformerRef, boundaryPathRef, 1);
+        //     sessionStorage.setItem("exportedProductImage", dataURL);
+        //     const sessionImageURL = sessionStorage.getItem("exportedProductImage");
+        //     setConfiguredImage(sessionImageURL);
+
+        //     const blob = dataURLToBlob(dataURL);
+        //     const fileName = `product-image-${Date.now()}.png`;
+        //     try {
+        //         const downloadURL = await uploadImageToStorage(blob, fileName);
+        //         setPurchaseData((prev) => ({
+        //             ...prev,
+        //             configImage: downloadURL,
+        //         }));
+        //     } catch (error) {
+        //         console.error("Error saving configured design:", error);
+        //     }
+        // };
+        const handleExport = () => {
+            // Reset zoom if needed
             handleResetZoom();
-            console.log("GETTING EXPORETED");
+            // Export current canvas state to dataURL
             const dataURL = exportCanvas(stageRef, transformerRef, boundaryPathRef, 1);
-            sessionStorage.setItem("exportedProductImage", dataURL);
-            const sessionImageURL = sessionStorage.getItem("exportedProductImage");
-            setConfiguredImage(sessionImageURL);
-
-            const blob = dataURLToBlob(dataURL);
-            const fileName = `product-image-${Date.now()}.png`;
-            try {
-                const downloadURL = await uploadImageToStorage(blob, fileName);
-                setPurchaseData((prev) => ({
-                    ...prev,
-                    configImage: downloadURL,
-                }));
-            } catch (error) {
-                console.error("Error saving configured design:", error);
-            }
+            console.log("BUBUBUBU", dataURL);
+            return dataURL;
         };
 
         useEffect(() => {
@@ -190,6 +201,7 @@ const KonvaLayer = forwardRef(
             if (isGraphicDraggable) {
                 setPosition({ x: e.target.x(), y: e.target.y() });
             }
+            console.log(purchaseData.sides.front.xPosition, purchaseData.sides.front.yPosition);
         };
 
         const handleGraphicTransformEnd = (e) => {

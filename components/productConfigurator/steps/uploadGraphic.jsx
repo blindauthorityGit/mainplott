@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion"; // Import Framer Motion
 import { GraphicUploadModalContent } from "@/components/modalContent"; // Import the new modal content component
 import LoadingSpinner from "@/components/spinner"; // Import the loading spinner component
 import { H3 } from "@/components/typography";
+import { TbDragDrop } from "react-icons/tb";
 
 //IDB
 // import { saveImageToDB, getImageFromDB } from "@/indexedDB";
@@ -339,7 +340,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                 exit={{ opacity: 0, y: 20 }}
                                 transition={{ duration: 0.3, ease: "easeInOut" }}
                                 {...getRootProps()}
-                                className="flex flex-col items-center justify-center bg-gray-100 border-dashed border-2 p-12 border-gray-400"
+                                className="flex flex-col items-center justify-center bg-primaryColor-100 rounded-[20px] border-dashed border-2 p-12 border-gray-400"
                             >
                                 <input {...getInputProps()} />
                                 <div className="text-center">
@@ -352,9 +353,12 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                             Ziehen Sie Ihre Grafik hierher oder klicken Sie, um eine Datei hochzuladen.
                                         </p>
                                     )}
+                                    <div className="flex justify-center text-6xl p-6 text-textColor">
+                                        <TbDragDrop></TbDragDrop>
+                                    </div>
                                     <button
                                         type="button"
-                                        className="mt-6 px-6 py-2 bg-primaryColor font-body text-white rounded-lg hover:bg-primaryColor-600"
+                                        className="px-6 py-2 !font-bold bg-primaryColor font-body text-white rounded-lg hover:bg-primaryColor-600"
                                     >
                                         Datei auswählen
                                     </button>

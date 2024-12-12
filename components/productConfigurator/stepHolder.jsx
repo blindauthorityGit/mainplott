@@ -15,6 +15,7 @@ import { useSwipeable } from "react-swipeable";
 
 //FUNCTIONS
 import { isNextDisabled, isPrevDisabled, handlePrevStep, handleNextStep } from "@/functions/stepHandlers";
+import exportAllSides from "@/functions/exportAllSides";
 
 // Dynamically import the KonvaLayer component with no SSR
 const KonvaLayer = dynamic(() => import("@/components/konva"), { ssr: false });
@@ -40,6 +41,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         openCartSidebar,
         addCartItem,
         configuredImage,
+        setConfiguredImage,
         stageRef,
         transformerRef,
         boundaryPathRef,
@@ -50,6 +52,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     const [isFrontView, setIsFrontView] = useState(true); // Track if we're viewing the front or back
     const configStepIndex = steps.findIndex((step) => step === "Design"); // Dynamically find the config step
     const [isLoadingImage, setIsLoadingImage] = useState(false); // State to track loading
+    const [isExporting, setIsExporting] = useState(false); // Track exporting state
 
     const imageRef = useRef();
     const containerRef = useRef(); // Add a reference to the container
@@ -76,6 +79,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     const handleExport = () => {
         console.log("HANDLE EXPORT");
         if (exportCanvasRef.current) {
+            console.log(exportCanvasRef.current);
             exportCanvasRef.current();
         }
     };
@@ -95,21 +99,30 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         }
     };
 
-    const handleNextStep = () => {
+    const handleNextStep = async () => {
+        // If we are at the Design step, export both sides first
+        console.log(purchaseData);
+        if (steps[currentStep] === "Design") {
+            setIsExporting(true);
+            await exportAllSides({
+                purchaseData,
+                setPurchaseData,
+                setConfiguredImage,
+                exportCanvasRef,
+            });
+            setIsExporting(false);
+        }
+
+        // Now proceed to next step
         if (currentStep == 0 && purchaseData.tryout) {
             setCurrentStep(steps.length - 1);
         } else {
             setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
         }
-        if (steps[currentStep] == "Design") {
-            handleExport();
-        }
 
-        // Scroll to top on mobile
         if (isMobile) {
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
-        console.log(purchaseData);
     };
 
     // Swipe handlers with checks for enabled state
@@ -282,6 +295,16 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
     return (
         <div className="grid grid-cols-12 lg:px-24 lg:gap-4 h-full" {...swipeHandlers}>
+            {/* If exporting, show overlay */}
+            {isExporting && (
+                <div className="fixed inset-0 z-50 font-body flex items-center justify-center bg-black bg-opacity-70">
+                    <div className="flex flex-col items-center">
+                        <div className="w-12 h-12 border-4 border-white border-t-transparent border-solid rounded-full animate-spin"></div>
+                        <p className="text-white mt-4">Exporting... Bitte warten</p>
+                    </div>
+                </div>
+            )}
+
             {/* Left - Product Image / Konva Layer with fade in/out animation */}
             <div className="col-span-12 lg:col-span-6 relative mb-4 lg:mb-0" ref={containerRef}>
                 <div className="w-full flex items-center justify-center lg:min-h-[840px] lg:max-h-[860px] relative">
@@ -414,7 +437,6 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 >
                     <AnimatePresence mode="wait" layout initial={false}>
                         <motion.div
-                            layout
                             key={currentStep}
                             initial={{ opacity: 0, x: -10 }} // Slide from left for entry animation
                             animate={{ opacity: 1, x: 0 }} // Fade in and position to center

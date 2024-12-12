@@ -93,10 +93,10 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
 
     const handleTabChange = (event, newValue) => {
         setActiveTab(newValue);
-        setPurchaseData({
-            ...purchaseData,
+        setPurchaseData((prevState) => ({
+            ...prevState,
             currentSide: newValue === 0 ? "front" : "back",
-        });
+        }));
     };
 
     const handleCopyFrontToBack = (event) => {
@@ -320,7 +320,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                         },
                                     },
                                     "& .MuiSlider-track": {
-                                        backgroundColor: "#B0D0D3",
+                                        backgroundColor: "#e6d1d5",
                                         height: 6,
                                         border: "none",
                                     },
@@ -363,7 +363,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                         },
                                     },
                                     "& .MuiSlider-track": {
-                                        backgroundColor: "#B0D0D3",
+                                        backgroundColor: "#e6d1d5",
                                         height: 6,
                                         border: "none",
                                     },
@@ -407,7 +407,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                         },
                                     },
                                     "& .MuiSlider-track": {
-                                        backgroundColor: "#B0D0D3",
+                                        backgroundColor: "#e6d1d5",
                                         height: 6,
                                         border: "none",
                                     },

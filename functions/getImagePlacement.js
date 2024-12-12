@@ -27,6 +27,8 @@ export default function getImagePlacement({
     const offsetX = finalWidth / 2;
     const offsetY = finalHeight / 2;
 
+    console.log("PLACEMNET CALLED");
+
     // Determine the center position
     const x = centerImage ? containerWidth / 2 : (containerWidth - finalWidth) / 2;
     const y = centerImage ? containerHeight / 2 : (containerHeight - finalHeight) / 2;
