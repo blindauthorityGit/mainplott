@@ -60,6 +60,12 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
     const exportCanvasRef = useRef(null);
 
+    console.log("SELCTED VARIANT", selectedVariant);
+
+    useEffect(() => {
+        console.log(selectedVariant);
+    }, [selectedVariant]);
+
     // Reset state when the URL changes
     useEffect(() => {
         if (handle) {
@@ -294,7 +300,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     }, [steps]);
 
     return (
-        <div className="grid grid-cols-12 lg:px-24 lg:gap-4 h-full" {...swipeHandlers}>
+        <div className="grid grid-cols-12 lg:px-12 2xl:px-24 lg:gap-4 h-full" {...swipeHandlers}>
             {/* If exporting, show overlay */}
             {isExporting && (
                 <div className="fixed inset-0 z-50 font-body flex items-center justify-center bg-black bg-opacity-70">
@@ -306,8 +312,8 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
             )}
 
             {/* Left - Product Image / Konva Layer with fade in/out animation */}
-            <div className="col-span-12 lg:col-span-6 relative mb-4 lg:mb-0" ref={containerRef}>
-                <div className="w-full flex items-center justify-center lg:min-h-[840px] lg:max-h-[860px] relative">
+            <div className="col-span-12 lg:col-span-5 2xl:col-span-6 relative mb-4 lg:mb-0" ref={containerRef}>
+                <div className="w-full flex items-center justify-center xl:min-h-[640px] 2xl:min-h-[840px] lg:max-h-[860px] relative">
                     <AnimatePresence mode="wait">
                         {steps[currentStep] === "Design" ? (
                             <motion.div
@@ -416,7 +422,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
             </div>
 
             {/* Right - Step Indicator, Dynamic Content, Buttons */}
-            <div className="col-span-12 lg:col-span-6 lg:pt-16 flex flex-col h-full">
+            <div className="col-span-12 lg:col-span-7 2xl:col-span-6  lg:pt-8 2xl:pt-16 flex flex-col h-full">
                 {/* Step Indicator */}
                 <div className="lg:mb-6">
                     <StepIndicator currentStep={currentStep} steps={steps} />
@@ -452,7 +458,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 </div>
 
                 {/* Navigation Buttons - Positioned at the bottom */}
-                <div className="mt-auto lg:flex justify-between hidden ">
+                <div className="mt-auto lg:flex space-x-4 lg:justify-end 2xl:justify-between hidden ">
                     <StepButton
                         onClick={() => handlePrevStep(currentStep, steps, setCurrentStep, isMobile)}
                         disabled={isPrevDisabled(currentStep)}

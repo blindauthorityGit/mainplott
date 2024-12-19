@@ -25,7 +25,7 @@ const StepButton = ({ onClick, type, disabled, klasse, aklass, children, icon, .
             disabled={disabled}
             className={`${klasse} ${
                 disabled ? "opacity-30" : null
-            } font-body   font-regular 2xl:text-sm tracking-widest hover-underline-animation z-20 flex items-center justify-center text-primaryColor-50 py-4 text-xs sm:text-base xl:text-sm 3xl:text-[1rem] sm:py-6 xl:py-4 2xl:py-[0.75rem] w-full lg:w-auto px-4 uppercase rounded-[10px] lg:min-w-[20rem]`}
+            } font-body   font-regular  2xl:text-sm tracking-widest hover-underline-animation z-20 flex items-center justify-center text-primaryColor-50 py-4 text-xs sm:text-base xl:text-xs 3xl:text-[1rem] sm:py-6 xl:py-4 2xl:py-[0.75rem] w-full lg:w-auto px-4 uppercase rounded-[10px] lg:min-w-[16rem] 2xl:min-w-[20rem]`}
             // Spread additional props here
         >
             <motion.span

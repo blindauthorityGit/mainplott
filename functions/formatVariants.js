@@ -1,13 +1,19 @@
-// libs/formatVariants.js
-
 export default function formatVariants(variants) {
-    // Reduce the variants into a structured format
-    return variants.edges.reduce((acc, { node }) => {
+    // Create a temporary map to store back images by color
+    const colorBackImages = {};
+
+    // First pass: Assign back images for colors
+    const structuredVariants = variants.edges.reduce((acc, { node }) => {
         const sizeOption = node.selectedOptions.find((option) => option.name === "Größe")?.value;
         const colorOption = node.selectedOptions.find((option) => option.name === "Farbe")?.value;
         const imageUrl = node.image?.originalSrc;
         const backImageUrl = node.backImageUrl || null; // Include the back image URL if available
         const variantId = node.id; // Capture the variant ID
+
+        // If this color already has a back image, use it; otherwise, store it
+        if (backImageUrl) {
+            colorBackImages[colorOption] = backImageUrl;
+        }
 
         // If the size does not exist, add it
         if (!acc[sizeOption]) {
@@ -16,14 +22,27 @@ export default function formatVariants(variants) {
             };
         }
 
-        // Add the color, front image, back image, and variant ID if not already present
+        // Add the variant to the structure
         acc[sizeOption].colors.push({
             color: colorOption,
             image: imageUrl,
-            backImage: backImageUrl,
+            backImage: backImageUrl || colorBackImages[colorOption] || null, // Use the stored back image if not defined
             id: variantId, // Include the variant ID
         });
 
         return acc;
     }, {});
+
+    // Second pass: Fill in missing back images for each size/color
+    Object.values(structuredVariants).forEach((sizeGroup) => {
+        sizeGroup.colors.forEach((colorEntry) => {
+            if (!colorEntry.backImage && colorBackImages[colorEntry.color]) {
+                colorEntry.backImage = colorBackImages[colorEntry.color];
+            }
+        });
+    });
+
+    console.log(structuredVariants);
+
+    return structuredVariants;
 }

@@ -119,6 +119,11 @@ const KonvaLayer = forwardRef(
 
         // Load the uploaded graphic and use getImagePlacement
         useEffect(() => {
+            if (!uploadedGraphicFile) return; // If no file, do nothing
+
+            const sideData = purchaseData.sides[purchaseData.currentSide];
+            const needInitialPlacement = !sideData.initialPlacementDone;
+
             if (uploadedGraphicFile) {
                 console.log("THIS ONE GETS CALLED", purchaseData.sides.front);
                 const img = new window.Image();
@@ -136,8 +141,8 @@ const KonvaLayer = forwardRef(
 
                             uploadedGraphicRef.current.width(finalWidth);
                             uploadedGraphicRef.current.height(finalHeight);
-                            uploadedGraphicRef.current.x(x);
-                            uploadedGraphicRef.current.y(y);
+                            // uploadedGraphicRef.current.x(x);
+                            // uploadedGraphicRef.current.y(y);
                             uploadedGraphicRef.current.offsetX(offsetX);
                             uploadedGraphicRef.current.offsetY(offsetY);
                             uploadedGraphicRef.current.image(img);
@@ -228,6 +233,10 @@ const KonvaLayer = forwardRef(
             }
         }, [resetHandler]);
 
+        useEffect(() => {
+            handleResetZoom();
+        }, [purchaseData.currentSide]);
+
         return (
             <div style={{ touchAction: "none" }}>
                 <Stage
@@ -313,7 +322,11 @@ const KonvaLayer = forwardRef(
                     >
                         <FiZoomOut />
                     </Button>
-                    <Button onClick={handleResetZoom} className=" !hidden lg:!block" variant="contained">
+                    <Button
+                        onClick={handleResetZoom}
+                        className="!bg-primaryColor-600 !text-2xl !hidden lg:!block"
+                        variant="contained"
+                    >
                         <FiRefreshCw />
                     </Button>
                 </div>

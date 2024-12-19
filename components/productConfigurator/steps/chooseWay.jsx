@@ -21,7 +21,7 @@ export default function ChooseWay() {
     };
 
     return (
-        <div className="lg:px-16 lg:mt-8 font-body">
+        <div className="lg:px-16 lg:mt-4 2xl:mt-8 font-body">
             <ContentWrapper data={stepData}>
                 {/* Options */}
                 <div className="flex flex-wrap gap-4 justify-center">

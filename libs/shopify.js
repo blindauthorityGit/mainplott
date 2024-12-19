@@ -194,7 +194,7 @@ export async function getProductByHandle(handle) {
               type
               description
           }
-          variants(first: 80) {
+          variants(first: 120) {
               edges {
                   node {
                       id  
@@ -494,7 +494,7 @@ export async function getBackImageUrl(mediaImageId) {
 export async function getProductsByCategory(categoryHandle) {
     const query = `{
         collectionByHandle(handle: "${categoryHandle}") {
-            products(first: 5) {  
+            products(first: 20) {  
                 edges {
                     node {
                         id

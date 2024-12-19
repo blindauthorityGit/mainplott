@@ -1,3 +1,5 @@
+// components/contentWrapper.js
+
 import React from "react";
 import { H2, P } from "@/components/typography";
 import useStore from "@/store/store"; // Zustand store
@@ -7,16 +9,18 @@ const ContentWrapper = ({ data, klasse, children, showToggle }) => {
     const { purchaseData, setPurchaseData } = useStore();
 
     const handleToggle = () => {
-        const newConfigurator = purchaseData.configurator === "configurator" ? "template" : "configurator";
-        setPurchaseData({ ...purchaseData, configurator: newConfigurator });
-        console.log(purchaseData);
+        setPurchaseData((prevData) => {
+            const newConfigurator = prevData.configurator === "configurator" ? "template" : "configurator";
+            console.log("Toggle to:", newConfigurator);
+            return { ...prevData, configurator: newConfigurator };
+        });
     };
 
     return (
         <div className={`${klasse} relative`}>
             {/* Heading and Button Row */}
             <div className="flex justify-between items-center">
-                <H2 klasse="!text-3xl lg:!text-6xl md:!text-3xl   lg:!text-6xl xl:!text-7xl 2xl:!text-7xl ">
+                <H2 klasse="!text-3xl lg:!text-6xl md:!text-3xl lg:!text-6xl xl:!text-5xl 2xl:!text-7xl ">
                     {data.title}
                 </H2>
                 {showToggle && (
@@ -36,7 +40,7 @@ const ContentWrapper = ({ data, klasse, children, showToggle }) => {
             </div>
 
             {/* Description and Children */}
-            <P klasse="text-xs hidden lg:block lg:!text-sm">{data.description}</P>
+            <P klasse="!text-xs hidden lg:block 2xl:!text-sm">{data.description}</P>
             {children}
             <P klasse="text-xs lg:hidden lg:!text-sm mt-4">{data.description}</P>
         </div>

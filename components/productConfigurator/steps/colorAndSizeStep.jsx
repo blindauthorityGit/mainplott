@@ -19,7 +19,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
 
     // Format variants for easier access
     const formattedVariants = formatVariants(product.variants);
-    console.log(product.variants, formattedVariants);
+    console.log("product.variants", formattedVariants);
     // console.log(formattedVariants, product.variants);
     // Ensure `selectedSize` and `selectedColor` are initialized
     // Centralized initialization logic
@@ -27,10 +27,10 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     useEffect(() => {
         const initializeSelection = () => {
             const firstSize = Object.keys(formattedVariants)?.[0];
-            const firstColor = formattedVariants[firstSize]?.colors?.[0]?.color;
-            const firstID = formattedVariants[firstSize]?.colors?.[0]?.id;
+            const firstColorData = formattedVariants[firstSize]?.colors?.[0] || {};
+            const { color: firstColor, image, backImage, id: id } = firstColorData;
 
-            console.log(firstID);
+            // console.log(firstID);
 
             if (!purchaseData.selectedSize || !purchaseData.selectedColor) {
                 const initialSize = purchaseData.selectedSize || firstSize;
@@ -48,6 +48,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                     ...purchaseData,
                     selectedSize: initialSize,
                     selectedColor: initialColor,
+                    backImage,
                     productName: product.title,
                     product,
                     variants: {
@@ -56,7 +57,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                             size: initialSize,
                             color: initialColor,
                             quantity: purchaseData.variants?.[initialSize]?.quantity || 1,
-                            id: firstID,
+                            id: id,
                         },
                     },
                 });
@@ -70,27 +71,43 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
         console.log(purchaseData);
     }, [purchaseData]);
 
-    // Function to set the active variant
+    // Revised setActiveVariant function
     const setActiveVariant = (size, color) => {
-        const activeVariant = product.variants.edges.find(
-            ({ node }) =>
-                node.selectedOptions.some((option) => option.name === "Größe" && option.value === size) &&
-                node.selectedOptions.some((option) => option.name === "Farbe" && option.value === color)
-        );
-        console.log(activeVariant);
-        if (activeVariant) {
-            setSelectedVariant(activeVariant.node);
+        // Use formattedVariants instead of product.variants.edges
+        const sizeData = formattedVariants[size];
+        if (!sizeData || !sizeData.colors) return;
+
+        // Find the corresponding color data from formatted variants
+        const activeColorData = sizeData.colors.find((c) => c.color === color);
+        if (activeColorData) {
+            const { backImage, image, id } = activeColorData;
+
+            // Create a simplified "variant node" object
+            const activeVariantNode = {
+                id: id,
+                image: { originalSrc: image },
+                backImageUrl: backImage, // Use our computed backImage
+            };
+
+            // Update Zustand store with the variant data
+            setSelectedVariant(activeVariantNode);
+            setSelectedImage(image);
+            setPurchaseData((prevData) => ({
+                ...prevData,
+                backImage: backImage,
+                selectedVariantId: id,
+            }));
         }
     };
 
+    // Handle size change
     // Handle size change
     const handleSizeChange = (size) => {
         setSelectedSize(size);
 
         // Get the first available color for the new size
-        const firstColor = formattedVariants[size]?.colors?.[0]?.color || null;
-        const firstImage = formattedVariants[size]?.colors?.[0]?.image || null;
-        const firstId = formattedVariants[size]?.colors?.[0]?.id || null;
+        const firstColorData = formattedVariants[size]?.colors?.[0] || {};
+        const { color: firstColor, image: firstImage, backImage: firstBackImage, id: firstId } = firstColorData;
 
         setSelectedImage(firstImage);
         setSelectedColor(firstColor);
@@ -109,22 +126,23 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
             ...purchaseData,
             selectedSize: size,
             selectedColor: firstColor,
+            backImage: firstBackImage, // Update the back image URL
             variants: updatedVariants, // Replace the current variants object with the new one
             selectedVariantId: firstId, // Update the selectedVariantId in purchaseData
         });
 
         setActiveVariant(size, firstColor);
-        console.log(purchaseData);
     };
 
+    // Handle color change
     // Handle color change
     const handleColorChange = (color) => {
         setSelectedColor(color);
 
         // Find the image and ID for the selected size and color
         const selectedColorData = formattedVariants[selectedSize]?.colors.find((c) => c.color === color) || {};
-        const image = selectedColorData.image || null;
-        const variantId = selectedColorData.id || null;
+        const { image, backImage, id: variantId } = selectedColorData;
+        console.log(backImage);
 
         // Update only the color and ID for the currently selected size
         const updatedVariants = {
@@ -139,14 +157,14 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
         setPurchaseData({
             ...purchaseData,
             selectedColor: color,
+            backImage: backImage, // Update the back image URL
             selectedVariantId: variantId, // Update the selectedVariantId in purchaseData
             variants: updatedVariants, // Update the entire variants object
         });
 
         setSelectedImage(image);
-
-        setActiveVariant(selectedSize, color);
-        console.log(purchaseData);
+        console.log("COLORE CHANGE", selectedSize, color, backImage);
+        setActiveVariant(selectedSize, color, backImage);
     };
 
     const handleToggle = (newState) => {
@@ -156,7 +174,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     };
 
     return (
-        <div className="flex flex-col lg:px-16 lg:mt-8">
+        <div className="flex flex-col lg:px-16 lg:mt-4 2xl:mt-8">
             {/* Mobile Color Selector */}
             {isMobile && selectedSize && (
                 <MobileColorSelector
@@ -168,7 +186,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
             <ContentWrapper data={product}>
                 <div className="flex space-x-3 items-center gap-8 lg:mt-16">
                     <div className="left font-body font-semibold">Größe</div>
-                    <div className="right flex space-x-3">
+                    <div className="right flex flex-wrap gap-x-3 gap-y-2">
                         {Object.keys(formattedVariants).map((size, i) => (
                             <CustomCheckBox
                                 key={`size-${i}`}
@@ -176,7 +194,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                                 isChecked={selectedSize === size}
                                 onClick={() => handleSizeChange(size)}
                                 activeClass="border-2 border-textColor text-white"
-                                nonActiveClass="opacity-60 text-black"
+                                nonActiveClass="opacity-60 text-black "
                                 offsetColor="bg-primaryColor-200"
                             />
                         ))}
@@ -191,7 +209,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                                 <div key={`color-${index}`} className="px-1 py-1">
                                     <CustomCheckBox
                                         key={`color-${index}`}
-                                        klasse={`bg-${color} !w-6 !h-6 lg:!w-10 lg:!h-10`}
+                                        klasse={`bg-${color} `}
                                         isChecked={selectedColor === color}
                                         onClick={() => handleColorChange(color)}
                                         activeClass=" border-2 border-textColor text-white"

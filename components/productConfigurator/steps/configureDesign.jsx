@@ -45,11 +45,14 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     const containerWidth = purchaseData.containerWidth || 500; // Set a default value for safety
     const containerHeight = purchaseData.containerHeight || 500;
 
+    console.log(selectedVariant);
+
+    // Remove or conditionally include this useEffect
     useEffect(() => {
-        setPurchaseData({
-            ...purchaseData,
+        setPurchaseData((prevData) => ({
+            ...prevData,
             currentSide: "front",
-        });
+        }));
     }, []);
 
     const handleXChange = (event, newValue) => {
@@ -199,7 +202,15 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
 
     //radio buttons
     const handleChange = (value, posX, posY) => {
-        console.log(value);
+        console.log(value, posX, posY);
+        console.log(purchaseData.containerWidth * 0.4);
+        console.log(purchaseData.containerHeight * 0.36);
+        // const newX = purchaseData.containerWidth * 0.75;
+        // const newY = purchaseData.containerHeight * 0.3;
+        const newX = purchaseData.containerWidth * posX;
+        const newY = purchaseData.containerHeight * posY;
+
+        console.log(newX, newY);
 
         // Update the selected value state
         setSelectedValue(value);
@@ -212,17 +223,38 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 [currentSide]: {
                     ...purchaseData.sides[currentSide], // Preserve existing data for the current side
                     position: value, // Update the position with the selected value
-                    xPosition: posX,
-                    yPosition: posY,
+                    xPosition: newX,
+                    yPosition: newY,
                 },
             },
         });
     };
 
+    useEffect(() => {
+        // console.log(
+        //     positions[currentSide].default,
+        //     positions[currentSide].default[0].position.x,
+        //     positions[currentSide].default[0].position.y
+        // );
+        if (purchaseData.configurator === "template") {
+            setPurchaseData({
+                ...purchaseData,
+                sides: {
+                    ...purchaseData.sides,
+                    [currentSide]: {
+                        ...purchaseData.sides[currentSide], // Preserve existing data for the current side
+                        xPosition: purchaseData.containerWidth * positions[currentSide].default[0].position.x,
+                        yPosition: purchaseData.containerHeight * positions[currentSide].default[0].position.y,
+                    },
+                },
+            });
+        }
+    }, [purchaseData.configurator]);
+
     console.log("EDEL", veredelungen);
 
     return (
-        <div className="flex flex-col lg:px-16 lg:mt-8 font-body ">
+        <div className="flex flex-col lg:px-16 lg:mt-4 2xl:mt-8 font-body ">
             <ContentWrapper data={stepData} showToggle />
 
             {/* Material-UI Tabs Component */}
@@ -284,20 +316,66 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                     <input type="file" hidden onChange={handleGraphicUpload} />
                 </Button>
             ) : purchaseData.configurator === "template" ? (
-                <div className="flex flex-col space-y-2">
-                    {positions[currentSide].default.map((option, index) => (
-                        <CustomRadioButton
-                            key={`radio${index}`}
-                            id={option.name}
-                            name="custom-radio-group"
-                            label={option.name}
-                            icon={option.icon}
-                            value={option.name}
-                            checked={selectedValue === option.name}
-                            onChange={() => handleChange(option.name, option.position.x, option.position.y)} // Pass additional parameters
-                        />
-                    ))}
-                </div>
+                <>
+                    <div className="flex flex-wrap ">
+                        {positions[currentSide].default.map((option, index) => (
+                            <CustomRadioButton
+                                key={`radio${index}`}
+                                id={option.name}
+                                name="custom-radio-group"
+                                label={option.name}
+                                icon={option.icon}
+                                value={option.name}
+                                checked={selectedValue === option.name}
+                                onChange={() => handleChange(option.name, option.position.x, option.position.y)} // Pass additional parameters
+                            />
+                        ))}
+                    </div>{" "}
+                    <div className="mb-4 mt-8">
+                        <P klasse="!text-sm !mb-0">Größe</P>
+                        <div className="flex space-x-4">
+                            <Slider
+                                value={purchaseData.sides[currentSide].scale}
+                                min={0.3}
+                                max={3.5}
+                                step={0.01}
+                                onChange={handleScaleChange}
+                                aria-labelledby="scale-slider"
+                                sx={{
+                                    "& .MuiSlider-thumb": {
+                                        backgroundColor: "#393836",
+                                        width: 20,
+                                        height: 20,
+                                        border: "2px solid white",
+                                        "&:hover, &.Mui-focusVisible": {
+                                            boxShadow: "0px 0px 0px 8px rgba(79, 70, 229, 0.16)",
+                                        },
+                                    },
+                                    "& .MuiSlider-track": {
+                                        backgroundColor: "#e6d1d5",
+                                        height: 6,
+                                        border: "none",
+                                    },
+                                    "& .MuiSlider-rail": {
+                                        backgroundColor: "#EBE0E1",
+                                        height: 6,
+                                    },
+                                    "& .MuiSlider-valueLabel": {
+                                        backgroundColor: "#4f46e5",
+                                        color: "white",
+                                        fontSize: "0.875rem",
+                                    },
+                                }}
+                            />
+                            <button
+                                className=" bg-textColor text-white p-2 rounded-[10px]"
+                                onClick={() => resetScale({ purchaseData, setPurchaseData, currentSide })}
+                            >
+                                <FiMaximize />
+                            </button>{" "}
+                        </div>
+                    </div>
+                </>
             ) : (
                 <>
                     <div className="mb-4">
@@ -445,20 +523,20 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 />
             )}
             {purchaseData.sides[currentSide].uploadedGraphicFile && (
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-4 justify-between">
                     <div className="info">
                         <VeredelungTable brustData={veredelungen.front} rueckenData={veredelungen.back} />
                     </div>
                     <div className="flex items-center gap-4 mt-4 font-body text-sm">
                         {purchaseData.sides[currentSide].isPDF ? (
                             <img
-                                className="max-h-24 rounded-[20px]"
+                                className="max-h-24 max-w-24 rounded-[20px]"
                                 src={purchaseData.sides[currentSide].preview}
                                 alt="Uploaded Preview"
                             />
                         ) : (
                             <img
-                                className="max-h-24 rounded-[20px]"
+                                className="max-h-24 max-w-36 rounded-[20px]"
                                 src={URL.createObjectURL(purchaseData.sides[currentSide].uploadedGraphicFile)}
                                 alt="Uploaded Preview"
                             />

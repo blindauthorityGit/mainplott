@@ -299,7 +299,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
     const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
     return (
-        <div className="lg:px-16 lg:mt-8">
+        <div className="lg:px-16 lg:mt-4 2xl:mt-8">
             <ContentWrapper data={stepData}>
                 <>
                     <AnimatePresence>

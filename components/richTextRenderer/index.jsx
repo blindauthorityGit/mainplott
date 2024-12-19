@@ -12,7 +12,11 @@ const RichTextRenderer = ({ richText }) => {
                 return <div key={index}>{node.children.map((child, idx) => renderNode(child, idx))}</div>;
 
             case "paragraph":
-                return <p key={index}>{node.children.map((child, idx) => renderNode(child, idx))}</p>;
+                return (
+                    <p className="pb-4" key={index}>
+                        {node.children.map((child, idx) => renderNode(child, idx))}
+                    </p>
+                );
 
             case "text":
                 const styles = {};

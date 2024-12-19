@@ -26,7 +26,7 @@ import { BiCloudLightRain } from "react-icons/bi";
 
 export default function Product({ product, sizes, relatedProducts }) {
     useEffect(() => {
-        console.log("PRÖÖÖDUKT", product);
+        console.log("PRÖÖÖDUKT", product, relatedProducts);
     }, [product, relatedProducts, sizes]);
 
     const { resetPurchaseData } = useStore(); // Add a reset function in your Zustand store

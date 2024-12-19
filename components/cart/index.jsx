@@ -185,7 +185,11 @@ export default function CartSidebar() {
                                 cartItems.map((item) => (
                                     <div key={item.id} className="flex items-center mb-8">
                                         <img
-                                            src={item.configImage ? item.configImage : item.selectedImage}
+                                            src={
+                                                item.design.front.downloadURL
+                                                    ? item.design.front.downloadURL
+                                                    : item.design.back.downloadURL
+                                            }
                                             alt={item.productName}
                                             className="w-16 mr-4"
                                         />

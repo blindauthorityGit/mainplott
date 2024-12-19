@@ -39,9 +39,9 @@ export default function Menu() {
         <>
             {/* Original Header */}
             <header className="relative font-body">
-                <div className="container mx-auto flex justify-between items-center p-4 relative font-semibold">
+                <div className="container mx-auto flex justify-between items-center lg:p-2 2xl:p-4 relative font-semibold">
                     {/* Left Section - Links */}
-                    <nav className="hidden md:flex space-x-4">
+                    <nav className="hidden md:flex space-x-4 text-sm 2xl:text-base">
                         <Link
                             href="/about"
                             className={`${
@@ -75,7 +75,7 @@ export default function Menu() {
                             <img
                                 src={urlFor(menuData.logo).url()}
                                 alt="Logo"
-                                className="h-16 lg:h-24 inline-block mx-auto md:mx-0"
+                                className="h-16 2xl:h-24 inline-block mx-auto md:mx-0"
                             />
                         </Link>
                     </div>

@@ -6,6 +6,8 @@ import { H2, H3, P } from "@/components/typography";
 export default function OrderSummary() {
     const { purchaseData } = useStore();
 
+    const sizeOrder = ["XS", "S", "M", "L", "XL", "2XL", "3XL"];
+
     // Relevant data mapping for display
     const summaryData = [
         { label: "Produkt Name", value: purchaseData.productName },
@@ -19,10 +21,25 @@ export default function OrderSummary() {
     ];
 
     // Extract sizes and quantities
-    const sizeQuantityList = Object.entries(purchaseData.variants || {}).map(([size, variant]) => ({
-        label: `Größe ${size}`,
-        value: `${variant.quantity} Stück`,
-    }));
+    const sizeQuantityList = Object.entries(purchaseData.variants || {})
+        .map(([size, variant]) => ({
+            label: `Größe ${size}`,
+            value: `${variant.quantity} Stück`,
+            size, // Keep the size for sorting
+        }))
+        .sort((a, b) => {
+            const aIndex = sizeOrder.indexOf(a.size.toUpperCase());
+            const bIndex = sizeOrder.indexOf(b.size.toUpperCase());
+
+            // Handle sizes not found in sizeOrder
+            if (aIndex === -1 && bIndex === -1) {
+                return a.size.localeCompare(b.size);
+            }
+            if (aIndex === -1) return 1;
+            if (bIndex === -1) return -1;
+
+            return aIndex - bIndex;
+        });
 
     return (
         <div className="lg:px-16 lg:mt-8 font-body">

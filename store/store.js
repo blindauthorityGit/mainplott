@@ -24,6 +24,7 @@ const useStore = create((set) => ({
     // SHOP DATA
     purchaseData: {
         selectedSize: null,
+        configurator: "configurator",
         containerWidth: null,
         containerHeight: null,
         currentSide: "front",
@@ -70,6 +71,7 @@ const useStore = create((set) => ({
         set({
             purchaseData: {
                 selectedSize: null,
+                configurator: null,
                 containerWidth: null,
                 containerHeight: null,
                 currentSide: "front",

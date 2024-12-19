@@ -104,11 +104,15 @@ export default function SimpleConfigurator({ product }) {
                                 {/* Render Dropdown if multiple variants exist */}
                                 {product.variants.edges.length > 1 && (
                                     <select
-                                        className="border border-gray-300 rounded-md p-2 mb-4"
+                                        className="border font-body border-gray-300 rounded-md p-2 mb-4"
                                         onChange={(e) => handleVariantChange(e.target.value)}
                                     >
                                         {product.variants.edges.map((variant) => (
-                                            <option key={variant.node.id} value={variant.node.title}>
+                                            <option
+                                                className="font-body"
+                                                key={variant.node.id}
+                                                value={variant.node.title}
+                                            >
                                                 {variant.node.title}
                                             </option>
                                         ))}

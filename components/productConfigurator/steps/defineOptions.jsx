@@ -11,6 +11,7 @@ import GeneralCheckBox from "@/components/inputs/generalCheckbox";
 import formatVariants from "@/functions/formatVariants"; // Function for formatting variants
 import { calculateTotalPrice } from "@/functions/calculateTotalPrice"; // Function for formatting variants
 import NumberInputField from "@/components/inputs/numberInputField"; // Adjust the import path as necessary
+import calculateTotalQuantity from "@/functions/calculateTotalQuantity"; // Import the utility function
 
 export default function DefineOptions({ product, veredelungen, profiDatenCheck }) {
     const { purchaseData, setPurchaseData } = useStore(); // Zustand global state
@@ -29,6 +30,9 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
     const [totalPrice, setTotalPrice] = useState(0);
     const [veredelungTotal, setVeredelungTotal] = useState(0);
     const [veredelungPerPiece, setVeredelungPerPiece] = useState({});
+
+    const [totalQuantity, setTotalQuantity] = useState(0); // State to track total quantity
+    const [medianPricePerPiece, setMedianPricePerPiece] = useState(0); // State to track median price per piece
 
     const stepData = {
         title: "Staffelung",
@@ -177,6 +181,22 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
         });
     }, [totalPrice, veredelungTotal, veredelungPerPiece, price]);
 
+    // Track total quantity whenever variants change
+    useEffect(() => {
+        const total = calculateTotalQuantity(purchaseData);
+        setTotalQuantity(total);
+    }, [purchaseData.variants]);
+
+    // Calculate median price per piece whenever totalPrice or totalQuantity changes
+    useEffect(() => {
+        if (totalQuantity > 0) {
+            const medianPrice = parseFloat((totalPrice / totalQuantity).toFixed(2));
+            setMedianPricePerPiece(medianPrice);
+        } else {
+            setMedianPricePerPiece(0);
+        }
+    }, [totalPrice, totalQuantity]);
+
     console.log(profiDatenCheck);
 
     return (
@@ -189,11 +209,20 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
                 {Object.keys(formattedVariants).map((size) => {
                     const currentVariant = purchaseData.variants?.[size] || {
                         size,
-                        color:
-                            purchaseData.variants?.[size]?.color || formattedVariants[size]?.colors?.[0]?.color || null, // Fetch size-specific color
-                        quantity: 0, // Default quantity
-                        id: formattedVariants[size]?.colors?.[0]?.id || null, // Fetch size-specific ID
+                        color: purchaseData.selectedColor || null, // Use globally selected color
+                        quantity: 0,
+                        id:
+                            formattedVariants[size]?.colors?.find((c) => c.color === purchaseData.selectedColor)?.id ||
+                            null, // Fetch ID based on selected color
                     };
+
+                    // const currentVariant = purchaseData.variants?.[size] || {
+                    //     size,
+                    //     color:
+                    //         purchaseData.variants?.[size]?.color || formattedVariants[size]?.colors?.[0]?.color || null, // Fetch size-specific color
+                    //     quantity: 0, // Default quantity
+                    //     id: formattedVariants[size]?.colors?.[0]?.id || null, // Fetch size-specific ID
+                    // };
                     // console.log(size);
                     // console.log(purchaseData.variants?.[size]);
 
@@ -206,6 +235,8 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
                                 const updatedId =
                                     formattedVariants[size]?.colors?.find((c) => c.color === currentVariant.color)
                                         ?.id || null;
+                                console.log(currentVariant, updatedId);
+
                                 setPurchaseData({
                                     ...purchaseData,
                                     variants: {
@@ -224,6 +255,7 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
                                     const updatedId =
                                         formattedVariants[size]?.colors?.find((c) => c.color === currentVariant.color)
                                             ?.id || null;
+                                    console.log(currentVariant, updatedId);
                                     setPurchaseData({
                                         ...purchaseData,
                                         variants: {
@@ -297,7 +329,11 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
                     transition={{ duration: 0.3 }}
                 >
                     <div>
-                        <H3 klasse="!mb-2">EUR {price.toFixed(2)}</H3>
+                        <div className="flex justify-end items-end">
+                            <H3 klasse="!mb-2">EUR {price.toFixed(2)}</H3>
+                            <P klasse="!text-xs mb-2 pl-2">EUR {medianPricePerPiece.toFixed(2)}/Stk.</P>
+                        </div>
+                        {/* <P>{`${price / }`}</P> */}
                         <P klasse="!text-xs">
                             {veredelungPiece.front > 0 && `inkl. EUR ${veredelungPiece.front} Druck Brust / Stk.`}
                         </P>
@@ -324,6 +360,11 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
                         </div>
                     )}
                 </motion.div>
+                {/* Display Total Quantity and Median Price Per Piece */}
+                {/* <div className="mt-4">
+                    <P klasse="!text-sm">Gesamtmenge: {totalQuantity}</P>
+                    <P klasse="!text-sm">Median Preis pro Stück: EUR {medianPricePerPiece.toFixed(2)}</P>
+                </div> */}
             </ContentWrapper>
         </div>
     );
