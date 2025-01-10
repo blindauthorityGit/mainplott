@@ -122,7 +122,7 @@ export default function CartSidebar() {
                 <>
                     <Overlay onClose={closeCartSidebar} />
                     <motion.div
-                        className="fixed top-0 font-body right-0 h-full w-1/3 bg-white shadow-lg z-50 flex flex-col px-12 py-12"
+                        className="fixed top-0 font-body right-0 h-full lg:w-1/3 bg-white shadow-lg z-50 flex flex-col p-4 lg:px-12 lg:py-12"
                         initial={{ x: "100%" }}
                         animate={{ x: 0 }}
                         exit={{ x: "100%" }}

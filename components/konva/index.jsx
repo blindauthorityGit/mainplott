@@ -341,9 +341,9 @@ const KonvaLayer = forwardRef(
                             y={boundingRect.y}
                             width={boundingRect.width}
                             height={boundingRect.height}
-                            fill="rgba(0, 255, 0, 0.1)"
-                            stroke="green"
-                            strokeWidth={2}
+                            // fill="rgba(0, 255, 0, 0.1)"
+                            // stroke="green"
+                            // strokeWidth={2}
                         />
 
                         {/* Uploaded Graphic */}

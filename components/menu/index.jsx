@@ -72,7 +72,7 @@ export default function Menu() {
                         <div className="relative">
                             <Link
                                 onMouseEnter={() => setIsMegaMenuVisible(false)}
-                                href="/services"
+                                href="/about"
                                 className="text-gray-700 hover:text-primaryColor-400"
                             >
                                 Über uns
@@ -88,13 +88,20 @@ export default function Menu() {
                     </nav>
 
                     {/* Center Section - Logo with Home Link */}
-                    <div className="flex-1 text-center md:flex-none md:text-left">
+                    <div className="flex-1 text-center hidden lg:flex md:flex-none md:text-left">
                         <Link href="/" className="text-2xl font-bold text-gray-900">
                             <img
                                 src={urlFor(menuData.logo).url()}
                                 alt="Logo"
                                 className="h-16 2xl:h-24 inline-block mx-auto md:mx-0"
                             />
+                        </Link>
+                    </div>
+
+                    {/* Center Section - Logo with Home Link */}
+                    <div className="flex-1 p-2 lg:hidden md:flex-none md:text-left">
+                        <Link href="/" className="text-2xl font-bold text-gray-900">
+                            <img src={LogoSM.src} alt="Logo" className="h-10 2xl:h-24 inline-block mx-auto md:mx-0" />
                         </Link>
                     </div>
 
@@ -110,7 +117,7 @@ export default function Menu() {
                         </MainButton>
 
                         {/* Cart Icon with Badge */}
-                        <button className="relative hidden md:inline-flex items-center">
+                        <button className="relative  md:inline-flex items-center">
                             <FaShoppingCart onClick={openCartSidebar} className="text-3xl text-gray-700" />
                             {cartItems.length > 0 && (
                                 <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full px-2 text-xs">
@@ -124,7 +131,7 @@ export default function Menu() {
                             {isOpen ? <FiX className="text-3xl" /> : <FiMenu className="text-3xl" />}
                         </button>
 
-                        <div>
+                        <div className="hidden lg:block">
                             {!user ? (
                                 <>
                                     <Link href="/signup?mode=login" className="mr-4">
@@ -159,14 +166,33 @@ export default function Menu() {
                     <div className="bg-gray-100 p-4 md:hidden">
                         <nav className="space-y-4 text-center">
                             <Link href="/about" className="text-gray-700 hover:text-gray-900 block">
-                                About
+                                Über uns
                             </Link>
                             <Link href="/services" className="text-gray-700 hover:text-gray-900 block">
                                 Services
                             </Link>
                             <Link href="/contact" className="text-gray-700 hover:text-gray-900 block">
-                                Contact
+                                Kontakt
                             </Link>
+                            <div className="">
+                                {!user ? (
+                                    <>
+                                        <Link href="/signup?mode=login" className="mr-4">
+                                            Login
+                                        </Link>
+                                        {/* <Link href="/signup?mode=signup">Sign Up</Link> */}
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* <span className="mr-4">Hallo, {user.email}</span> */}
+                                        {/* Optionally show userType */}
+                                        {/* {user.userType && <span className="mr-4">({user.userType})</span>} */}
+                                        <button onClick={handleLogout} className="text-primaryColor hover:underline">
+                                            Logout
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </nav>
                     </div>
                 )}

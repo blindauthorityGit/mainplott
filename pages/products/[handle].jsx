@@ -40,20 +40,20 @@ export default function Product({ product, sizes, relatedProducts }) {
 
     return (
         <MainContainer>
-            {product.productByHandle?.konfigurator?.value == "true" ? (
+            {product?.productByHandle?.konfigurator?.value == "true" ? (
                 <ProductConfigurator
-                    product={product.productByHandle}
-                    veredelungen={product.parsedVeredelungData}
-                    profiDatenCheck={product.profiDatenCheckData}
+                    product={product?.productByHandle}
+                    veredelungen={product?.parsedVeredelungData}
+                    profiDatenCheck={product?.profiDatenCheckData}
                     sizes={sizes}
                 ></ProductConfigurator>
             ) : (
-                <SimpleConfigurator product={product.productByHandle}></SimpleConfigurator>
+                <SimpleConfigurator product={product?.productByHandle}></SimpleConfigurator>
             )}
-            {product.productByHandle?.detailbeschreibung?.value ? (
+            {product?.productByHandle?.detailbeschreibung?.value ? (
                 <div className="lg:px-24 lg:w-3/4 lg:mt-16 font-body !text-textColor">
                     <RichTextRenderer
-                        richText={JSON.parse(product.productByHandle.detailbeschreibung.value)}
+                        richText={JSON.parse(product?.productByHandle?.detailbeschreibung.value)}
                     ></RichTextRenderer>
                 </div>
             ) : (
