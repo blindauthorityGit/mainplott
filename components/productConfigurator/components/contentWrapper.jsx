@@ -1,14 +1,14 @@
-// components/contentWrapper.js
-
 import React from "react";
 import { H2, P } from "@/components/typography";
 import useStore from "@/store/store"; // Zustand store
 import { motion } from "framer-motion"; // Optional for animations
+import { FiRepeat, FiLayout } from "react-icons/fi"; // Icons for the button
 
 const ContentWrapper = ({ data, klasse, children, showToggle }) => {
     const { purchaseData, setPurchaseData } = useStore();
 
     const handleToggle = () => {
+        // Ensure the configurator switches correctly on the first click
         setPurchaseData((prevData) => {
             const newConfigurator = prevData.configurator === "configurator" ? "template" : "configurator";
             console.log("Toggle to:", newConfigurator);
@@ -26,15 +26,21 @@ const ContentWrapper = ({ data, klasse, children, showToggle }) => {
                 {showToggle && (
                     <motion.button
                         onClick={handleToggle}
-                        className={`ml-4 px-4 py-2 text-sm font-semibold rounded border-2 transition ${
-                            purchaseData.configurator === "configurator"
-                                ? "bg-primaryColor text-white border-primaryColor"
-                                : "bg-gray-200 text-black border-gray-400"
-                        }`}
+                        className="flex items-center space-x-2 text-primaryColor hover:text-primaryColor-dark font-semibold text-lg transition duration-300"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                     >
-                        {purchaseData.configurator === "configurator" ? "Custom Placement" : "Template Placement"}
+                        {purchaseData.configurator === "configurator" ? (
+                            <>
+                                <FiLayout size={20} />
+                                <span>Wechsel zu Vorlagen</span>
+                            </>
+                        ) : (
+                            <>
+                                <FiRepeat size={20} />
+                                <span>Freie Platzierung</span>
+                            </>
+                        )}
                     </motion.button>
                 )}
             </div>

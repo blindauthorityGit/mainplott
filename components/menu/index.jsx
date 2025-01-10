@@ -11,6 +11,10 @@ import useStore from "@/store/store"; // Import Zustand store
 import urlFor from "../../functions/urlFor";
 
 import LogoSM from "@/assets/logoSM.png";
+import useUserStore from "@/store/userStore";
+
+import { signOut } from "firebase/auth";
+import { auth } from "@/config/firebase";
 
 export default function Menu() {
     const [isOpen, setIsOpen] = useState(false);
@@ -19,6 +23,9 @@ export default function Menu() {
 
     const menuData = useMenu(); // Access menu data from context
     const { cartItems, openCartSidebar } = useStore(); // Assuming cartItems is an array in Zustand
+    const user = useUserStore((state) => state.user);
+
+    console.log("USER", user);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -34,6 +41,17 @@ export default function Menu() {
     }, []);
 
     if (!menuData) return null; // Render nothing until data is loaded
+
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            console.log("User logged out successfully");
+            // Optionally, reset the user in your Zustand store
+            useUserStore.setState({ user: null });
+        } catch (error) {
+            console.error("Error logging out:", error.message);
+        }
+    };
 
     return (
         <>
@@ -105,6 +123,26 @@ export default function Menu() {
                         <button onClick={() => setIsOpen(!isOpen)} className="text-gray-700 md:hidden">
                             {isOpen ? <FiX className="text-3xl" /> : <FiMenu className="text-3xl" />}
                         </button>
+
+                        <div>
+                            {!user ? (
+                                <>
+                                    <Link href="/signup?mode=login" className="mr-4">
+                                        Login
+                                    </Link>
+                                    {/* <Link href="/signup?mode=signup">Sign Up</Link> */}
+                                </>
+                            ) : (
+                                <>
+                                    {/* <span className="mr-4">Hallo, {user.email}</span> */}
+                                    {/* Optionally show userType */}
+                                    {/* {user.userType && <span className="mr-4">({user.userType})</span>} */}
+                                    <button onClick={handleLogout} className="text-primaryColor hover:underline">
+                                        Logout
+                                    </button>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
 

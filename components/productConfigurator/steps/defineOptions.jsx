@@ -12,6 +12,7 @@ import formatVariants from "@/functions/formatVariants"; // Function for formatt
 import { calculateTotalPrice } from "@/functions/calculateTotalPrice"; // Function for formatting variants
 import NumberInputField from "@/components/inputs/numberInputField"; // Adjust the import path as necessary
 import calculateTotalQuantity from "@/functions/calculateTotalQuantity"; // Import the utility function
+import { calculateNetPrice } from "@/functions/calculateNetPrice"; // Import your net price function
 
 export default function DefineOptions({ product, veredelungen, profiDatenCheck }) {
     const { purchaseData, setPurchaseData } = useStore(); // Zustand global state
@@ -330,15 +331,19 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
                 >
                     <div>
                         <div className="flex justify-end items-end">
-                            <H3 klasse="!mb-2">EUR {price.toFixed(2)}</H3>
-                            <P klasse="!text-xs mb-2 pl-2">EUR {medianPricePerPiece.toFixed(2)}/Stk.</P>
+                            <H3 klasse="!mb-2">EUR {calculateNetPrice(price.toFixed(2))}</H3>
+                            <P klasse="!text-xs mb-2 pl-2">
+                                EUR {calculateNetPrice(medianPricePerPiece.toFixed(2))}/Stk.
+                            </P>
                         </div>
                         {/* <P>{`${price / }`}</P> */}
                         <P klasse="!text-xs">
-                            {veredelungPiece.front > 0 && `inkl. EUR ${veredelungPiece.front} Druck Brust / Stk.`}
+                            {veredelungPiece.front > 0 &&
+                                `inkl. EUR ${calculateNetPrice(veredelungPiece.front)} Druck Brust / Stk.`}
                         </P>
                         <P klasse="!text-xs">
-                            {veredelungPiece.back > 0 && `inkl. EUR ${veredelungPiece.back} Druck Rücken / Stk`}
+                            {veredelungPiece.back > 0 &&
+                                `inkl. EUR ${calculateNetPrice(veredelungPiece.back)} Druck Rücken / Stk`}
                         </P>
                         {/* <P klasse="!text-xs text-successColor">
                             {discountApplied && `Rabatt von ${appliedDiscountPercentage.toFixed(2)}% angewendet!`}
@@ -352,8 +357,10 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
                                         {discount.maxQuantity
                                             ? `Von ${discount.minQuantity} bis ${
                                                   discount.maxQuantity
-                                              } Stück: EUR ${discount.price.toFixed(2)}`
-                                            : `Ab ${discount.minQuantity} Stück: EUR ${discount.price.toFixed(2)}`}
+                                              } Stück: EUR ${calculateNetPrice(discount.price.toFixed(2))}`
+                                            : `Ab ${discount.minQuantity} Stück: EUR ${calculateNetPrice(
+                                                  discount.price.toFixed(2)
+                                              )}`}
                                     </li>
                                 ))}
                             </ul>

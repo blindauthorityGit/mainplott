@@ -6,6 +6,9 @@ import { motion } from "framer-motion";
 
 import calculateLowestPrice from "@/functions/calculateLowestPrice";
 
+import { calculateNetPrice } from "@/functions/calculateNetPrice";
+import useUserStore from "@/store/userStore";
+
 function ProductCard({ product }) {
     const handle = product.node.handle;
     const title = product.node.title;
@@ -19,6 +22,7 @@ function ProductCard({ product }) {
 
     // Format variants for easier access
     const formattedVariants = formatVariants(product.node.variants);
+    const user = useUserStore((state) => state.user);
 
     return (
         <motion.div
@@ -77,6 +81,10 @@ function ProductCard({ product }) {
                     <div className="text-base lg:text-lg font-body text-gray-600 font-primary font-semibold mb-2 mt-4">
                         {/* ab EUR 29,- */}
                         {calculateLowestPrice(product.node.variants.edges)}
+
+                        {user?.userType == "firmenkunde" ? (
+                            <p className="text-xs font-body font-thin">ohne MwSt.</p>
+                        ) : null}
                     </div>
                 </div>
             </div>

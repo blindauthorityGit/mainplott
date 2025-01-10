@@ -9,13 +9,16 @@ import MobileColorSelector from "../mobile/colorChoose";
 import useStore from "@/store/store"; // Your Zustand store
 import formatVariants from "@/functions/formatVariants"; // Function for formatting variants
 import { getColorHex } from "@/libs/colors";
+import useUserStore from "@/store/userStore";
 
 export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
-    const { purchaseData, setPurchaseData, setSelectedVariant, setSelectedImage } = useStore();
+    const { purchaseData, setPurchaseData, setSelectedVariant, selectedImage, setSelectedImage } = useStore();
     const [selectedSize, setSelectedSize] = useState(purchaseData.selectedSize || null);
     const [selectedColor, setSelectedColor] = useState(purchaseData.selectedColor || null);
     const [isChecked, setIsChecked] = useState(purchaseData.tryout || false);
     const isMobile = useIsMobile();
+
+    const user = useUserStore((state) => state.user);
 
     // Format variants for easier access
     const formattedVariants = formatVariants(product.variants);
@@ -101,37 +104,59 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     };
 
     // Handle size change
-    // Handle size change
-    const handleSizeChange = (size) => {
-        setSelectedSize(size);
+    const handleSizeChange = (newSize) => {
+        setSelectedSize(newSize);
 
-        // Get the first available color for the new size
-        const firstColorData = formattedVariants[size]?.colors?.[0] || {};
-        const { color: firstColor, image: firstImage, backImage: firstBackImage, id: firstId } = firstColorData;
+        // 1) Attempt to see if the current selectedColor is valid for this newSize
+        const currentColorIsValid = formattedVariants[newSize]?.colors?.some((c) => c.color === selectedColor);
 
-        setSelectedImage(firstImage);
-        setSelectedColor(firstColor);
+        let finalColor;
+        let finalImage;
+        let finalBackImage;
+        let finalId;
 
-        // Replace the specific size entry in purchaseData.variants
+        if (currentColorIsValid && selectedColor) {
+            // If the user’s current color is valid, do nothing special, keep it
+            const matchingColorData = formattedVariants[newSize].colors.find((c) => c.color === selectedColor);
+            finalColor = matchingColorData.color;
+            finalImage = matchingColorData.image;
+            finalBackImage = matchingColorData.backImage;
+            finalId = matchingColorData.id;
+        } else {
+            // If it’s invalid (or no color was selected), pick the first color
+            const firstColorData = formattedVariants[newSize]?.colors?.[0] || {};
+            finalColor = firstColorData.color || "";
+            finalImage = firstColorData.image || "";
+            finalBackImage = firstColorData.backImage || "";
+            finalId = firstColorData.id || "";
+        }
+
+        setSelectedColor(finalColor);
+        setSelectedImage(finalImage);
+
+        // 2) Update purchaseData.variants
         const updatedVariants = {
-            [size]: {
-                size: size,
-                color: firstColor,
-                quantity: 1, // Default quantity
-                id: firstId, // Update the variant ID
+            [newSize]: {
+                size: newSize,
+                color: finalColor,
+                // If there's already a quantity set for this size, keep it. Otherwise default to 1
+                quantity: purchaseData.variants[newSize]?.quantity || 1,
+                id: finalId,
             },
         };
 
+        // 3) Update purchaseData
         setPurchaseData({
             ...purchaseData,
-            selectedSize: size,
-            selectedColor: firstColor,
-            backImage: firstBackImage, // Update the back image URL
-            variants: updatedVariants, // Replace the current variants object with the new one
-            selectedVariantId: firstId, // Update the selectedVariantId in purchaseData
+            selectedSize: newSize,
+            selectedColor: finalColor,
+            backImage: finalBackImage,
+            selectedVariantId: finalId,
+            variants: updatedVariants,
         });
 
-        setActiveVariant(size, firstColor);
+        // 4) Update the active variant in the store
+        setActiveVariant(newSize, finalColor);
     };
 
     // Handle color change
@@ -168,9 +193,8 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     };
 
     const handleToggle = (newState) => {
-        setPurchaseData({ ...purchaseData, tryout: newState });
+        setPurchaseData({ ...purchaseData, tryout: newState, quantity: 1, cartImage: selectedImage, totalPrice: 0 });
         setIsChecked(newState);
-        console.log(purchaseData);
     };
 
     return (
@@ -224,16 +248,18 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                         </div>
                     </div>
                 )}
-                {/* <GeneralCheckBox
-                    label="Diesen Artikel ohne Personalisierung zum Probieren bestellen"
-                    isChecked={isChecked}
-                    onToggle={handleToggle}
-                    onClick={() => setIsChecked(!isChecked)}
-                    activeClass=""
-                    nonActiveClass="bg-background"
-                    borderColor="border-textColor"
-                    checkColor="text-successColor"
-                /> */}
+                {user?.userType == "firmenkunde" ? (
+                    <GeneralCheckBox
+                        label="Diesen Artikel ohne Personalisierung zum Probieren bestellen"
+                        isChecked={isChecked}
+                        onToggle={handleToggle}
+                        onClick={() => setIsChecked(!isChecked)}
+                        activeClass=""
+                        nonActiveClass="bg-background"
+                        borderColor="border-textColor"
+                        checkColor="text-successColor"
+                    />
+                ) : null}
             </ContentWrapper>
         </div>
     );

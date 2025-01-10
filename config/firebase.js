@@ -3,6 +3,7 @@ import {
     getFirestore,
     collection,
     getDocs,
+    getDoc,
     doc,
     setDoc,
     addDoc,
@@ -13,10 +14,10 @@ import {
 } from "firebase/firestore/lite";
 import { getStorage, ref, uploadBytes, listAll, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
-// import { getAuth } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-    apiKey: process.env.NEXT_FIREBASE,
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE,
     authDomain: "database-test-4bcff.firebaseapp.com",
     databaseURL: "https://database-test-4bcff.firebaseio.com",
     projectId: "database-test-4bcff",
@@ -30,8 +31,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
+const auth = getAuth(app);
 
-export { app, db, storage };
+const firestore = getFirestore(app);
+
+export { app, db, storage, auth, firestore };
 // export const auth = getAuth(app);
 
 export const fetchFirestoreData = async (collectionName) => {
@@ -157,4 +161,36 @@ export const uploadPurchaseToFirestore = async (purchaseData) => {
         console.error("Error uploading purchase data:", error);
         throw error; // Re-throw the error to handle it in the caller
     }
+};
+
+// Save user data to Firestore
+export const saveUserDataToFirestore = async (uid, userData, collectionName) => {
+    try {
+        const userDoc = doc(db, collectionName, uid);
+        await setDoc(userDoc, {
+            ...userData,
+            createdAt: new Date().toISOString(),
+        });
+        console.log(`User data saved to collection: ${collectionName}`);
+    } catch (error) {
+        console.error("Error saving user data to Firestore:", error);
+        throw error;
+    }
+};
+
+export const getUserData = async (uid, isDev = false) => {
+    const collections = isDev ? ["dev_firmenUsers", "dev_privatUsers"] : ["firmenUsers", "privatUsers"];
+
+    for (const collection of collections) {
+        const userDocRef = doc(firestore, collection, uid); // Pass the Firestore instance explicitly
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+            const userData = userDocSnap.data();
+            userData.collection = collection;
+            return userData;
+        }
+    }
+
+    return null;
 };

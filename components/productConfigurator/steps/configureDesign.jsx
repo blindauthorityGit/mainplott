@@ -37,6 +37,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     const [uploadError, setUploadError] = useState(null);
     const [uploadedFile, setUploadedFile] = useState(null);
 
+    const boundingRect = purchaseData.boundingRect; // { x, y, width, height }
+
     const currentSide = activeTab === 0 ? "front" : "back";
 
     //fr radio buttons
@@ -195,18 +197,35 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         title: purchaseData.configurator == "template" ? "Vorlage wählen" : "Platzierung",
         // description: "Passen Sie das Design auf dem Produkt an.",
     };
-
-    // console.log("IS HIER JSON", JSON.parse(product.templatePositions.value).properties);
-
     const positions = product?.templatePositions ? JSON.parse(product?.templatePositions?.value).properties : null;
+
+    useEffect(() => {
+        if (!purchaseData.sides[currentSide]?.position && positions[currentSide]?.default) {
+            const defaultOption = positions[currentSide].default[0];
+            setSelectedValue(defaultOption.name);
+
+            setPurchaseData({
+                ...purchaseData,
+                sides: {
+                    ...purchaseData.sides,
+                    [currentSide]: {
+                        ...purchaseData.sides[currentSide],
+                        position: defaultOption.name,
+                        xPosition: purchaseData.containerWidth * defaultOption.position.x,
+                        yPosition: purchaseData.containerHeight * defaultOption.position.y,
+                    },
+                },
+            });
+        }
+    }, [currentSide, positions, purchaseData.containerWidth, purchaseData.containerHeight]);
 
     //radio buttons
     const handleChange = (value, posX, posY) => {
         console.log(value, posX, posY);
         console.log(purchaseData.containerWidth * 0.4);
         console.log(purchaseData.containerHeight * 0.36);
-        // const newX = purchaseData.containerWidth * 0.75;
-        // const newY = purchaseData.containerHeight * 0.3;
+        // const newX = purchaseData.containerWidth * 0.4;
+        // const newY = purchaseData.containerHeight * 0.4;
         const newX = purchaseData.containerWidth * posX;
         const newY = purchaseData.containerHeight * posY;
 
@@ -251,7 +270,17 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         }
     }, [purchaseData.configurator]);
 
-    console.log("EDEL", veredelungen);
+    let minX = 0;
+    let maxX = purchaseData.containerWidth; // fallback
+    let minY = 0;
+    let maxY = purchaseData.containerHeight; // fallback
+
+    if (boundingRect) {
+        minX = boundingRect.x;
+        maxX = boundingRect.x + boundingRect.width - 120;
+        minY = boundingRect.y;
+        maxY = boundingRect.y + boundingRect.height - 120;
+    }
 
     return (
         <div className="flex flex-col lg:px-16 lg:mt-4 2xl:mt-8 font-body ">
@@ -383,8 +412,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                         <div className="flex space-x-4">
                             <Slider
                                 value={purchaseData.sides[currentSide].xPosition}
-                                min={0}
-                                max={containerWidth}
+                                min={minX}
+                                max={maxX}
                                 onChange={handleXChange}
                                 aria-labelledby="x-axis-slider"
                                 sx={{
@@ -426,8 +455,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                         <div className="flex space-x-4">
                             <Slider
                                 value={purchaseData.sides[currentSide].yPosition}
-                                min={0}
-                                max={containerHeight}
+                                min={minY}
+                                max={maxY}
                                 onChange={handleYChange}
                                 aria-labelledby="y-axis-slider"
                                 sx={{

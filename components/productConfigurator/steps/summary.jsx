@@ -2,6 +2,7 @@ import React from "react";
 import useStore from "@/store/store"; // Zustand store
 import { ListElement } from "@/components/list";
 import { H2, H3, P } from "@/components/typography";
+import { calculateNetPrice } from "@/functions/calculateNetPrice"; // Import your net price function
 
 export default function OrderSummary() {
     const { purchaseData } = useStore();
@@ -75,9 +76,12 @@ export default function OrderSummary() {
             {/* Final Price */}
             <div className="mt-8">
                 <P klasse="text-lg font-semibold mb-4">Gesamtpreis:</P>
-                <H3 klasse="text-xl">EUR {purchaseData.totalPrice.toFixed(2)}</H3>
+                <H3 klasse="text-xl">
+                    EUR {purchaseData.tryout ? "0,-" : calculateNetPrice(purchaseData.totalPrice.toFixed(2))}
+                </H3>
                 <P klasse="!text-sm">
-                    {purchaseData.veredelungTotal && `Davon EUR ${purchaseData.veredelungTotal} für Verdelungen`}
+                    {purchaseData.veredelungTotal &&
+                        `Davon EUR ${calculateNetPrice(purchaseData.veredelungTotal)} für Verdelungen`}
                 </P>
                 <P klasse="!text-sm">
                     {purchaseData.profiDatenCheck &&

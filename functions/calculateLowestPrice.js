@@ -1,3 +1,5 @@
+import { calculateNetPrice } from "@/functions/calculateNetPrice"; // Import your net price function
+
 export default function calculateLowestPrice(variants) {
     // Ensure variants is a valid array
     if (!variants || !Array.isArray(variants) || variants.length === 0) {
@@ -20,6 +22,9 @@ export default function calculateLowestPrice(variants) {
     // Find the lowest price
     const lowestPrice = Math.min(...prices);
 
+    // Calculate the net price (if user is Firmenkunde)
+    const netPrice = calculateNetPrice(lowestPrice);
+
     // Return the formatted result
-    return `ab EUR ${lowestPrice.toFixed(2).replace(".", ",")}`;
+    return `ab EUR ${netPrice.toFixed(2).replace(".", ",")}`;
 }

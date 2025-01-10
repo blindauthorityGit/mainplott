@@ -444,6 +444,17 @@ export async function getAllProducts() {
                             }
                         }
                     }
+                                            collections(first: 5) { 
+                        edges {
+                            node {
+                                id
+                                title
+                                handle
+                                description
+                            }
+                        }
+                    }
+
                 }
             }
         }

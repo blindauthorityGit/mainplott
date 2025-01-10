@@ -11,6 +11,7 @@ import prepareLineItems from "@/functions/prepareLineItems";
 import { createCart } from "@/libs/shopify";
 export default function CartSidebar() {
     const {
+        purchaseData,
         cartItems,
         isCartSidebarOpen,
         closeCartSidebar,
@@ -24,6 +25,8 @@ export default function CartSidebar() {
     const [discountApplied, setDiscountApplied] = useState(false);
     const [totalPrice, setTotalPrice] = useState(0);
     const [userNotes, setUserNotes] = useState(""); // State for user notes
+
+    console.log("CART", cartItems);
 
     // Calculate the total price with or without discount
     useEffect(() => {
@@ -62,50 +65,6 @@ export default function CartSidebar() {
             updateCartItem(id, { quantity: newQuantity });
         }
     };
-
-    // const handleCheckout = async () => {
-    //     try {
-    //         closeCartSidebar();
-
-    //         // Prepare purchase data
-    //         const cleanedCartItems = cartItems.map((item) => {
-    //             const cleanedSides = Object.keys(item.sides || {}).reduce((acc, sideKey) => {
-    //                 const { uploadedGraphicFile, ...rest } = item.sides[sideKey]; // Remove the File object
-    //                 acc[sideKey] = rest; // Keep the rest of the properties
-    //                 return acc;
-    //             }, {});
-
-    //             return {
-    //                 ...item,
-    //                 sides: cleanedSides, // Replace sides with cleaned data
-    //             };
-    //         });
-
-    //         console.log(cleanedCartItems);
-
-    //         const purchaseData = {
-    //             cartItems: cleanedCartItems,
-    //             totalPrice,
-    //             customerName: "Test Kunde",
-    //             date: new Date().toISOString(),
-    //         };
-
-    //         console.log("Starting Firestore upload...");
-    //         console.log("Data to upload:", purchaseData);
-
-    //         await uploadPurchaseToFirestore(purchaseData);
-
-    //         setModalContent("Vielen Dank für Ihre Bestellung!");
-    //         setModalOpen(true);
-    //         clearCart();
-
-    //         console.log("Purchase data saved successfully!");
-    //     } catch (error) {
-    //         console.error("Error saving purchase data:", error);
-    //         setModalContent("Fehler beim Speichern der Bestellung.");
-    //         setModalOpen(true);
-    //     }
-    // };
 
     const handleCheckout = async () => {
         try {
@@ -186,7 +145,9 @@ export default function CartSidebar() {
                                     <div key={item.id} className="flex items-center mb-8">
                                         <img
                                             src={
-                                                item.design.front.downloadURL
+                                                item.tryout
+                                                    ? item.cartImage
+                                                    : item.design.front.downloadURL
                                                     ? item.design.front.downloadURL
                                                     : item.design.back.downloadURL
                                             }
@@ -200,13 +161,17 @@ export default function CartSidebar() {
                                             )}
                                             <p className="text-sm">
                                                 Menge:{" "}
-                                                {item.configurator
+                                                {item.tryout
+                                                    ? 1
+                                                    : item.configurator
                                                     ? Object.entries(item.variants || {}).map(([size, details]) => (
                                                           <span key={size}>{` ${details.quantity}x (${size})`}</span>
                                                       ))
                                                     : item.quantity}
                                             </p>
-                                            <p className="text-sm">Preis: € {Number(item.totalPrice).toFixed(2)}</p>
+                                            <p className="text-sm">
+                                                Preis: € {item.tryout ? 0 : Number(item.totalPrice).toFixed(2)}
+                                            </p>
                                         </div>
                                         {/* <div className="flex items-center mt-2">
                                             <button

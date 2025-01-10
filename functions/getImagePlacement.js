@@ -24,8 +24,10 @@ export default function getImagePlacement({
     }
 
     // Decide on offsets. If the image should scale/rotate from the center:
-    const offsetX = finalWidth / 2;
-    const offsetY = finalHeight / 2;
+    // const offsetX = finalWidth / 2;
+    // const offsetY = finalHeight / 2;
+    const offsetX = 0;
+    const offsetY = 0;
 
     console.log("PLACEMNET CALLED");
 

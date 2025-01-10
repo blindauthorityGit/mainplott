@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, forwardRef } from "react";
-import { Stage, Layer, Image as KonvaImage, Transformer } from "react-konva";
+import { Stage, Layer, Image as KonvaImage, Rect, Transformer } from "react-konva";
 import useStore from "@/store/store";
 import { Button } from "@mui/material";
 import { FiZoomIn, FiZoomOut, FiRefreshCw } from "react-icons/fi";
@@ -32,7 +32,7 @@ const KonvaLayer = forwardRef(
         const productImageRef = useRef(null);
         const uploadedGraphicRef = useRef(null);
         const transformerRef = useRef(null);
-        const boundaryPathRef = useRef(null);
+        const boundaryRectRef = useRef(null); // <--- bounding rectangle
 
         const {
             purchaseData,
@@ -40,7 +40,7 @@ const KonvaLayer = forwardRef(
             setConfiguredImage,
             setStageRef,
             setTransformerRef,
-            setBoundaryPathRef,
+            // We won't use setBoundaryPathRef in this example, but it's in your code
         } = useStore();
         const { containerWidth, containerHeight } = purchaseData;
 
@@ -50,8 +50,10 @@ const KonvaLayer = forwardRef(
         const [isGraphicDraggable, setIsGraphicDraggable] = useState(purchaseData.configurator !== "template");
         const [showTransformer, setShowTransformer] = useState(purchaseData.configurator !== "template");
 
+        // ---------------------------
+        // Update config on load
+        // ---------------------------
         useEffect(() => {
-            // Update draggability and transformer visibility when configurator changes
             setIsGraphicDraggable(purchaseData.configurator !== "template");
             setShowTransformer(purchaseData.configurator !== "template");
             if (transformerRef.current && uploadedGraphicRef.current) {
@@ -63,6 +65,7 @@ const KonvaLayer = forwardRef(
             }
         }, [purchaseData.configurator]);
 
+        // If Transformer is showing and we have an uploaded graphic
         useEffect(() => {
             if (uploadedGraphicRef.current && showTransformer) {
                 transformerRef.current.nodes([uploadedGraphicRef.current]);
@@ -70,123 +73,99 @@ const KonvaLayer = forwardRef(
             }
         }, [showTransformer]);
 
+        // Save references in Zustand
         useEffect(() => {
-            // Save refs in Zustand
             setStageRef(stageRef.current);
             setTransformerRef(transformerRef.current);
-            setBoundaryPathRef(boundaryPathRef.current);
+            // Omit setBoundaryPathRef(...) for clarity
 
             return () => {
                 setStageRef(null);
                 setTransformerRef(null);
-                setBoundaryPathRef(null);
             };
-        }, [setStageRef, setTransformerRef, setBoundaryPathRef]);
+        }, [setStageRef, setTransformerRef]);
 
-        // Load the product image
+        // ---------------------------
+        // Load product image
+        // ---------------------------
         useEffect(() => {
-            if (productImage) {
-                const img = new window.Image();
-                img.crossOrigin = "Anonymous";
-                img.src = productImage;
-                img.onload = () => {
-                    if (productImageRef.current) {
-                        const aspectRatio = img.width / img.height;
-                        let newWidth = containerWidth;
-                        let newHeight = containerHeight;
+            if (!productImage) return;
+            const img = new window.Image();
+            img.crossOrigin = "anonymous";
+            img.src = productImage;
+            img.onload = () => {
+                if (!productImageRef.current) return;
+                // Fit image "contain" inside containerWidth x containerHeight
+                const containerAspect = containerWidth / containerHeight;
+                const imageAspect = img.width / img.height;
 
-                        if (aspectRatio > 1) {
-                            newWidth = Math.min(containerWidth, 860);
-                            newHeight = newWidth / aspectRatio;
-                        } else {
-                            newHeight = Math.min(containerHeight, 860);
-                            newWidth = newHeight * aspectRatio;
-                        }
+                let newWidth, newHeight;
+                if (imageAspect > containerAspect) {
+                    newWidth = containerWidth;
+                    newHeight = newWidth / imageAspect;
+                } else {
+                    newHeight = containerHeight;
+                    newWidth = newHeight * imageAspect;
+                }
 
-                        const offsetX = (containerWidth - newWidth) / 2;
-                        const offsetY = (containerHeight - newHeight) / 2;
+                const offsetX = (containerWidth - newWidth) / 2;
+                const offsetY = (containerHeight - newHeight) / 2;
 
-                        productImageRef.current.width(newWidth);
-                        productImageRef.current.height(newHeight);
-                        productImageRef.current.x(offsetX);
-                        productImageRef.current.y(offsetY);
-                        productImageRef.current.image(img);
-                        productImageRef.current.getLayer().batchDraw();
-                    }
-                };
-            }
+                productImageRef.current.width(newWidth);
+                productImageRef.current.height(newHeight);
+                productImageRef.current.x(offsetX);
+                productImageRef.current.y(offsetY);
+                productImageRef.current.image(img);
+                productImageRef.current.getLayer().batchDraw();
+            };
         }, [productImage, containerWidth, containerHeight]);
 
-        // Load the uploaded graphic and use getImagePlacement
+        // ---------------------------
+        // Load uploaded graphic
+        // ---------------------------
         useEffect(() => {
-            if (!uploadedGraphicFile) return; // If no file, do nothing
+            if (!uploadedGraphicFile) return;
+            const img = new window.Image();
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                img.src = e.target.result;
+                img.onload = () => {
+                    if (uploadedGraphicRef.current) {
+                        const { x, y, offsetX, offsetY, finalWidth, finalHeight } = getImagePlacement({
+                            containerWidth,
+                            containerHeight,
+                            imageNaturalWidth: img.width,
+                            imageNaturalHeight: img.height,
+                        });
 
-            const sideData = purchaseData.sides[purchaseData.currentSide];
-            const needInitialPlacement = !sideData.initialPlacementDone;
+                        uploadedGraphicRef.current.width(finalWidth);
+                        uploadedGraphicRef.current.height(finalHeight);
+                        // We'll offset from the center for scaling, but let's just put (x, y) for reference:
+                        // uploadedGraphicRef.current.x(x);
+                        // uploadedGraphicRef.current.y(y);
 
-            if (uploadedGraphicFile) {
-                console.log("THIS ONE GETS CALLED", purchaseData.sides.front);
-                const img = new window.Image();
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    img.src = e.target.result;
-                    img.onload = () => {
-                        if (uploadedGraphicRef.current) {
-                            const { x, y, offsetX, offsetY, finalWidth, finalHeight } = getImagePlacement({
-                                containerWidth,
-                                containerHeight,
-                                imageNaturalWidth: img.width,
-                                imageNaturalHeight: img.height,
-                            });
+                        uploadedGraphicRef.current.offsetX(0);
+                        uploadedGraphicRef.current.offsetY(0);
+                        uploadedGraphicRef.current.image(img);
+                        uploadedGraphicRef.current.getLayer().batchDraw();
 
-                            uploadedGraphicRef.current.width(finalWidth);
-                            uploadedGraphicRef.current.height(finalHeight);
-                            // uploadedGraphicRef.current.x(x);
-                            // uploadedGraphicRef.current.y(y);
-                            uploadedGraphicRef.current.offsetX(offsetX);
-                            uploadedGraphicRef.current.offsetY(offsetY);
-                            uploadedGraphicRef.current.image(img);
-                            uploadedGraphicRef.current.getLayer().batchDraw();
-
-                            console.log(x, y, offsetX, offsetY, finalWidth, finalHeight);
-
-                            if (transformerRef.current) {
-                                transformerRef.current.nodes([uploadedGraphicRef.current]);
-                                transformerRef.current.getLayer().batchDraw();
-                            }
+                        if (transformerRef.current) {
+                            transformerRef.current.nodes([uploadedGraphicRef.current]);
+                            transformerRef.current.getLayer().batchDraw();
                         }
-                    };
+                    }
                 };
-                reader.readAsDataURL(uploadedGraphicFile);
-            }
-        }, [uploadedGraphicFile]);
+            };
+            reader.readAsDataURL(uploadedGraphicFile);
+        }, [uploadedGraphicFile, containerWidth, containerHeight, purchaseData.currentSide]);
 
-        // const handleExport = async () => {
-        //     handleResetZoom();
-        //     console.log("GETTING EXPORETED");
-        //     const dataURL = exportCanvas(stageRef, transformerRef, boundaryPathRef, 1);
-        //     sessionStorage.setItem("exportedProductImage", dataURL);
-        //     const sessionImageURL = sessionStorage.getItem("exportedProductImage");
-        //     setConfiguredImage(sessionImageURL);
-
-        //     const blob = dataURLToBlob(dataURL);
-        //     const fileName = `product-image-${Date.now()}.png`;
-        //     try {
-        //         const downloadURL = await uploadImageToStorage(blob, fileName);
-        //         setPurchaseData((prev) => ({
-        //             ...prev,
-        //             configImage: downloadURL,
-        //         }));
-        //     } catch (error) {
-        //         console.error("Error saving configured design:", error);
-        //     }
-        // };
+        // ---------------------------
+        // Export logic
+        // ---------------------------
         const handleExport = () => {
-            // Reset zoom if needed
             handleResetZoom();
-            // Export current canvas state to dataURL
-            const dataURL = exportCanvas(stageRef, transformerRef, boundaryPathRef, 1);
-            console.log("BUBUBUBU", dataURL);
+            const dataURL = exportCanvas(stageRef, transformerRef, null, 1); // pass null for boundaryPathRef
+            console.log("Export dataURL:", dataURL);
             return dataURL;
         };
 
@@ -196,8 +175,10 @@ const KonvaLayer = forwardRef(
             }
         }, [onExportReady]);
 
+        // ---------------------------
+        // Drag / Scale logic
+        // ---------------------------
         const handleGraphicDragStart = () => {
-            // While dragging the graphic, we don't want the stage to move
             setIsDraggingGraphic(true);
         };
 
@@ -206,12 +187,12 @@ const KonvaLayer = forwardRef(
             if (isGraphicDraggable) {
                 setPosition({ x: e.target.x(), y: e.target.y() });
             }
-            console.log(purchaseData.sides.front.xPosition, purchaseData.sides.front.yPosition);
         };
 
         const handleGraphicTransformEnd = (e) => {
             if (isGraphicDraggable) {
-                const newScale = Math.min(e.target.scaleX(), 2.5);
+                const newScale = Math.min(e.target.scaleX(), 3.5);
+                console.log("end da sizer");
                 setScale(newScale);
                 e.target.scaleX(newScale);
                 e.target.scaleY(newScale);
@@ -219,6 +200,80 @@ const KonvaLayer = forwardRef(
             }
         };
 
+        // ---------------
+        // BOUNDING LOGIC
+        // ---------------
+        // This dragBoundFunc will clamp the graphic's position so it can't leave the boundaryRectRef.
+        const dragBoundFunc = (pos) => {
+            const boundingRectNode = boundaryRectRef.current;
+            const shapeNode = uploadedGraphicRef.current;
+            if (!boundingRectNode || !shapeNode) return pos;
+
+            // The bounding rectangle’s absolute position on the Stage:
+            const boundingRect = boundingRectNode.getClientRect();
+
+            // shapeRect is the shape’s current bounding box
+            // *before* we move it to pos.x/pos.y.
+            // Konva calls dragBoundFunc to see if new pos is allowed.
+            const shapeRect = shapeNode.getClientRect();
+
+            // We want the shape’s top-left corner to move to pos.x / pos.y
+            // So the “newLeft” & “newTop” become pos.x / pos.y
+            // Then “newRight” & “newBottom” are pos.x + shapeRect.width, pos.y + shapeRect.height
+            // (assuming no offset or anchor shift).
+            const newLeft = pos.x;
+            const newTop = pos.y;
+            const newRight = pos.x + shapeRect.width;
+            const newBottom = pos.y + shapeRect.height;
+
+            let clampedX = pos.x;
+            let clampedY = pos.y;
+
+            // Left clamp
+            if (newLeft < boundingRect.x) {
+                clampedX = boundingRect.x;
+            }
+            // Right clamp
+            if (newRight > boundingRect.x + boundingRect.width) {
+                clampedX = boundingRect.x + boundingRect.width - shapeRect.width;
+            }
+            // Top clamp
+            if (newTop < boundingRect.y) {
+                clampedY = boundingRect.y;
+            }
+            // Bottom clamp
+            if (newBottom > boundingRect.y + boundingRect.height) {
+                clampedY = boundingRect.y + boundingRect.height - shapeRect.height;
+            }
+
+            return { x: clampedX, y: clampedY };
+        };
+
+        // This boundBoxFunc will clamp the scale so that the graphic never grows beyond the boundary rect.
+        const boundBoxFunc = (oldBox, newBox) => {
+            const boundingRectNode = boundaryRectRef.current;
+            if (!boundingRectNode || !uploadedGraphicRef.current) return newBox;
+
+            const boundingRect = boundingRectNode.getClientRect();
+
+            // newBox is the prospective new bounding box after transform
+            // We'll do a simple check: if newBox goes outside boundingRect, revert
+            // More advanced logic might clamp scale partially, but let's revert for simplicity:
+
+            if (
+                newBox.x < boundingRect.x ||
+                newBox.y < boundingRect.y ||
+                newBox.x + newBox.width > boundingRect.x + boundingRect.width ||
+                newBox.y + newBox.height > boundingRect.y + boundingRect.height
+            ) {
+                return oldBox; // revert
+            }
+            return newBox;
+        };
+
+        // ---------------
+        // Reset Zoom
+        // ---------------
         const handleResetZoom = () => {
             setZoomLevel(1);
             setStagePosition({ x: 0, y: 0 });
@@ -233,9 +288,28 @@ const KonvaLayer = forwardRef(
             }
         }, [resetHandler]);
 
+        // If we switch sides (front/back), reset
         useEffect(() => {
             handleResetZoom();
         }, [purchaseData.currentSide]);
+
+        // For example, read from product or purchaseData to compute boundingRect
+        // Maybe you store these fractions in each product, so e.g. product.boundingBox = { x: 0.2, y: 0.1, width: 0.6, height: 0.7 }
+        // Or you hardcode them for demonstration:
+        const boundingRect = {
+            x: containerWidth * 0.22,
+            y: containerHeight * 0.15,
+            width: containerWidth * 0.55,
+            height: containerHeight * 0.76,
+        };
+
+        useEffect(() => {
+            // Save boundingRect in purchaseData
+            setPurchaseData((prev) => ({
+                ...prev,
+                boundingRect, // store x,y,width,height in global state
+            }));
+        }, [containerWidth, containerHeight /* also product changes if any*/]);
 
         return (
             <div style={{ touchAction: "none" }}>
@@ -246,15 +320,33 @@ const KonvaLayer = forwardRef(
                     height={containerHeight}
                     scaleX={zoomLevel}
                     scaleY={zoomLevel}
-                    draggable={!isDraggingGraphic} /* Stage not draggable while dragging graphic */
+                    draggable={!isDraggingGraphic}
                     x={stagePosition.x}
                     y={stagePosition.y}
-                    // onDragEnd={(e) => setStagePosition({ x: e.target.x(), y: e.target.y() })}
                     onMouseOver={() => stageRef.current && (stageRef.current.container().style.cursor = "grab")}
                     onMouseOut={() => stageRef.current && (stageRef.current.container().style.cursor = "default")}
                 >
                     <Layer>
+                        {/* Product Image (behind everything) */}
                         {productImage && <KonvaImage ref={productImageRef} />}
+
+                        {/* 
+              Our boundingRect above the product image but behind the graphic.
+              Let's center it at (containerWidth*0.5, containerHeight*0.5)
+              We'll pick some arbitrary width & height for demonstration.
+            */}
+                        <Rect
+                            ref={boundaryRectRef} // <-- add this!
+                            x={boundingRect.x}
+                            y={boundingRect.y}
+                            width={boundingRect.width}
+                            height={boundingRect.height}
+                            fill="rgba(0, 255, 0, 0.1)"
+                            stroke="green"
+                            strokeWidth={2}
+                        />
+
+                        {/* Uploaded Graphic */}
                         {(uploadedGraphicFile || uploadedGraphicURL) && (
                             <KonvaImage
                                 ref={uploadedGraphicRef}
@@ -266,26 +358,21 @@ const KonvaLayer = forwardRef(
                                 onDragStart={handleGraphicDragStart}
                                 onDragEnd={handleGraphicDragEnd}
                                 onTransformEnd={handleGraphicTransformEnd}
+                                dragBoundFunc={dragBoundFunc} // <--- bounding logic for drag
                             />
                         )}
+
+                        {/* Transformer with a scale bounding function */}
                         {(uploadedGraphicFile || uploadedGraphicURL) && showTransformer && (
                             <Transformer
                                 ref={transformerRef}
-                                boundBoxFunc={(oldBox, newBox) => {
-                                    if (
-                                        newBox.width < 50 ||
-                                        newBox.height < 50 ||
-                                        newBox.width > 300 ||
-                                        newBox.height > 300
-                                    ) {
-                                        return oldBox;
-                                    }
-                                    return newBox;
-                                }}
+                                boundBoxFunc={boundBoxFunc} // <--- bounding logic for scale
                             />
                         )}
                     </Layer>
                 </Stage>
+
+                {/* Zoom & Reset UI */}
                 <div
                     className="top-16 right-10 flex-col"
                     style={{ position: "absolute", display: "flex", gap: "10px" }}
