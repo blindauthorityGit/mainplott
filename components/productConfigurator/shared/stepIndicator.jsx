@@ -35,7 +35,7 @@ const StepIndicator = ({ steps, currentStep }) => {
                 {steps.map((step, index) => (
                     <div
                         key={index}
-                        className={`text-xs 2xl:text-sm font-medium ${
+                        className={`text-xs 2xl:text-xs font-medium ${
                             index === currentStep ? "text-black" : "text-gray-400 opacity-50"
                         }`}
                     >
@@ -59,7 +59,7 @@ const StepIndicator = ({ steps, currentStep }) => {
                     {steps.map((_, index) => (
                         <div
                             key={index}
-                            className={`w-2 h-2 2xl:w-4 2xl:h-4 rounded-full ${
+                            className={`w-2 h-2 2xl:w-3 2xl:h-3 rounded-full ${
                                 index <= currentStep ? "bg-textColor" : "bg-gray-300"
                             }`}
                         />

@@ -8,6 +8,8 @@ import { MainContainer } from "../../layout/container";
 import ProductDetail from "../../sections/product";
 import ProductConfigurator from "../../components/productConfigurator/index.jsx";
 import SimpleConfigurator from "../../components/simpleConfigurator";
+import Breadcrumbs from "@/components/simpleConfigurator/components/breadcrumbs";
+
 import Spacer from "../../layout/spacer";
 import MoreProducts from "@/sections/moreProducts";
 import FAQSection from "@/sections/faqs";
@@ -24,7 +26,7 @@ import client from "../../client";
 import { useRouter } from "next/router";
 import { BiCloudLightRain } from "react-icons/bi";
 
-export default function Product({ product, sizes, relatedProducts }) {
+export default function Product({ product, sizes, relatedProducts, category }) {
     useEffect(() => {
         console.log("PRÖÖÖDUKT", product, relatedProducts);
     }, [product, relatedProducts, sizes]);
@@ -38,8 +40,12 @@ export default function Product({ product, sizes, relatedProducts }) {
         resetPurchaseData(); // Clear purchaseData when a new product is loaded
     }, [handle]); // Dependency ensures reset runs only on handle change
 
+    // Extract the product title from the Shopify data
+    const productTitle = product?.productByHandle?.title || "Unbekanntes Produkt";
+
     return (
         <MainContainer>
+            <Breadcrumbs category={category} productTitle={productTitle} />
             {product?.productByHandle?.konfigurator?.value == "true" ? (
                 <ProductConfigurator
                     product={product?.productByHandle}
@@ -99,7 +105,7 @@ export async function getStaticProps({ params }) {
     console.log(category);
 
     return {
-        props: { product: product, sizes: product.sizes, relatedProducts: relatedProducts },
+        props: { product: product, sizes: product.sizes, relatedProducts: relatedProducts, category },
 
         revalidate: 60, // ISR, um die Seite alle 60 Sekunden neu zu generieren
     };
