@@ -61,6 +61,18 @@ const colorDictionary = {
     "Rose Melange": "#FBB8BE",
     brown: "#4C3428",
     lime: "#C6E55D",
+    "Artic Blue": "#C1DDDC",
+    "Astral Purple": "#59103E",
+    "Frozen Green": "#BFD7AE",
+    "Light Yellow": "#F6E899",
+    "Bottle Green": "#384F32",
+    "French Navy": "#292E3C",
+    "Grey Melange": "#A7A7A7",
+    "Kelly Green": "#4F9C57",
+    "Royal Blue": "#4864AA",
+    Burgundy: "#471E26",
+    Khaki: "#727161",
+    Natural: "#E1DDCD",
 
     // weitere Farben hinzufügen
 };

@@ -17,6 +17,7 @@ export default function Shop({ allProducts, globalData }) {
     const [selectedCats, setSelectedCats] = useState(initialCats);
     const [selectedTags, setSelectedTags] = useState(initialTags);
     const [sortOption, setSortOption] = useState("name"); // default sort by name
+    const [searchTerm, setSearchTerm] = useState(""); // <<-- NEW
 
     const updateURL = (newCats, newTags) => {
         const query = {};
@@ -98,26 +99,38 @@ export default function Shop({ allProducts, globalData }) {
     const filteredProducts = allProducts.filter((product) => {
         const productCollections = product.node.collections.edges.map((e) => e.node.handle.toLowerCase());
         const productTags = product.node.tags.map((t) => t.toLowerCase());
+        const productTitle = product.node.title.toLowerCase();
 
         const chosenCats = selectedCats.map((c) => c.toLowerCase());
         const chosenTags = selectedTags.map((t) => t.toLowerCase());
 
-        // If "all" selected or no categories selected, that means no restriction by category.
+        // 1) Category filter
         let catPass = true;
         if (!chosenCats.includes("all")) {
-            // Product must match at least one chosen category (collection)
             catPass = productCollections.some((c) => chosenCats.includes(c));
         }
 
+        // 2) Tag filter (OR logic across all chosen tags)
         let tagPass = true;
         if (chosenTags.length > 0) {
-            // Product should show if it matches ANY chosen tag (not all)
-            // If a product must match tags of multiple categories, we considered them collectively.
-            // If you want OR logic: at least one chosen tag must be in productTags.
             tagPass = chosenTags.some((t) => productTags.includes(t));
         }
 
-        return catPass && tagPass;
+        // 3) Search filter
+        // "Winterjacke" should match if it appears in the title or in any tag.
+        let searchPass = true;
+        if (searchTerm.trim() !== "") {
+            const st = searchTerm.toLowerCase();
+            const inTitle = productTitle.includes(st);
+            const inTags = productTags.some((tag) => tag.includes(st));
+
+            // Only pass if found in title or tags
+            if (!inTitle && !inTags) {
+                searchPass = false;
+            }
+        }
+
+        return catPass && tagPass && searchPass;
     });
 
     // Sorting logic
@@ -126,14 +139,13 @@ export default function Shop({ allProducts, globalData }) {
         const B = b.node;
         switch (sortOption) {
             case "price":
-                // Compare by first variant price for simplicity
+                // Compare by first variant price
                 const Aprice = parseFloat(A.variants.edges[0].node.priceV2.amount);
                 const Bprice = parseFloat(B.variants.edges[0].node.priceV2.amount);
                 return Aprice - Bprice;
             case "name":
                 return A.title.localeCompare(B.title);
             case "collection":
-                // Sort by the first collection handle
                 const Acol = A.collections.edges[0]?.node.handle || "";
                 const Bcol = B.collections.edges[0]?.node.handle || "";
                 return Acol.localeCompare(Bcol);
@@ -163,6 +175,9 @@ export default function Shop({ allProducts, globalData }) {
                         onRemoveTag={handleRemoveTag}
                         sortOption={sortOption}
                         setSortOption={setSortOption}
+                        // Pass down the search state + setter
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
                     />
                     {sortedProducts.length > 0 ? (
                         <ProductListings products={sortedProducts} />

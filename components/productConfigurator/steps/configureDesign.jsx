@@ -224,10 +224,10 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         console.log(value, posX, posY);
         console.log(purchaseData.containerWidth * 0.4);
         console.log(purchaseData.containerHeight * 0.36);
-        const newX = purchaseData.containerWidth * 0.26;
-        const newY = purchaseData.containerHeight * 0.18;
-        // const newX = purchaseData.containerWidth * posX;
-        // const newY = purchaseData.containerHeight * posY;
+        // const newX = purchaseData.containerWidth * 0.26;
+        // const newY = purchaseData.containerHeight * 0.18;
+        const newX = purchaseData.containerWidth * posX;
+        const newY = purchaseData.containerHeight * posY;
 
         console.log(newX, newY);
 
