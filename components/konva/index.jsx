@@ -50,6 +50,12 @@ const KonvaLayer = forwardRef(
         const [isGraphicDraggable, setIsGraphicDraggable] = useState(purchaseData.configurator !== "template");
         const [showTransformer, setShowTransformer] = useState(purchaseData.configurator !== "template");
 
+        const [isTemplate, setIsTemplate] = useState(purchaseData.configurator !== "template");
+
+        useEffect(() => {
+            setIsTemplate(purchaseData.configurator !== "template");
+        }, [purchaseData.configurator]);
+
         // ---------------------------
         // Update config on load
         // ---------------------------
@@ -384,7 +390,7 @@ const KonvaLayer = forwardRef(
                         setZoomLevel={setZoomLevel}
                     />
                     <Button
-                        className="!bg-textColor !text-2xl !hidden lg:!block"
+                        className="!bg-textColor justify-center text-center !text-2xl !hidden lg:!block"
                         onClick={() => {
                             const newZoomLevel = Math.min(zoomLevel + 0.1, 3);
                             setZoomLevel(newZoomLevel);

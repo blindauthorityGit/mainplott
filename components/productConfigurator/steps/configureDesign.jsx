@@ -355,12 +355,13 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                 label={option.name}
                                 icon={option.icon}
                                 value={option.name}
+                                product={product}
                                 checked={selectedValue === option.name}
                                 onChange={() => handleChange(option.name, option.position.x, option.position.y)} // Pass additional parameters
                             />
                         ))}
                     </div>{" "}
-                    <div className="mb-4 mt-8">
+                    {/* <div className="mb-4 mt-8">
                         <P klasse="!text-sm !mb-0">Größe</P>
                         <div className="flex space-x-4">
                             <Slider
@@ -403,7 +404,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                 <FiMaximize />
                             </button>{" "}
                         </div>
-                    </div>
+                    </div> */}
                 </>
             ) : (
                 <>

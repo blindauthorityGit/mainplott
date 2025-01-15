@@ -422,7 +422,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
             </div>
 
             {/* Right - Step Indicator, Dynamic Content, Buttons */}
-            <div className="col-span-12 lg:col-span-7 2xl:col-span-6  lg:pt-8 2xl:pt-16 flex flex-col h-full">
+            <div className="col-span-12 lg:col-span-7 2xl:col-span-6   flex flex-col h-full">
                 {/* Step Indicator */}
                 <div className="lg:mb-6">
                     <StepIndicator currentStep={currentStep} steps={steps} />
