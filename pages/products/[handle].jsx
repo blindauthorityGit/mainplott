@@ -26,7 +26,7 @@ import client from "../../client";
 import { useRouter } from "next/router";
 import { BiCloudLightRain } from "react-icons/bi";
 
-export default function Product({ product, sizes, relatedProducts, category }) {
+export default function Product({ product, sizes, relatedProducts, category, globalData }) {
     useEffect(() => {
         console.log("PRÖÖÖDUKT", product, relatedProducts);
     }, [product, relatedProducts, sizes]);
@@ -66,7 +66,7 @@ export default function Product({ product, sizes, relatedProducts, category }) {
                 "null"
             )}{" "}
             <MoreProducts relatedProducts={relatedProducts} currentProductHandle={product} />
-            <FAQSection></FAQSection>
+            <FAQSection faqs={globalData.faqs.faqs}></FAQSection>
         </MainContainer>
     );
 }
@@ -104,8 +104,15 @@ export async function getStaticProps({ params }) {
     }
     console.log(category);
 
+    const queryGlobal = `{    "features": *[_type == "featuresSingleton"][0],
+    "testimonials": *[_type == "testimonialsSingleton"][0],
+    "faqs": *[_type == "faqsSingleton"][0],
+    "settings": *[_type == "settingsSingleton"][0]}
+  `; // Adjust your query as needed
+    const globalData = await client.fetch(queryGlobal);
+
     return {
-        props: { product: product, sizes: product.sizes, relatedProducts: relatedProducts, category },
+        props: { product: product, sizes: product.sizes, relatedProducts: relatedProducts, category, globalData },
 
         revalidate: 60, // ISR, um die Seite alle 60 Sekunden neu zu generieren
     };

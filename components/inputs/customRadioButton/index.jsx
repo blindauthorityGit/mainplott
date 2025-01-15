@@ -94,7 +94,7 @@ const CustomRadioButton = ({ id, name, label, icon, value, checked, onChange, pr
     const imageSrc = getGraphicForProductType(product, label);
 
     // If you want dynamic styling for the card when it's selected vs. not selected
-    const cardBorder = checked ? "border-primaryColor-500" : "border-gray-300 opacity-70";
+    const cardBorder = checked ? "border-primaryColor-500 bg-accentColor" : "border-gray-300 opacity-70";
     const textColor = checked ? "text-primaryColor-700 font-semibold" : "text-gray-700";
 
     // We handle clicks on the card container itself so users can click anywhere to select

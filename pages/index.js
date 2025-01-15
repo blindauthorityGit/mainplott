@@ -22,7 +22,7 @@ export default function Home({ sanityData, globalData }) {
 
     return (
         <MainContainer>
-            <HeroSlider data={sanityData.slider.slides} />
+            <HeroSlider data={sanityData.slider.slides.reverse()} />
             <LinkBoxSection data={sanityData.linkBoxes}></LinkBoxSection>
             <Spacer></Spacer>
             <IntroText data={sanityData.textImageBlocks[0]}></IntroText>
@@ -31,7 +31,7 @@ export default function Home({ sanityData, globalData }) {
             <Spacer></Spacer>
             <IntroText data={sanityData.textImageBlocks[1]} order></IntroText>
             <Spacer></Spacer>
-            <FAQSection></FAQSection>
+            <FAQSection faqs={globalData.faqs.faqs}></FAQSection>
             <Spacer></Spacer>
 
             <TestimonialsSection data={globalData.testimonials.testimonials}></TestimonialsSection>

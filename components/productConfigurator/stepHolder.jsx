@@ -18,7 +18,11 @@ import { isNextDisabled, isPrevDisabled, handlePrevStep, handleNextStep } from "
 import exportAllSides from "@/functions/exportAllSides";
 
 // Dynamically import the KonvaLayer component with no SSR
-const KonvaLayer = dynamic(() => import("@/components/konva"), { ssr: false });
+// Provide a fallback
+const KonvaLayer = dynamic(() => import("@/components/konva"), {
+    ssr: false,
+    loading: () => <div className="h-80 w-full bg-gray-50" />, // or a spinner
+});
 // import KonvaLayer from "@/components/konva/konvaWrapper"; // Normal import
 // import KonvaLayerWithRef from "@/components/konva/konvaWrapper"; // Adjust the path to your wrapper
 
@@ -325,6 +329,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                 transition={{ duration: 0.3, ease: "easeInOut" }}
                             >
                                 <KonvaLayer
+                                    key={purchaseData.configurator}
                                     onExportReady={(fn) => (exportCanvasRef.current = fn)}
                                     ref={konvaLayerRef}
                                     uploadedGraphicFile={

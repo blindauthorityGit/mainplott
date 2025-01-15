@@ -51,10 +51,13 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
 
     // Remove or conditionally include this useEffect
     useEffect(() => {
-        setPurchaseData((prevData) => ({
-            ...prevData,
-            currentSide: "front",
-        }));
+        // Only set currentSide if it’s not defined yet
+        if (!purchaseData.currentSide) {
+            setPurchaseData((prevData) => ({
+                ...prevData,
+                currentSide: "front",
+            }));
+        }
     }, []);
 
     const handleXChange = (event, newValue) => {
@@ -223,13 +226,14 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     const handleChange = (value, posX, posY) => {
         console.log(value, posX, posY);
         console.log(purchaseData.containerWidth * 0.4);
-        console.log(purchaseData.containerHeight * 0.36);
-        // const newX = purchaseData.containerWidth * 0.26;
-        // const newY = purchaseData.containerHeight * 0.18;
-        const newX = purchaseData.containerWidth * posX;
-        const newY = purchaseData.containerHeight * posY;
 
-        console.log(newX, newY);
+        // console.log(purchaseData.containerHeight * 0.36);
+        // // const newX = purchaseData.containerWidth * 0.26;
+        // // const newY = purchaseData.containerHeight * 0.18;
+        // const newX = purchaseData.containerWidth * posX;
+        // const newY = purchaseData.containerHeight * posY;
+
+        // console.log(newX, newY);
 
         // Update the selected value state
         setSelectedValue(value);
@@ -242,33 +246,33 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 [currentSide]: {
                     ...purchaseData.sides[currentSide], // Preserve existing data for the current side
                     position: value, // Update the position with the selected value
-                    xPosition: newX,
-                    yPosition: newY,
+                    // xPosition: newX,
+                    // yPosition: newY,
                 },
             },
         });
     };
 
-    useEffect(() => {
-        // console.log(
-        //     positions[currentSide].default,
-        //     positions[currentSide].default[0].position.x,
-        //     positions[currentSide].default[0].position.y
-        // );
-        if (purchaseData.configurator === "template") {
-            setPurchaseData({
-                ...purchaseData,
-                sides: {
-                    ...purchaseData.sides,
-                    [currentSide]: {
-                        ...purchaseData.sides[currentSide], // Preserve existing data for the current side
-                        xPosition: purchaseData.containerWidth * positions[currentSide].default[0].position.x,
-                        yPosition: purchaseData.containerHeight * positions[currentSide].default[0].position.y,
-                    },
-                },
-            });
-        }
-    }, [purchaseData.configurator]);
+    // useEffect(() => {
+    //     // console.log(
+    //     //     positions[currentSide].default,
+    //     //     positions[currentSide].default[0].position.x,
+    //     //     positions[currentSide].default[0].position.y
+    //     // );
+    //     if (purchaseData.configurator === "template") {
+    //         setPurchaseData({
+    //             ...purchaseData,
+    //             sides: {
+    //                 ...purchaseData.sides,
+    //                 [currentSide]: {
+    //                     ...purchaseData.sides[currentSide], // Preserve existing data for the current side
+    //                     xPosition: purchaseData.containerWidth * positions[currentSide].default[0].position.x,
+    //                     yPosition: purchaseData.containerHeight * positions[currentSide].default[0].position.y,
+    //                 },
+    //             },
+    //         });
+    //     }
+    // }, [purchaseData.configurator]);
 
     let minX = 0;
     let maxX = purchaseData.containerWidth; // fallback
@@ -346,7 +350,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 </Button>
             ) : purchaseData.configurator === "template" ? (
                 <>
-                    <div className="flex flex-wrap ">
+                    <div className="flex  lg:mb-4">
                         {positions[currentSide].default.map((option, index) => (
                             <CustomRadioButton
                                 key={`radio${index}`}

@@ -21,6 +21,9 @@ import TawkChat from "@/components/tawkto";
 //LIBS
 import { ReactLenis, useLenis } from "../libs/lenis";
 
+//COOKIE
+import CookieConsentBanner from "@/components/cookie";
+
 export default function App({ Component, pageProps }) {
     const lenis = useLenis(({ scroll }) => {
         // called every scroll
@@ -64,6 +67,7 @@ export default function App({ Component, pageProps }) {
                 <Menu /> {/* The Menu component */}
                 <CartSidebar /> <TawkChat />
                 <Component {...pageProps} /> <Spinner></Spinner> <Modal></Modal> <Footer></Footer>
+                <CookieConsentBanner />
             </ReactLenis>
         </MenuProvider>
     );

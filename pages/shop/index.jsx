@@ -4,6 +4,7 @@ import client from "../../client";
 import { MainContainer } from "../../layout/container";
 import ProductListings from "../../components/shop/productListings";
 import Sidebar from "../../components/shop/sidebar";
+import MobileFilterBar from "../../components/shop/mobileFilterBar";
 import TopBarFilter from "../../components/shop/topBarFilter";
 import { getAllProducts, getAllCollectionsWithSubcollections } from "../../libs/shopify";
 
@@ -156,6 +157,15 @@ export default function Shop({ allProducts, globalData }) {
 
     return (
         <MainContainer>
+            <MobileFilterBar
+                categories={globalData.shop.categories}
+                selectedCats={selectedCats}
+                selectedTags={selectedTags}
+                onSelectCategory={handleSelectCategory}
+                onSelectTag={handleSelectTag}
+                onResetFilters={handleResetFilters}
+                allProducts={allProducts}
+            />
             <div className="grid grid-cols-12 px-4 lg:px-0 gap-4">
                 <Sidebar
                     categories={globalData.shop.categories}
@@ -166,6 +176,7 @@ export default function Shop({ allProducts, globalData }) {
                     onResetFilters={handleResetFilters}
                     allProducts={allProducts}
                 />
+
                 <div className="col-span-12 lg:col-span-9 flex flex-col">
                     <TopBarFilter
                         selectedCats={selectedCats}

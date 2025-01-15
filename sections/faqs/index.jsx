@@ -8,7 +8,7 @@ import { H1, H2, P } from "../../components/typography";
 // ANIMATION
 import { motion, useInView } from "framer-motion";
 
-const FAQSection = ({ klasse }) => {
+const FAQSection = ({ klasse, faqs }) => {
     const parallaxRef5 = useRef(null);
 
     const faqData = [
@@ -47,7 +47,7 @@ const FAQSection = ({ klasse }) => {
                     </H2>
                 </motion.div>
                 <div className="col-span-12 lg:col-span-12  pt-4 flex flex-col justify-center">
-                    <FAQs data={faqData}></FAQs>
+                    <FAQs data={faqs}></FAQs>
                 </div>
             </div>
         </>

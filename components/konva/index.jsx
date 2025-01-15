@@ -130,40 +130,63 @@ const KonvaLayer = forwardRef(
         // Load uploaded graphic
         // ---------------------------
         useEffect(() => {
+            // If there's no uploaded file at all, we skip.
             if (!uploadedGraphicFile) return;
-            const img = new window.Image();
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                img.src = e.target.result;
-                img.onload = () => {
-                    if (uploadedGraphicRef.current) {
-                        const { x, y, offsetX, offsetY, finalWidth, finalHeight } = getImagePlacement({
-                            containerWidth,
-                            containerHeight,
-                            imageNaturalWidth: img.width,
-                            imageNaturalHeight: img.height,
-                        });
 
-                        uploadedGraphicRef.current.width(finalWidth);
-                        uploadedGraphicRef.current.height(finalHeight);
-                        // We'll offset from the center for scaling, but let's just put (x, y) for reference:
-                        // uploadedGraphicRef.current.x(x);
-                        // uploadedGraphicRef.current.y(y);
+            console.log("UPLOADED GRAPHIC:", uploadedGraphicFile, uploadedGraphicURL);
 
-                        uploadedGraphicRef.current.offsetX(0);
-                        uploadedGraphicRef.current.offsetY(0);
-                        uploadedGraphicRef.current.image(img);
-                        uploadedGraphicRef.current.getLayer().batchDraw();
+            const currentSideData = purchaseData.sides?.[purchaseData.currentSide] || {};
+            const isPDFSide = currentSideData.isPDF;
+            const pdfPreviewURL = currentSideData.preview;
 
-                        if (transformerRef.current) {
-                            transformerRef.current.nodes([uploadedGraphicRef.current]);
-                            transformerRef.current.getLayer().batchDraw();
-                        }
-                    }
+            // Helper to place the loaded image in the Konva canvas
+            function placeAndDraw(loadedImg) {
+                if (!uploadedGraphicRef.current) return;
+
+                const { x, y, offsetX, offsetY, finalWidth, finalHeight } = getImagePlacement({
+                    containerWidth,
+                    containerHeight,
+                    imageNaturalWidth: loadedImg.width,
+                    imageNaturalHeight: loadedImg.height,
+                });
+
+                uploadedGraphicRef.current.width(finalWidth);
+                uploadedGraphicRef.current.height(finalHeight);
+                // If you want to set an initial position or offsets, do so here
+                // uploadedGraphicRef.current.x(x);
+                // uploadedGraphicRef.current.y(y);
+                uploadedGraphicRef.current.offsetX(0);
+                uploadedGraphicRef.current.offsetY(0);
+                uploadedGraphicRef.current.image(loadedImg);
+                uploadedGraphicRef.current.getLayer().batchDraw();
+
+                // If we have a transformer, attach it to the uploaded image
+                if (transformerRef.current) {
+                    transformerRef.current.nodes([uploadedGraphicRef.current]);
+                    transformerRef.current.getLayer().batchDraw();
+                }
+            }
+
+            // 1) If it's a PDF side, we load pdfPreview URL instead of reading the file
+            if (isPDFSide && pdfPreviewURL) {
+                const previewImg = new window.Image();
+                previewImg.src = pdfPreviewURL;
+                previewImg.onload = () => {
+                    placeAndDraw(previewImg);
                 };
-            };
-            reader.readAsDataURL(uploadedGraphicFile);
-        }, [uploadedGraphicFile, containerWidth, containerHeight, purchaseData.currentSide]);
+            } else {
+                // 2) Otherwise, treat it like a normal image (JPG/PNG)
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const normalImg = new window.Image();
+                    normalImg.src = e.target.result;
+                    normalImg.onload = () => {
+                        placeAndDraw(normalImg);
+                    };
+                };
+                reader.readAsDataURL(uploadedGraphicFile);
+            }
+        }, [uploadedGraphicFile, uploadedGraphicURL, containerWidth, containerHeight, purchaseData.currentSide]);
 
         // ---------------------------
         // Export logic
@@ -317,6 +340,13 @@ const KonvaLayer = forwardRef(
             }));
         }, [containerWidth, containerHeight /* also product changes if any*/]);
 
+        useEffect(() => {
+            if (stageRef.current) {
+                // Force Konva to re-draw the stage
+                stageRef.current.batchDraw();
+            }
+        }, [purchaseData.configurator]);
+
         return (
             <div style={{ touchAction: "none" }}>
                 <Stage
@@ -353,8 +383,9 @@ const KonvaLayer = forwardRef(
                         />
 
                         {/* Uploaded Graphic */}
-                        {(uploadedGraphicFile || uploadedGraphicURL) && (
+                        {purchaseData.configurator !== "template" && (uploadedGraphicFile || uploadedGraphicURL) && (
                             <KonvaImage
+                                // key={purchaseData.configurator} // triggers a remount on mode change
                                 ref={uploadedGraphicRef}
                                 draggable={isGraphicDraggable}
                                 x={position.x}
@@ -369,12 +400,14 @@ const KonvaLayer = forwardRef(
                         )}
 
                         {/* Transformer with a scale bounding function */}
-                        {(uploadedGraphicFile || uploadedGraphicURL) && showTransformer && (
-                            <Transformer
-                                ref={transformerRef}
-                                boundBoxFunc={boundBoxFunc} // <--- bounding logic for scale
-                            />
-                        )}
+                        {purchaseData.configurator !== "template" &&
+                            (uploadedGraphicFile || uploadedGraphicURL) &&
+                            showTransformer && (
+                                <Transformer
+                                    ref={transformerRef}
+                                    boundBoxFunc={boundBoxFunc} // <--- bounding logic for scale
+                                />
+                            )}
                     </Layer>
                 </Stage>
 

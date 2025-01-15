@@ -380,7 +380,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                     </AnimatePresence>
 
                     <P klasse="!text-sm mt-4 mb-4">
-                        Akzeptierte Formate: JPG, PNG, PDF, TIFF, AI, EPS
+                        Akzeptierte Formate: JPG, PNG, PDF
                         <br />
                         max 10 MB
                     </P>

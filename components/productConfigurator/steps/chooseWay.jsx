@@ -46,7 +46,7 @@ export default function ChooseWay() {
                 </div>
 
                 {/* Description */}
-                <motion.div
+                {/* <motion.div
                     className="mt-6 text-center px-4"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -60,7 +60,7 @@ export default function ChooseWay() {
                     ) : (
                         <P>Choose from standard placements like Top Left on Chest or Center Back with custom sizes.</P>
                     )}
-                </motion.div>
+                </motion.div> */}
             </ContentWrapper>
         </div>
     );
