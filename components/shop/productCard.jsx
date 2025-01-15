@@ -46,7 +46,7 @@ function ProductCard({ product }) {
 
             {/* Image */}
             <Link href={`/products/${handle}`} passHref>
-                <div className="lg:h-64 h-64 border-b-2 border-gray-200 relative cursor-pointer overflow-hidden">
+                <div className="lg:h-64 h-48 border-b-2 border-gray-200 relative cursor-pointer overflow-hidden">
                     <ContainImage
                         src={imageNode?.originalSrc}
                         mobileSrc={imageNode?.originalSrc}

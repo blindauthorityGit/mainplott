@@ -23,7 +23,7 @@ export default function TopBarFilter({
     return (
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4 gap-4 font-body pt-4">
             {/* Left side: active filters + total count */}
-            <div className="flex flex-wrap items-center gap-2 hidden lg:block">
+            <div className="flex flex-wrap items-center gap-2 hidden lg:flex">
                 {hasFilters && (
                     <>
                         <span className="font-semibold">Aktive Filter:</span>
