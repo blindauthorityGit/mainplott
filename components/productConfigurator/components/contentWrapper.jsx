@@ -48,7 +48,7 @@ const ContentWrapper = ({ data, klasse, children, showToggle }) => {
             {/* Description and Children */}
             <P klasse="!text-xs hidden lg:block 2xl:!text-sm">{data.description}</P>
             {children}
-            <P klasse="text-xs lg:hidden lg:!text-sm mt-4">{data.description}</P>
+            {/* <P klasse="text-xs lg:hidden lg:!text-sm mt-4">{data.description}</P> */}
         </div>
     );
 };

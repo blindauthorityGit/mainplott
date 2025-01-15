@@ -4,7 +4,7 @@ import { HiChevronRight } from "react-icons/hi"; // or any icon you'd like
 
 export default function Breadcrumbs({ category, productTitle }) {
     return (
-        <nav className="flex items-center text-sm text-gray-600 font-body mb-4">
+        <nav className="flex items-center text-xs p-2 lg:p-0 text-gray-600 font-body mb-4">
             {/* "Shop" link */}
             <Link href="/shop" className="hover:text-gray-800 hover:underline">
                 Shop
