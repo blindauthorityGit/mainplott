@@ -248,6 +248,28 @@ export default function Menu() {
                                         </span>
                                     )}
                                 </button>
+                                <div className="hidden lg:block">
+                                    {!user ? (
+                                        <>
+                                            <Link href="/signup?mode=login" className="mr-4">
+                                                Login
+                                            </Link>
+                                            {/* <Link href="/signup?mode=signup">Sign Up</Link> */}
+                                        </>
+                                    ) : (
+                                        <>
+                                            {/* <span className="mr-4">Hallo, {user.email}</span> */}
+                                            {/* Optionally show userType */}
+                                            {/* {user.userType && <span className="mr-4">({user.userType})</span>} */}
+                                            <button
+                                                onClick={handleLogout}
+                                                className="text-primaryColor hover:underline"
+                                            >
+                                                Logout
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </motion.header>

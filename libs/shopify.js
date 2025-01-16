@@ -399,7 +399,7 @@ export async function getProductByHandle(handle) {
 
 export async function getAllProducts() {
     const query = `{
-           products(first: 250, query: "-tag:veredelung") { 
+       products(first: 250, query: "-tag:veredelung -title:'profi datencheck'") { 
 
             edges {
                 node {

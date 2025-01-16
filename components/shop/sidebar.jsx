@@ -16,6 +16,8 @@ export default function Sidebar({
     const [openCategories, setOpenCategories] = useState([]);
     const [openSubCategories, setOpenSubCategories] = useState([]);
 
+    console.log(categories, allProducts);
+
     useEffect(() => {
         // On mount, open all categories and sub-subcategories
         const allCatNames = categories.map((c) => c.name);
