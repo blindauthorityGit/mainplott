@@ -12,7 +12,8 @@ import { getColorHex } from "@/libs/colors";
 import useUserStore from "@/store/userStore";
 
 export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
-    const { purchaseData, setPurchaseData, setSelectedVariant, selectedImage, setSelectedImage } = useStore();
+    const { purchaseData, setPurchaseData, selectedVariant, setSelectedVariant, selectedImage, setSelectedImage } =
+        useStore();
     const [selectedSize, setSelectedSize] = useState(purchaseData.selectedSize || null);
     const [selectedColor, setSelectedColor] = useState(purchaseData.selectedColor || null);
     const [isChecked, setIsChecked] = useState(purchaseData.tryout || false);
@@ -73,6 +74,10 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     useEffect(() => {
         console.log(purchaseData);
     }, [purchaseData]);
+
+    useEffect(() => {
+        console.log(selectedVariant);
+    }, [selectedVariant]);
 
     // Revised setActiveVariant function
     const setActiveVariant = (size, color) => {

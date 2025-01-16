@@ -127,7 +127,7 @@ export default function Menu() {
                         </button>
 
                         {/* Burger Menu */}
-                        <button onClick={() => setIsOpen(!isOpen)} className="text-gray-700 md:hidden">
+                        <button onClick={() => setIsOpen(!isOpen)} className="text-textColor pr-4 md:hidden">
                             {isOpen ? <FiX className="text-3xl" /> : <FiMenu className="text-3xl" />}
                         </button>
 

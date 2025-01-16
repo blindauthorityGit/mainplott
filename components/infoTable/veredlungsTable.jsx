@@ -17,7 +17,7 @@ function VeredelungTable({ brustData, rueckenData }) {
     }
 
     return (
-        <table className="table-auto text-xs border-collapse border border-gray-300 w-full text-left font-body">
+        <table className="table-auto  lg:w-auto text-xs border-collapse border border-gray-300 w-full text-left font-body">
             <thead>
                 <tr>
                     <th className="border border-gray-300 px-4 py-2">Stk-Bereich</th>

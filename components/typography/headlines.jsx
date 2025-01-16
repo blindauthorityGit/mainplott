@@ -29,7 +29,7 @@ const H3 = React.forwardRef(({ children, klasse, style }, ref) => {
     return (
         <h3
             ref={ref}
-            className={`text-base font-headline lg:text-xl  xl:text-3xl 2xl:text-5xl 2xl:mb-8   ${klasse}`}
+            className={`text-4xl font-headline lg:text-xl  xl:text-3xl 2xl:text-5xl 2xl:mb-8   ${klasse}`}
             style={style}
         >
             {children}

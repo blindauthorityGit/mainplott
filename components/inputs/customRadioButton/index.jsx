@@ -71,6 +71,8 @@ function getGraphicForProductType(product, label) {
 
     if (tags.includes("T-Shirt")) {
         return TShirtPositions[label] || "/images/default.png";
+    } else if (tags.includes("Tshirt")) {
+        return TShirtPositions[label] || "/images/default.png";
     } else if (tags.includes("Sweater")) {
         return SweaterPositions[label] || "/images/default.png";
     } else if (tags.includes("Polo")) {

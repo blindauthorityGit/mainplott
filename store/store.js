@@ -196,6 +196,14 @@ const useStore = create((set) => ({
 
     // Clear refs (optional utility for cleanup)
     clearRefs: () => set({ stageRef: null, transformerRef: null, boundaryPathRef: null }),
+
+    isMobileSliderOpen: false, // Boolean to indicate if *any* slider is open
+    openMobileSlider: () => set(() => ({ isMobileSliderOpen: true })),
+    closeMobileSlider: () => set(() => ({ isMobileSliderOpen: false })),
+
+    showMobileSteps: true, // By default, we want the mobile steps visible
+    hideMobileSteps: () => set(() => ({ showMobileSteps: false })),
+    revealMobileSteps: () => set(() => ({ showMobileSteps: true })),
 }));
 
 export default useStore;

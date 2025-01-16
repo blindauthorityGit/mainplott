@@ -19,6 +19,7 @@ import handleFileUpload from "@/functions/handleFileUpload";
 import getImagePlacement from "@/functions/getImagePlacement";
 import { centerVertically, centerHorizontally } from "@/functions/centerFunctions";
 import resetScale from "@/functions/resetScale"; // Import the resetScale function
+import useIsMobile from "@/hooks/isMobile";
 
 export default function ConfigureDesign({ product, setCurrentStep, steps, currentStep, veredelungen }) {
     const {
@@ -30,6 +31,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         setModalContent,
         setDpi,
         setShowSpinner,
+        isMobileSliderOpen,
     } = useStore();
     const [activeTab, setActiveTab] = useState(0); // Track which tab is active
     const [copyFrontToBack, setCopyFrontToBack] = useState(false);
@@ -41,6 +43,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
 
     const currentSide = activeTab === 0 ? "front" : "back";
 
+    const isMobile = useIsMobile();
+
     //fr radio buttons
     const [selectedValue, setSelectedValue] = useState(purchaseData.sides[currentSide]?.position || "");
 
@@ -48,6 +52,10 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     const containerHeight = purchaseData.containerHeight || 500;
 
     console.log(selectedVariant);
+
+    useEffect(() => {
+        console.log(isMobileSliderOpen);
+    }, [isMobileSliderOpen]);
 
     // Remove or conditionally include this useEffect
     useEffect(() => {
@@ -288,7 +296,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
 
     return (
         <div className="flex flex-col lg:px-16 lg:mt-4 2xl:mt-8 font-body ">
-            <ContentWrapper data={stepData} showToggle />
+            {/* Check for mobile Design, if true dont render it for UI reasons */}
+            {steps[currentStep] === "Design" && isMobile ? null : <ContentWrapper data={stepData} showToggle />}
 
             {/* Material-UI Tabs Component */}
             <Tabs
@@ -297,15 +306,16 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 textColor="primary"
                 indicatorColor="primary"
                 aria-label="Product side tabs"
+                centered={isMobile}
                 className="mb-8 font-body text-xl"
-                style={{ color: "#4f46e5" }} // Inline style to override default MUI color
+                style={{ color: "#4f46e5", textAlign: "center" }} // Inline style to override default MUI color
                 sx={{
                     "& .MuiTabs-indicator": {
                         backgroundColor: "#ba979d", // Replace with your Tailwind primary color
                     },
                     "& .Mui-selected": {
                         color: "#393836!important", // Selected tab color
-                        fontWeight: "bold", // Bold text for the active tab
+                        fontWeight: "bold", // Bold text for   centered={isMobile}the active tab
                     },
                     "& .MuiTab-root": {
                         minWidth: 0, // Minimize width for better styling control
@@ -350,7 +360,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 </Button>
             ) : purchaseData.configurator === "template" ? (
                 <>
-                    <div className="flex  lg:mb-4">
+                    <div className="flex flex-wrap lg:flex-nowrap lg:mb-4">
                         {positions[currentSide].default.map((option, index) => (
                             <CustomRadioButton
                                 key={`radio${index}`}
@@ -411,7 +421,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                     </div> */}
                 </>
             ) : (
-                <>
+                <div className="hidden lg:block">
                     <div className="mb-4">
                         <P klasse="!text-sm !mb-0">X-Achse Position</P>
                         <div className="flex space-x-4">
@@ -542,7 +552,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                             </button>{" "}
                         </div>
                     </div>
-                </>
+                </div>
             )}
 
             {/* Copy Front Design to Back */}
@@ -558,7 +568,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
             )}
             {purchaseData.sides[currentSide].uploadedGraphicFile && (
                 <div className="flex items-center space-x-4 flex-wrap justify-between">
-                    <div className="info">
+                    <div className="info w-full lg:will-change-auto">
                         <VeredelungTable brustData={veredelungen.front} rueckenData={veredelungen.back} />
                     </div>
                     <div className="flex items-center gap-4 mt-4 font-body text-sm">

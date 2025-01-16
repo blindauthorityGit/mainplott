@@ -50,6 +50,10 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         transformerRef,
         boundaryPathRef,
         resetPurchaseData,
+        isMobileSliderOpen,
+        showMobileSteps,
+        hideMobileSteps,
+        revealMobileSteps,
     } = useStore();
     const [imageHeight, setImageHeight] = useState(null);
     const [imageSize, setImageSize] = useState({ width: null, height: null });
@@ -112,7 +116,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     const handleNextStep = async () => {
         // If we are at the Design step, export both sides first
         console.log(purchaseData);
-        if (steps[currentStep] === "Design") {
+        if (steps[currentStep] === "Design" && !isMobile && purchaseData.configurator !== "template") {
             setIsExporting(true);
             await exportAllSides({
                 purchaseData,
@@ -303,6 +307,83 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         };
     }, [steps]);
 
+    // StepHolder.js (excerpt)
+
+    const handleAddToCart = () => {
+        const updatedPurchaseData = { ...purchaseData };
+        const { sides, variants } = updatedPurchaseData;
+
+        const totalQuantity = Object.values(variants).reduce((sum, variant) => sum + (variant.quantity || 0), 0);
+        console.log("Total Quantity:", totalQuantity);
+
+        const updatedVariants = { ...variants };
+        const sidesToProcess = ["front", "back"];
+
+        sidesToProcess.forEach((sideKey) => {
+            const side = sides?.[sideKey];
+            console.log(`Processing ${sideKey}:`, side);
+
+            if (side?.uploadedGraphic || side?.uploadedGraphicFile) {
+                const veredelungDetail = veredelungen?.[sideKey];
+                console.log(`${sideKey} Veredelung Detail:`, veredelungDetail);
+
+                if (veredelungDetail) {
+                    const matchedDiscount = veredelungDetail.preisReduktion.discounts.find(
+                        (discount) =>
+                            totalQuantity >= discount.minQuantity &&
+                            (discount.maxQuantity === null || totalQuantity <= discount.maxQuantity)
+                    );
+                    console.log(`${sideKey} Matched Discount:`, matchedDiscount);
+
+                    if (matchedDiscount) {
+                        const variantIndex = veredelungDetail.preisReduktion.discounts.indexOf(matchedDiscount);
+                        console.log("variantIndex", variantIndex);
+                        const selectedVariant = veredelungDetail.variants.edges[variantIndex];
+                        console.log("vDetails", veredelungDetail.variants);
+                        console.log(`${sideKey} Selected Variant:`, selectedVariant);
+
+                        if (selectedVariant) {
+                            updatedVariants[`${sideKey}Veredelung`] = {
+                                id: selectedVariant.node.id,
+                                size: null,
+                                quantity: totalQuantity,
+                                price: parseFloat(matchedDiscount.price),
+                                title: `${veredelungDetail.title} ${
+                                    sideKey.charAt(0).toUpperCase() + sideKey.slice(1)
+                                }`,
+                                currency: veredelungDetail.currency,
+                            };
+                            console.log(`Added ${sideKey}Veredelung:`, updatedVariants[`${sideKey}Veredelung`]);
+                        } else {
+                            console.error(`No matching variant found for ${sideKey}.`);
+                        }
+                    } else {
+                        console.error(`No matching discount for ${sideKey}.`);
+                    }
+                } else {
+                    console.error(`No veredelung detail found for side: ${sideKey}`);
+                }
+            } else {
+                console.log(`No graphic for side: ${sideKey}, skipping.`);
+            }
+        });
+
+        updatedPurchaseData.variants = updatedVariants;
+        console.log("Final Updated Variants:", updatedVariants);
+
+        addCartItem(updatedPurchaseData);
+        openCartSidebar();
+        hideMobileSteps();
+    };
+
+    useEffect(() => {
+        // Example: whenever route changes or a new product is loaded, re-show steps
+        // (You might do this in a different place, depending on your logic)
+        return () => {
+            revealMobileSteps();
+        };
+    }, [revealMobileSteps]);
+
     return (
         <div className="grid grid-cols-12 lg:px-12 2xl:px-24 lg:gap-4 h-full" {...swipeHandlers}>
             {/* If exporting, show overlay */}
@@ -327,6 +408,9 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                 animate="animate"
                                 exit="exit"
                                 transition={{ duration: 0.3, ease: "easeInOut" }}
+                                style={{
+                                    display: isMobile && purchaseData.configurator == "template" ? "none" : "block",
+                                }}
                             >
                                 <KonvaLayer
                                     key={purchaseData.configurator}
@@ -431,20 +515,24 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 {/* Step Indicator */}
                 <div className="lg:mb-6">
                     <StepIndicator currentStep={currentStep} steps={steps} />
-                    <MobileStepNavigator
-                        steps={steps}
-                        currentStep={currentStep}
-                        setCurrentStep={setCurrentStep}
-                        handlePrevStep={handlePrevStep}
-                        handleNextStep={handleNextStep}
-                        isNextDisabled={isNextDisabled}
-                    ></MobileStepNavigator>
+
+                    {showMobileSteps && (
+                        <MobileStepNavigator
+                            steps={steps}
+                            currentStep={currentStep}
+                            setCurrentStep={setCurrentStep}
+                            handlePrevStep={handlePrevStep}
+                            handleNextStep={handleNextStep}
+                            isNextDisabled={isNextDisabled}
+                            handleAddToCart={handleAddToCart}
+                        />
+                    )}
                 </div>
 
                 {/* Dynamic Content with entry/exit animation */}
                 <div
                     className="flex-grow mb-8 px-4 lg:px-0"
-                    style={{ zIndex: steps[currentStep] === "Design" && isMobile ? "0" : null }}
+                    style={{ zIndex: steps[currentStep] === "Design" && isMobileSliderOpen ? "-1" : null }}
                 >
                     <AnimatePresence mode="wait" layout initial={false}>
                         <motion.div

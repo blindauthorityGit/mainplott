@@ -324,13 +324,13 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
                 </div>
                 {/* Price Display */}
                 <motion.div
-                    className="mt-6 flex"
+                    className="mt-6 flex flex-wrap lg:flex-nowrap p-4 lg:p-0"
                     initial={{ scale: 1 }}
                     animate={{ scale: discountApplied ? 1.1 : 1 }}
                     transition={{ duration: 0.3 }}
                 >
                     <div>
-                        <div className="flex justify-end items-end">
+                        <div className="flex lg:justify-end items-end">
                             <H3 klasse="!mb-2">EUR {calculateNetPrice(price.toFixed(2))}</H3>
                             <P klasse="!text-xs mb-2 pl-2">
                                 EUR {calculateNetPrice(medianPricePerPiece.toFixed(2))}/Stk.
@@ -350,7 +350,7 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
                         </P> */}
                     </div>
                     {product.preisReduktion && (
-                        <div className="mt-0 pl-16 flex items-end">
+                        <div className="lg:mt-0 lg:pl-16 flex items-end mt-4 ">
                             <ul className=" text-xs text-textColor !font-body tracking-wider">
                                 {JSON.parse(product.preisReduktion.value).discounts.map((discount, index) => (
                                     <li key={index}>
