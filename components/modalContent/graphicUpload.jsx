@@ -89,7 +89,7 @@ const GraphicUploadModalContent = ({
                     className="lg:mt-20 w-full relative lg:static mx-auto"
                 />
 
-                <div className="absolute -top-4 -right-6">
+                <div className="absolute -top-4 -right-6 hidden">
                     {hasErrors ? <img src={ErrorCheckMark.src} alt="" /> : <img src={SuccessCheckmark.src} alt="" />}
                 </div>
 
@@ -108,7 +108,9 @@ const GraphicUploadModalContent = ({
                 </H2>
                 <p className="font-body text-gray-700 mb-2 lg:mb-8">
                     {hasErrors ? (
-                        <span className="font-semibold">Die Qualität des Drucks könnte beinflusst sein.</span>
+                        <span className="font-semibold text-sm lg:text-base">
+                            Die Qualität des Drucks könnte beinflusst sein.
+                        </span>
                     ) : (
                         <span className="font-semibold">Alles scheint in Ordnung zu sein</span>
                     )}
@@ -185,7 +187,7 @@ const GraphicUploadModalContent = ({
                 <button
                     type="button"
                     onClick={handleUploadButtonClick}
-                    className="lg:mt-4 px-4 py-2 bg-primaryColor z-50 text-white rounded-lg hover:bg-primaryColor-600"
+                    className="lg:mt-4 px-4 text-sm lg:text-base py-2 bg-primaryColor z-50 text-white rounded-lg hover:bg-primaryColor-600"
                 >
                     Neues Bild hochladen
                 </button>
@@ -193,7 +195,7 @@ const GraphicUploadModalContent = ({
             <div className="col-span-6 mt-2 lg:mt-0 pl-1 lg:pl-0">
                 <StepButton
                     onClick={handleNextStep}
-                    className="px-4 py-2 bg-textColor text-white rounded"
+                    className="px-4 py-2 bg-textColor text-white rounded !text-sm lg:text-base"
                     klasse="bg-textColor"
                 >
                     {hasErrors ? "Trotzdem weiter" : "weiter"}

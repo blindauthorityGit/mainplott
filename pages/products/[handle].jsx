@@ -57,7 +57,7 @@ export default function Product({ product, sizes, relatedProducts, category, glo
                 <SimpleConfigurator product={product?.productByHandle}></SimpleConfigurator>
             )}
             {product?.productByHandle?.detailbeschreibung?.value ? (
-                <div className="lg:px-24 lg:w-3/4 lg:mt-16 font-body !text-textColor p-2 lg_p-0">
+                <div className="lg:px-24 lg:w-3/4 lg:mt-16 font-body text-sm lg:text-base !text-textColor p-2 lg:p-0">
                     <RichTextRenderer
                         richText={JSON.parse(product?.productByHandle?.detailbeschreibung.value)}
                     ></RichTextRenderer>

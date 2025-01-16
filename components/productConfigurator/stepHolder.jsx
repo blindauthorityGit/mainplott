@@ -444,7 +444,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 {/* Dynamic Content with entry/exit animation */}
                 <div
                     className="flex-grow mb-8 px-4 lg:px-0"
-                    style={{ zIndex: steps[currentStep] === "Design" && isMobile ? "-1" : null }}
+                    style={{ zIndex: steps[currentStep] === "Design" && isMobile ? "0" : null }}
                 >
                     <AnimatePresence mode="wait" layout initial={false}>
                         <motion.div

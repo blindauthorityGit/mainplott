@@ -557,7 +557,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 />
             )}
             {purchaseData.sides[currentSide].uploadedGraphicFile && (
-                <div className="flex items-center space-x-4 justify-between">
+                <div className="flex items-center space-x-4 flex-wrap justify-between">
                     <div className="info">
                         <VeredelungTable brustData={veredelungen.front} rueckenData={veredelungen.back} />
                     </div>

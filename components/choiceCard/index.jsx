@@ -39,7 +39,7 @@ export default function ChoiceCard({ icon: Icon, heading, description, configura
 
             {/* Main Content */}
             <motion.div
-                className={`relative w-full h-full p-4 lg:p-8 rounded-lg border-2 border-textColor flex flex-col justify-between ${
+                className={`relative w-full h-full p-4 lg:p-8 rounded-lg border-2  flex flex-col justify-between ${
                     isActive ? "border-primaryColor" : "border-gray-300"
                 } transition-all duration-200 cursor-pointer shadow hover:shadow-lg`}
                 style={{ zIndex: 1 }}

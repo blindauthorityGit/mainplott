@@ -30,7 +30,7 @@ const MobileColorSelector = ({ colors, selectedColor, onColorChange }) => {
             <div className="absolute top-24 left-4  ">
                 <button
                     onClick={toggleColorSelector}
-                    className=" border-4 border-textColor bg-accentColor text-primaryColor p-3 rounded-[20px] shadow-lg z-50 flex items-center justify-center gap-2 transition-transform hover:scale-105"
+                    className=" border-2 border-textColor bg-black text-white p-3 rounded-full z-50 flex items-center justify-center gap-2 transition-transform hover:scale-105"
                     aria-label="Choose Color"
                 >
                     <FaPalette size={24} />

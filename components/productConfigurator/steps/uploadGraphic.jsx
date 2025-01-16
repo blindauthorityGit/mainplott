@@ -340,7 +340,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                 exit={{ opacity: 0, y: 20 }}
                                 transition={{ duration: 0.3, ease: "easeInOut" }}
                                 {...getRootProps()}
-                                className="flex flex-col items-center justify-center bg-primaryColor-100 rounded-[20px] border-dashed border-2 p-12 border-gray-400"
+                                className="flex flex-col items-center justify-center bg-primaryColor-100 rounded-[20px] border-dashed border-2 p-8 lg:p-12 border-gray-400"
                             >
                                 <input {...getInputProps()} />
                                 <div className="text-center">
@@ -349,16 +349,22 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                             Lassen Sie los, um die Grafik hochzuladen!
                                         </p>
                                     ) : (
-                                        <p className="font-body font-semibold text-xl text-gray-700">
-                                            Ziehen Sie Ihre Grafik hierher oder klicken Sie, um eine Datei hochzuladen.
-                                        </p>
+                                        <>
+                                            <p className="font-body hidden lg:block font-semibold text-xl text-textColor">
+                                                Ziehen Sie Ihre Grafik hierher oder klicken Sie, um eine Datei
+                                                hochzuladen.
+                                            </p>
+                                            <p className="font-body lg:hidden font-semibold text-lg text-textColor">
+                                                Wählen Sie Ihre Grafik
+                                            </p>{" "}
+                                        </>
                                     )}
                                     <div className="flex justify-center text-6xl p-6 text-textColor">
                                         <TbDragDrop></TbDragDrop>
                                     </div>
                                     <button
                                         type="button"
-                                        className="px-6 py-2 !font-bold bg-primaryColor font-body text-white rounded-lg hover:bg-primaryColor-600"
+                                        className="px-6 py-2 !font-semibold bg-primaryColor font-body text-white rounded-lg hover:bg-primaryColor-600"
                                     >
                                         Datei auswählen
                                     </button>
