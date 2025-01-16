@@ -15,6 +15,7 @@ import useUserStore from "@/store/userStore";
 
 import { signOut } from "firebase/auth";
 import { auth } from "@/config/firebase";
+import MobileMenu from "./mobileMenu";
 
 export default function Menu() {
     const [isOpen, setIsOpen] = useState(false);
@@ -274,6 +275,12 @@ export default function Menu() {
                         </div>
                     </motion.header>
                 )}
+                {/* MobileMenu overlay + side drawer */}
+                <MobileMenu
+                    isOpen={isOpen}
+                    onClose={() => setIsOpen(false)}
+                    data={menuData} // pass the entire menu data for mega menu
+                />
             </AnimatePresence>
         </>
     );
