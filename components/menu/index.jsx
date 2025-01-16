@@ -161,42 +161,6 @@ export default function Menu() {
                 >
                     <MegaMenu data={menuData} isVisible={isMegaMenuVisible} />
                 </div>
-
-                {/* Mobile Menu - Toggle visibility */}
-                {isOpen && (
-                    <div className="bg-gray-100 p-4 md:hidden">
-                        <nav className="space-y-4 text-center">
-                            <Link href="/about" className="text-gray-700 hover:text-gray-900 block">
-                                Über uns
-                            </Link>
-                            <Link href="/services" className="text-gray-700 hover:text-gray-900 block">
-                                Services
-                            </Link>
-                            <Link href="/contact" className="text-gray-700 hover:text-gray-900 block">
-                                Kontakt
-                            </Link>
-                            <div className="">
-                                {!user ? (
-                                    <>
-                                        <Link href="/signup?mode=login" className="mr-4">
-                                            Login
-                                        </Link>
-                                        {/* <Link href="/signup?mode=signup">Sign Up</Link> */}
-                                    </>
-                                ) : (
-                                    <>
-                                        {/* <span className="mr-4">Hallo, {user.email}</span> */}
-                                        {/* Optionally show userType */}
-                                        {/* {user.userType && <span className="mr-4">({user.userType})</span>} */}
-                                        <button onClick={handleLogout} className="text-primaryColor hover:underline">
-                                            Logout
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                        </nav>
-                    </div>
-                )}
             </header>
             {/* Sticky Header */}
             <AnimatePresence>
