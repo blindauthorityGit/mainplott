@@ -73,30 +73,8 @@ const LinkBox = ({ klasse, iconUrl, link, image, text, icon, details, title }) =
 
                 {/* Text with color animation */}
                 <motion.div className="mt-2 relative inline-block">
-                    <H3
-                        klasse="relative !mb-4 !font-bold xl:!text-2xl !font-body"
-                        as={motion.h3}
-                        variants={{
-                            rest: { color: "#000" }, // Default color (e.g., dark grey or black)
-                            hover: { color: "var(--primaryColor)" }, // Change to primary color
-                        }}
-                        transition={{ duration: 0.4, ease: "easeInOut" }}
-                    >
-                        {text}
-                    </H3>
-                    {title && (
-                        <H3
-                            klasse="relative !mb-4"
-                            as={motion.h3}
-                            variants={{
-                                rest: { color: "#000" }, // Default color (e.g., dark grey or black)
-                                hover: { color: "var(--primaryColor)" }, // Change to primary color
-                            }}
-                            transition={{ duration: 0.4, ease: "easeInOut" }}
-                        >
-                            {title}
-                        </H3>
-                    )}
+                    <H3 klasse="relative !mb-4 !font-bold xl:!text-2xl !font-body">{text}</H3>
+                    {title && <H3 klasse="relative !mb-4">{title}</H3>}
 
                     {details && <P klasse="lg:!-mt-3">{details}</P>}
                 </motion.div>
