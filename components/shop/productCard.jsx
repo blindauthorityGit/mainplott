@@ -69,15 +69,21 @@ function ProductCard({ product }) {
                     </div>
                 </div>
                 <div>
-                    {/* <div className="flex flex-wrap gap-x-2 gap-y-2">
-                        {formattedVariants["XL"]?.colors.map(({ color }, index) => (
+                    <div className="flex flex-wrap gap-x-2 gap-y-2 items-center lg:mt-2">
+                        {formattedVariants["L"]?.colors.slice(0, 4).map(({ color }, index) => (
                             <div
                                 key={`color-${index}`}
-                                className="w-4 h-4 lg:w-6 lg:h-6 block rounded-full border-2 border-white shadow"
+                                className="w-4 h-4 lg:w-5 lg:h-5 block rounded-full border-2 border-white "
                                 style={{ background: getColorHex(color) }}
                             />
                         ))}
-                    </div>{" "} */}
+
+                        {formattedVariants["L"]?.colors.length > 4 && (
+                            <span className="text-xs text-textColor font-body">
+                                + {formattedVariants["L"].colors.length - 4} weitere Farben
+                            </span>
+                        )}
+                    </div>{" "}
                     <div className="text-base lg:text-lg font-body text-gray-600 font-primary font-semibold mb-2 mt-4">
                         {/* ab EUR 29,- */}
                         {calculateLowestPrice(product.node.variants.edges)}
