@@ -44,11 +44,6 @@ export default function Product({ product, sizes, relatedProducts, category, glo
     // Extract the product title from the Shopify data
     const productTitle = product?.productByHandle?.title || "Unbekanntes Produkt";
 
-    console.log(
-        "IMAAAAGE",
-        product?.productByHandle?.customImages.references.edges.map(({ node }) => node.image.url)
-    );
-
     return (
         <MainContainer>
             <Breadcrumbs category={category} productTitle={productTitle} />
