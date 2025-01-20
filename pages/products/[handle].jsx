@@ -64,13 +64,14 @@ export default function Product({ product, sizes, relatedProducts, category, glo
                             richText={JSON.parse(product?.productByHandle?.detailbeschreibung.value)}
                         ></RichTextRenderer>
                     </div>
-                    {product?.productByHandle?.customImages.references ? (
+                    {product?.productByHandle?.customImages?.references?.edges?.length > 0 ? (
                         <SimpleGallery
-                            images={product?.productByHandle?.customImages.references.edges.map(
+                            images={product.productByHandle.customImages.references.edges.map(
                                 ({ node }) => node.image.url
                             )}
                         />
                     ) : null}
+
                     <div className=""></div>
                 </div>
             ) : (
