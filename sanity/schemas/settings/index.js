@@ -86,6 +86,11 @@ export default {
               },
             },
             {
+              name: 'imageLink',
+              title: 'Image Link',
+              type: 'string',
+            },
+            {
               name: 'title',
               title: 'Category Title',
               type: 'string',

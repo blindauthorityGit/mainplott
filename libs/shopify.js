@@ -149,6 +149,7 @@ export async function getProductByHandle(handle) {
           id
           title
           description
+          descriptionHtml 
           tags
           vendor
           images(first: 10) {
@@ -194,6 +195,23 @@ export async function getProductByHandle(handle) {
               type
               description
           }
+
+       customImages: metafield(namespace: "custom", key: "custom_images") {
+            references(first: 10) {
+                edges {
+                    node {
+                        ... on MediaImage {
+                            id
+                            image {
+                                url
+                                altText
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
           variants(first: 120) {
               edges {
                   node {

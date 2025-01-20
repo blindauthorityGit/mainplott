@@ -20,6 +20,17 @@ export default function Shop({ allProducts, globalData }) {
     const [sortOption, setSortOption] = useState("name"); // default sort by name
     const [searchTerm, setSearchTerm] = useState(""); // <<-- NEW
 
+    // 1. Listen for changes in `cat` or `tags` from the URL, and resync the local states
+    useEffect(() => {
+        const newCats = cat ? cat.split("+").filter(Boolean) : ["all"];
+        const newTags = tags ? tags.split("+").filter(Boolean) : [];
+
+        setSelectedCats(newCats);
+        setSelectedTags(newTags);
+        // Now, when the query changes, your local states update,
+        // causing the filtering logic to re-run below.
+    }, [cat, tags]);
+
     const updateURL = (newCats, newTags) => {
         const query = {};
         if (newCats.length > 0) {

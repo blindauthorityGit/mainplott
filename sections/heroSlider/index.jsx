@@ -35,6 +35,7 @@ const HeroSwiper = ({ data }) => {
             <Swiper
                 modules={[Pagination, Navigation]}
                 slidesPerView={1}
+                loop
                 // pagination={{ clickable: true, dynamicBullets: true }}
                 onSwiper={setSwiper} // Save swiper instance
                 className="h-full w-full"

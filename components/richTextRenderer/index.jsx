@@ -1,6 +1,8 @@
 import React from "react";
+import { P } from "@/components/typography";
 
 const RichTextRenderer = ({ richText }) => {
+    console.log(richText);
     const renderNode = (node, index) => {
         if (!node) return null;
 
@@ -13,9 +15,9 @@ const RichTextRenderer = ({ richText }) => {
 
             case "paragraph":
                 return (
-                    <p className="pb-4" key={index}>
+                    <P className="pb-4 font-body" key={index}>
                         {node.children.map((child, idx) => renderNode(child, idx))}
-                    </p>
+                    </P>
                 );
 
             case "text":

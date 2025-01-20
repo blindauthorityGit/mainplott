@@ -16,6 +16,21 @@ const ContentWrapper = ({ data, klasse, children, showToggle }) => {
         });
     };
 
+    console.log(data.descriptionHtml);
+    const RichTextRenderer = ({ htmlContent }) => {
+        if (!htmlContent) {
+            console.error("No HTML content provided");
+            return null;
+        }
+
+        return (
+            <div
+                className="text-sm tracking-widest text-darkGrey sm:text-base md:text-lg font-body  xl:leading-relaxed lg:text-base xl:text-sm 2xl:text-base 3xl:text-[1rem] 3xl:leading-7  !text-xs hidden lg:block 2xl:!text-sm"
+                dangerouslySetInnerHTML={{ __html: htmlContent }}
+            ></div>
+        );
+    };
+
     return (
         <div className={`${klasse} relative`}>
             {/* Heading and Button Row */}
@@ -46,7 +61,8 @@ const ContentWrapper = ({ data, klasse, children, showToggle }) => {
             </div>
 
             {/* Description and Children */}
-            <P klasse="!text-xs hidden lg:block 2xl:!text-sm">{data.description}</P>
+            {/* <P klasse="!text-xs hidden lg:block 2xl:!text-sm">{data.descriptionHtml}</P> */}
+            <RichTextRenderer htmlContent={data.descriptionHtml}></RichTextRenderer>
             {children}
             {/* <P klasse="text-xs lg:hidden lg:!text-sm mt-4">{data.description}</P> */}
         </div>

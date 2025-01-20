@@ -9,6 +9,7 @@ import ProductDetail from "../../sections/product";
 import ProductConfigurator from "../../components/productConfigurator/index.jsx";
 import SimpleConfigurator from "../../components/simpleConfigurator";
 import Breadcrumbs from "@/components/simpleConfigurator/components/breadcrumbs";
+import { SimpleGallery } from "@/components/gallery";
 
 import Spacer from "../../layout/spacer";
 import MoreProducts from "@/sections/moreProducts";
@@ -43,6 +44,11 @@ export default function Product({ product, sizes, relatedProducts, category, glo
     // Extract the product title from the Shopify data
     const productTitle = product?.productByHandle?.title || "Unbekanntes Produkt";
 
+    console.log(
+        "IMAAAAGE",
+        product?.productByHandle?.customImages.references.edges.map(({ node }) => node.image.url)
+    );
+
     return (
         <MainContainer>
             <Breadcrumbs category={category} productTitle={productTitle} />
@@ -57,16 +63,26 @@ export default function Product({ product, sizes, relatedProducts, category, glo
                 <SimpleConfigurator product={product?.productByHandle}></SimpleConfigurator>
             )}
             {product?.productByHandle?.detailbeschreibung?.value ? (
-                <div className="lg:px-24 lg:w-3/4 lg:mt-16 font-body text-sm lg:text-base !text-textColor p-2 lg:p-0">
-                    <RichTextRenderer
-                        richText={JSON.parse(product?.productByHandle?.detailbeschreibung.value)}
-                    ></RichTextRenderer>
+                <div className="flex mt-4  lg:mt-20 flex-wrap lg:flex-nowrap mb-16 lg:mb-4">
+                    <div className="lg:px-24 lg:w-2/4 lg:mt-16 font-body text-sm lg:text-base !text-textColor p-4 lg:p-2 lg:p-0">
+                        <RichTextRenderer
+                            richText={JSON.parse(product?.productByHandle?.detailbeschreibung.value)}
+                        ></RichTextRenderer>
+                    </div>
+                    {product?.productByHandle?.customImages ? (
+                        <SimpleGallery
+                            images={product?.productByHandle?.customImages.references.edges.map(
+                                ({ node }) => node.image.url
+                            )}
+                        />
+                    ) : null}
+                    <div className=""></div>
                 </div>
             ) : (
                 "null"
             )}{" "}
+            <FAQSection faqs={globalData.faqs.faqs}></FAQSection>{" "}
             <MoreProducts relatedProducts={relatedProducts} currentProductHandle={product} />
-            <FAQSection faqs={globalData.faqs.faqs}></FAQSection>
         </MainContainer>
     );
 }

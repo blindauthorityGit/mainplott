@@ -11,9 +11,13 @@ import formatVariants from "@/functions/formatVariants"; // Function for formatt
 import { getColorHex } from "@/libs/colors";
 import useUserStore from "@/store/userStore";
 
+import { P, H3 } from "@/components/typography";
+
 export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     const { purchaseData, setPurchaseData, selectedVariant, setSelectedVariant, selectedImage, setSelectedImage } =
         useStore();
+    const [price, setPrice] = useState(null);
+
     const [selectedSize, setSelectedSize] = useState(purchaseData.selectedSize || null);
     const [selectedColor, setSelectedColor] = useState(purchaseData.selectedColor || null);
     const [isChecked, setIsChecked] = useState(purchaseData.tryout || false);
@@ -23,7 +27,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
 
     // Format variants for easier access
     const formattedVariants = formatVariants(product.variants);
-    console.log("product.variants", formattedVariants);
+    console.log("product.variants", formattedVariants, product);
     // console.log(formattedVariants, product.variants);
     // Ensure `selectedSize` and `selectedColor` are initialized
     // Centralized initialization logic
@@ -32,7 +36,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
         const initializeSelection = () => {
             const firstSize = Object.keys(formattedVariants)?.[0];
             const firstColorData = formattedVariants[firstSize]?.colors?.[0] || {};
-            const { color: firstColor, image, backImage, id: id } = firstColorData;
+            const { color: firstColor, image, backImage, id: id, price: initialPrice } = firstColorData;
 
             // console.log(firstID);
 
@@ -42,6 +46,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                 console.log(initialSize, initialColor);
                 setSelectedSize(initialSize);
                 setSelectedColor(initialColor);
+                setPrice(initialPrice); // Set the initial price
 
                 // Set the first image and active variant
                 setSelectedImage(formattedVariants[initialSize]?.colors?.[0]?.image);
@@ -62,6 +67,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                             color: initialColor,
                             quantity: purchaseData.variants?.[initialSize]?.quantity || 1,
                             id: id,
+                            price: initialPrice, // Store the initial price
                         },
                     },
                 });
@@ -88,7 +94,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
         // Find the corresponding color data from formatted variants
         const activeColorData = sizeData.colors.find((c) => c.color === color);
         if (activeColorData) {
-            const { backImage, image, id } = activeColorData;
+            const { backImage, image, id, price: variantPrice } = activeColorData;
 
             // Create a simplified "variant node" object
             const activeVariantNode = {
@@ -100,6 +106,8 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
             // Update Zustand store with the variant data
             setSelectedVariant(activeVariantNode);
             setSelectedImage(image);
+            setPrice(variantPrice); // Update the price
+
             setPurchaseData((prevData) => ({
                 ...prevData,
                 backImage: backImage,
@@ -115,10 +123,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
         // 1) Attempt to see if the current selectedColor is valid for this newSize
         const currentColorIsValid = formattedVariants[newSize]?.colors?.some((c) => c.color === selectedColor);
 
-        let finalColor;
-        let finalImage;
-        let finalBackImage;
-        let finalId;
+        let finalColor, finalImage, finalBackImage, finalId, finalPrice;
 
         if (currentColorIsValid && selectedColor) {
             // If the user’s current color is valid, do nothing special, keep it
@@ -127,6 +132,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
             finalImage = matchingColorData.image;
             finalBackImage = matchingColorData.backImage;
             finalId = matchingColorData.id;
+            finalPrice = matchingColorData.price; // Get the price
         } else {
             // If it’s invalid (or no color was selected), pick the first color
             const firstColorData = formattedVariants[newSize]?.colors?.[0] || {};
@@ -134,10 +140,12 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
             finalImage = firstColorData.image || "";
             finalBackImage = firstColorData.backImage || "";
             finalId = firstColorData.id || "";
+            finalPrice = firstColorData.price || ""; // Get the price
         }
 
         setSelectedColor(finalColor);
         setSelectedImage(finalImage);
+        setPrice(finalPrice); // Update the price
 
         // 2) Update purchaseData.variants
         const updatedVariants = {
@@ -147,6 +155,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                 // If there's already a quantity set for this size, keep it. Otherwise default to 1
                 quantity: purchaseData.variants[newSize]?.quantity || 1,
                 id: finalId,
+                price: finalPrice, // Update the price
             },
         };
 
@@ -165,13 +174,12 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     };
 
     // Handle color change
-    // Handle color change
     const handleColorChange = (color) => {
         setSelectedColor(color);
 
         // Find the image and ID for the selected size and color
         const selectedColorData = formattedVariants[selectedSize]?.colors.find((c) => c.color === color) || {};
-        const { image, backImage, id: variantId } = selectedColorData;
+        const { image, backImage, id: variantId, price: variantPrice } = selectedColorData;
         console.log(backImage);
 
         // Update only the color and ID for the currently selected size
@@ -181,6 +189,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                 ...purchaseData.variants[selectedSize], // Preserve existing data for the current size
                 color: color, // Update the color
                 id: variantId, // Update the variant ID
+                price: variantPrice, // Update the price
             },
         };
 
@@ -193,6 +202,8 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
         });
 
         setSelectedImage(image);
+        setPrice(variantPrice); // Update the price
+
         console.log("COLORE CHANGE", selectedSize, color, backImage);
         setActiveVariant(selectedSize, color, backImage);
     };
@@ -253,6 +264,18 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                         </div>
                     </div>
                 )}
+
+                <div>
+                    <div className="flex justify-end items-end mt-8">
+                        <H3 klasse="!mb-2">EUR {Number(price).toFixed(2) || "0.00"}</H3>
+                        {/* <P klasse="!text-xs mb-2 pl-2">EUR 210/Stk.</P> */}
+                    </div>
+                    {/* <P>{`${price / }`}</P> */}
+
+                    {/* <P klasse="!text-xs text-successColor">
+                            {discountApplied && `Rabatt von ${appliedDiscountPercentage.toFixed(2)}% angewendet!`}
+                        </P> */}
+                </div>
                 {user?.userType == "firmenkunde" ? (
                     <GeneralCheckBox
                         label="Diesen Artikel ohne Personalisierung zum Probieren bestellen"

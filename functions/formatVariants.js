@@ -9,6 +9,7 @@ export default function formatVariants(variants) {
         const imageUrl = node.image?.originalSrc;
         const backImageUrl = node.backImageUrl || null; // Include the back image URL if available
         const variantId = node.id; // Capture the variant ID
+        const price = node.priceV2?.amount || null; // Capture the price amount
 
         // If this color already has a back image, use it; otherwise, store it
         if (backImageUrl) {
@@ -28,6 +29,7 @@ export default function formatVariants(variants) {
             image: imageUrl,
             backImage: backImageUrl || colorBackImages[colorOption] || null, // Use the stored back image if not defined
             id: variantId, // Include the variant ID
+            price,
         });
 
         return acc;

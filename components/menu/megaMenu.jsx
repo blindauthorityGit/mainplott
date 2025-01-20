@@ -6,7 +6,7 @@ import { CoverImage } from "../images"; // Importing your CoverImage component
 import { H4 } from "../typography"; // Importing your H4 component
 import urlFor from "../../functions/urlFor"; // Importing the URL function for images
 
-const MegaMenu = ({ isVisible, data }) => {
+const MegaMenu = ({ isVisible, data, onClose }) => {
     const containerVariants = {
         hidden: { opacity: 0, height: 0, scaleY: 0 },
         visible: { opacity: 1, height: "auto", scaleY: 1 },
@@ -40,14 +40,26 @@ const MegaMenu = ({ isVisible, data }) => {
                             {data.menu.map((item, index) => (
                                 <motion.div key={index} className="text-center p-4" variants={itemVariants}>
                                     <div className="mb-4 relative">
-                                        <CoverImage
-                                            src={urlFor(item.image).url()}
-                                            alt={item.title}
-                                            klasse="rounded-lg"
-                                            className="h-40 w-full object-cover"
-                                        />
+                                        <Link
+                                            href={`${item.imageLink}`}
+                                            onClick={() => {
+                                                onClose();
+                                            }}
+                                        >
+                                            <CoverImage
+                                                src={urlFor(item.image).url()}
+                                                alt={item.title}
+                                                klasse="rounded-lg"
+                                                className="h-40 w-full object-cover"
+                                            />
+                                        </Link>
                                     </div>
-                                    <Link href={`/${item.title}`}>
+                                    <Link
+                                        href={`/${item.title}`}
+                                        onClick={() => {
+                                            onClose();
+                                        }}
+                                    >
                                         <H4 klasse="mb-4 font-bold">{item.title}</H4>
                                     </Link>
                                     <div className="text-left font-body">
@@ -62,7 +74,12 @@ const MegaMenu = ({ isVisible, data }) => {
                                                     alt=""
                                                     className="h-6 w-6 fill-primaryColor-400"
                                                 />
-                                                <Link href={`/${point.link}`}>
+                                                <Link
+                                                    href={`/${point.link}`}
+                                                    onClick={() => {
+                                                        onClose();
+                                                    }}
+                                                >
                                                     <span>{point.text}</span>
                                                 </Link>
                                             </motion.div>

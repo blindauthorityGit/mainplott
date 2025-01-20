@@ -62,7 +62,7 @@ export default function Menu() {
                     {/* Left Section - Links */}
                     <nav className="hidden md:flex space-x-4 text-sm 2xl:text-base">
                         <Link
-                            href="/about"
+                            href="/shop"
                             className={`${
                                 isMegaMenuVisible ? "text-primaryColor-400" : "text-textColor"
                             } hover:text-primaryColor-400`}
@@ -159,7 +159,11 @@ export default function Menu() {
                     className={`relative lg:-top-10 ${isMegaMenuVisible ? "block" : "hidden"}`}
                     onMouseLeave={() => setIsMegaMenuVisible(false)}
                 >
-                    <MegaMenu data={menuData} isVisible={isMegaMenuVisible} />
+                    <MegaMenu
+                        data={menuData}
+                        isVisible={isMegaMenuVisible}
+                        onClose={() => setIsMegaMenuVisible(false)}
+                    />
                 </div>
             </header>
             {/* Sticky Header */}
