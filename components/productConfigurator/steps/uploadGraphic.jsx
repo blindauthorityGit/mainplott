@@ -108,6 +108,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                 setUploading(false);
             } catch (error) {
                 console.error("Error uploading new file:", error);
+
                 setUploadError("Fehler beim Hochladen der Datei. Bitte versuchen Sie es erneut.");
                 setShowSpinner(false);
                 setUploading(false);
@@ -250,6 +251,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                     console.error("Error uploading file:", error);
                     setUploadError("Fehler beim Hochladen der Datei. Bitte versuchen Sie es erneut.");
                     setUploading(false);
+                    setShowSpinner(false);
                 }
             }
         },
