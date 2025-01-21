@@ -61,26 +61,28 @@ function ProductCard({ product }) {
             {/* Content */}
             <div className="h-auto lg:h-auto p-4 flex flex-col justify-between">
                 <div>
-                    <div className="font-body leading-tight text-textColor text-base lg:text-xl font-semibold ">
-                        {title}
-                    </div>
+                    <div className="font-body leading-tight text text-base lg:text-xl font-semibold ">{title}</div>
                     <div className="text-xs mb-4 lg:mb-2 lg:text-sm text-textColor  mt-2 line-clamp-2 font-body">
                         {description}
                     </div>
                 </div>
                 <div>
                     <div className="flex flex-wrap gap-x-2 gap-y-2 items-center lg:mt-2">
-                        {formattedVariants["L"]?.colors.slice(0, 4).map(({ color }, index) => (
-                            <div
-                                key={`color-${index}`}
-                                className="w-4 h-4 lg:w-5 lg:h-5 block rounded-full border-2 border-white "
-                                style={{ background: getColorHex(color) }}
-                            />
-                        ))}
+                        {Object.keys(formattedVariants)[0] &&
+                            formattedVariants[Object.keys(formattedVariants)[0]]?.colors
+                                .slice(0, 4)
+                                .map(({ color }, index) => (
+                                    <div
+                                        key={`color-${index}`}
+                                        className="w-4 h-4 lg:w-5 lg:h-5 block rounded-full border-2 border-white"
+                                        style={{ background: getColorHex(color) }}
+                                    />
+                                ))}
 
-                        {formattedVariants["L"]?.colors.length > 4 && (
+                        {formattedVariants[Object.keys(formattedVariants)[0]]?.colors.length > 4 && (
                             <span className="text-xs text-textColor font-body">
-                                + {formattedVariants["L"].colors.length - 4} weitere Farben
+                                + {formattedVariants[Object.keys(formattedVariants)[0]]?.colors.length - 4} weitere
+                                Farben
                             </span>
                         )}
                     </div>{" "}

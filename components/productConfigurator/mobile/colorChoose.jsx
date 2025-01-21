@@ -35,7 +35,7 @@ const MobileColorSelector = ({ colors, selectedColor, onColorChange }) => {
                 >
                     <FaPalette size={24} />
                 </button>{" "}
-                <span className="text-xs font-semibold font-body">Farben</span>
+                <span className="text-xs font-semibold font-body text-textColor">Farben</span>
             </div>
             {/* Color Selector Dropdown */}
             <AnimatePresence>

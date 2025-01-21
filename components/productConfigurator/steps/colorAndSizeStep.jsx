@@ -28,10 +28,20 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     // Format variants for easier access
     const formattedVariants = formatVariants(product.variants);
     console.log("product.variants", formattedVariants, product);
-    // console.log(formattedVariants, product.variants);
-    // Ensure `selectedSize` and `selectedColor` are initialized
-    // Centralized initialization logic
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    // Initialize price based on current purchaseData
+    useEffect(() => {
+        if (purchaseData.selectedSize && purchaseData.selectedColor) {
+            const sizeData = formattedVariants[purchaseData.selectedSize];
+            if (sizeData) {
+                const colorData = sizeData.colors.find((c) => c.color === purchaseData.selectedColor);
+                if (colorData) {
+                    setPrice(colorData.price); // Set the price from the matching variant
+                }
+            }
+        }
+    }, [purchaseData, formattedVariants]);
+
     useEffect(() => {
         const initializeSelection = () => {
             const firstSize = Object.keys(formattedVariants)?.[0];
@@ -225,7 +235,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
             )}
             <ContentWrapper data={product}>
                 <div className="flex space-x-3 items-center gap-8 lg:mt-16">
-                    <div className="left font-body font-semibold">Größe</div>
+                    <div className="left font-body text-textColor font-semibold">Größe</div>
                     <div className="right flex flex-wrap gap-x-3 gap-y-2">
                         {Object.keys(formattedVariants).map((size, i) => (
                             <CustomCheckBox
