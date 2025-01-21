@@ -2,12 +2,8 @@ import React from "react";
 import { P } from "@/components/typography";
 
 const RichTextRenderer = ({ richText }) => {
-    console.log(richText);
     const renderNode = (node, index) => {
         if (!node) return null;
-
-        // Log the current node for debugging
-        // console.log("Rendering Node:", node);
 
         switch (node.type) {
             case "root":
@@ -18,6 +14,20 @@ const RichTextRenderer = ({ richText }) => {
                     <P className="pb-4 font-body" key={index}>
                         {node.children.map((child, idx) => renderNode(child, idx))}
                     </P>
+                );
+
+            case "ul":
+                return (
+                    <ul key={index} className="list-disc pl-6 mb-4">
+                        {node.children.map((child, idx) => renderNode(child, idx))}
+                    </ul>
+                );
+
+            case "li":
+                return (
+                    <li key={index} className="mb-2">
+                        {node.children.map((child, idx) => renderNode(child, idx))}
+                    </li>
                 );
 
             case "text":
