@@ -15,7 +15,7 @@ const MobileStepNavigator = ({
     const isLastStep = currentStepName === "Zusammenfassung";
 
     return (
-        <div className="fixed bottom-0 left-0 lg:hidden right-0 w-full z-50 bg-white">
+        <div className="fixed bottom-0 left-0 lg:hidden right-0 w-full z-30 bg-white">
             {/* Progress bar */}
             <div className="h-2 w-full">
                 <div className="relative w-full h-1 bg-gray-200 rounded-full">
