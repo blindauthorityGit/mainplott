@@ -61,10 +61,10 @@ function ProductCard({ product }) {
             {/* Content */}
             <div className="h-auto lg:h-auto p-4 flex flex-col justify-between">
                 <div>
-                    <div className="font-body leading-tight text-palette-primary text-base lg:text-xl font-semibold ">
+                    <div className="font-body leading-tight text-textColor text-base lg:text-xl font-semibold ">
                         {title}
                     </div>
-                    <div className="text-xs mb-4 lg:mb-2 lg:text-sm text-gray-500  mt-2 line-clamp-2 font-body">
+                    <div className="text-xs mb-4 lg:mb-2 lg:text-sm text-textColor  mt-2 line-clamp-2 font-body">
                         {description}
                     </div>
                 </div>

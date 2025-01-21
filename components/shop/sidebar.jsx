@@ -51,11 +51,11 @@ export default function Sidebar({
     };
 
     return (
-        <div className="bg-white rounded-2xl hidden lg:block  p-8  w-full col-span-12 lg:col-span-3 max-w-xs font-body">
+        <div className="bg-white rounded-2xl hidden lg:block  p-8   w-full col-span-12 lg:col-span-3 max-w-xs font-body">
             <div className="sticky top-[50px] 2xl:top-[150px]">
                 <button
                     className={`w-full mb-4 p-2 font-bold rounded-[6px] text-center ${
-                        isCatSelected("all") ? "bg-primaryColor text-white" : "bg-gray-200 text-black"
+                        isCatSelected("all") ? "bg-primaryColor text-white" : "bg-gray-200 text-textColor"
                     }`}
                     onClick={onResetFilters}
                 >
@@ -82,7 +82,7 @@ export default function Sidebar({
                                 <FiChevronDown size={20} />
                             )}
                         </div>
-                        <hr className="border border-black bg-black text-black opacity-10 my-1 " />
+                        <hr className="border border-black bg-black text-textColor opacity-10 my-1 " />
 
                         <AnimatePresence>
                             {openCategories.includes(category.name) && (
@@ -134,7 +134,7 @@ export default function Sidebar({
                                                     {subCategory.icon && (
                                                         <img src={urlFor(subCategory.icon)} className="w-6" alt="" />
                                                     )}
-                                                    <p className="font-semibold text-sm">
+                                                    <p className="font-semibold text-sm text-textColor">
                                                         {subCatName} ({count})
                                                     </p>
                                                     {hasSubSub ? (
@@ -166,7 +166,7 @@ export default function Sidebar({
                                                             return (
                                                                 <div
                                                                     key={subSub.name}
-                                                                    className="flex items-center mb-1 2xl:mb-2"
+                                                                    className="flex items-center mb-1 2xl:mb-2 text-textColor"
                                                                 >
                                                                     <input
                                                                         type="checkbox"
@@ -176,7 +176,7 @@ export default function Sidebar({
                                                                             onSelectTag(subCatName, subSub.name)
                                                                         }
                                                                     />
-                                                                    <label className="text-sm">
+                                                                    <label className="text-sm text-textColor">
                                                                         {subSub.name} ({tagCount})
                                                                     </label>
                                                                 </div>

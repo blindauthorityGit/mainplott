@@ -109,7 +109,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         }
         // Scroll to top on mobile
         if (isMobile) {
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            window.scrollTo({ top: 0 });
         }
     };
 
@@ -491,7 +491,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     <img
                                         src={displayedImage}
                                         alt="Product Step Image"
-                                        className="w-full mix-blend-multiply max-h-[380px] lg:max-h-[none]"
+                                        className="w-full mix-blend-multiply p-4 lg:max-h-[none]"
                                         onLoad={() => setImageHeight(imageRef.current?.clientHeight)}
                                     />
                                     {/* Rotate Icon Button */}

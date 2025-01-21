@@ -5,7 +5,7 @@ const H1 = React.forwardRef(({ children, klasse, style }, ref) => {
         <h1
             ref={ref}
             style={style}
-            className={`text-[clamp(32px,calc(64px+0.0957*(100vw-320px)),56px)] uppercase  !leading-[0.95] 3xl:tracking-tight text-balance md:text-5xl lg:text-5xl xl:text-6xl 2xl:text-[6.75rem] 4xl:text-[8.5rem] mb-4 lg:mb-6  font-headline text-darkGrey ${klasse}`}
+            className={`text-[clamp(32px,calc(64px+0.0957*(100vw-320px)),56px)] uppercase  !leading-[0.95] 3xl:tracking-tight text-balance md:text-5xl lg:text-5xl xl:text-6xl 2xl:text-[6.75rem] 4xl:text-[8.5rem] mb-4 lg:mb-6  font-headline text-textColor ${klasse}`}
         >
             {children}
         </h1>
@@ -29,7 +29,7 @@ const H3 = React.forwardRef(({ children, klasse, style }, ref) => {
     return (
         <h3
             ref={ref}
-            className={`text-4xl font-headline lg:text-xl  xl:text-3xl 2xl:text-5xl 2xl:mb-8   ${klasse}`}
+            className={`text-4xl font-headline lg:text-xl text-textColor xl:text-3xl 2xl:text-5xl 2xl:mb-8   ${klasse}`}
             style={style}
         >
             {children}
@@ -52,7 +52,7 @@ H4.displayName = "H4";
 
 const H5 = React.forwardRef(({ children, klasse }, ref) => {
     return (
-        <h5 ref={ref} className={`text-xs lg:text-base xl:text-base font-bold font-body text-textColor ${klasse}`}>
+        <h5 ref={ref} className={`text-xs lg:text-base xl:text-base font-bold font-body text-text-textColor ${klasse}`}>
             {children}
         </h5>
     );
