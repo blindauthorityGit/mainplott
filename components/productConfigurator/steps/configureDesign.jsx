@@ -209,6 +209,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         // description: "Passen Sie das Design auf dem Produkt an.",
     };
     const positions = product?.templatePositions ? JSON.parse(product?.templatePositions?.value).properties : null;
+    console.log("FIIIXED", product?.fixedPositions);
 
     useEffect(() => {
         if (!purchaseData.sides[currentSide]?.position && positions[currentSide]?.default) {

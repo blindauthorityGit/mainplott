@@ -195,6 +195,10 @@ export async function getProductByHandle(handle) {
               type
               description
           }
+          fixedPositions: metafield(namespace: "custom", key: "positioning") {
+              value
+            
+          }
 
        customImages: metafield(namespace: "custom", key: "custom_images") {
             references(first: 10) {

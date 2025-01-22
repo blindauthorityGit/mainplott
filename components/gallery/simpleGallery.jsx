@@ -1,19 +1,17 @@
-import React, { useState } from "react";
+import React from "react";
 
 const SimpleGallery = ({ images = [], selectedImage, onSelectImage }) => {
-    // const [selectedImage, setSelectedImage] = useState(images[0] || ""); // Initialize with the first image
-
-    if (images.length === 0) return <p>No images available</p>; // Handle case where no images are provided
+    if (images.length === 0) return <p>No images available</p>;
 
     return (
-        <div className="flex flex-col items-center space-y-4">
+        <div className="flex flex-col items-center space-y-4 w-full">
             {/* Main Image */}
-            <div className="flex justify-center items-center   rounded-lg overflow-hidden w-full aspect-square lg:aspect-[square] max-w-2xl">
+            <div className="flex justify-center items-center rounded-lg overflow-hidden w-full aspect-square lg:aspect-[4/3] max-w-full">
                 <img src={selectedImage} alt="Selected" className="object-cover w-full h-full" />
             </div>
 
             {/* Thumbnails */}
-            <div className="flex space-x-4 overflow-x-auto">
+            <div className="flex flex-wrap gap-4 justify-center w-full px-2">
                 {images.map((image, index) => (
                     <button
                         key={index}
