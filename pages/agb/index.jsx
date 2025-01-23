@@ -1,5 +1,5 @@
 import Head from "next/head";
-
+import Link from "next/link";
 export default function AGB() {
     return (
         <>
@@ -17,7 +17,7 @@ export default function AGB() {
                 <h2 className="text-xl font-semibold mt-8 mb-4">1. Geltungsbereich</h2>
                 <p className="mb-4">
                     Diese Allgemeinen Geschäftsbedingungen (AGB) gelten für alle Bestellungen, die Verbraucher und
-                    Unternehmer (nachfolgend "Kunden") über unseren Onlineshop unter{" "}
+                    Unternehmer (nachfolgend Kunden) über unseren Onlineshop unter{" "}
                     <a href="https://www.mainplott.de" className="text-primaryColor hover:underline">
                         www.mainplott.de
                     </a>
@@ -49,7 +49,7 @@ export default function AGB() {
                 <h2 className="text-xl font-semibold mt-8 mb-4">3. Vertragsschluss</h2>
                 <p className="mb-4">
                     Die Darstellung der Produkte im Onlineshop stellt kein rechtlich bindendes Angebot, sondern eine
-                    Aufforderung zur Bestellung dar. Durch Anklicken des Buttons "Zahlungspflichtig bestellen" geben Sie
+                    Aufforderung zur Bestellung dar. Durch Anklicken des Buttons Zahlungspflichtig bestellen geben Sie
                     eine verbindliche Bestellung der im Warenkorb enthaltenen Waren ab. Die Bestätigung des Eingangs der
                     Bestellung erfolgt unmittelbar nach dem Absenden der Bestellung und stellt noch keine
                     Vertragsannahme dar. Wir können Ihre Bestellung durch Versand einer Auftragsbestätigung per E-Mail
@@ -80,9 +80,9 @@ export default function AGB() {
                 <h2 className="text-xl font-semibold mt-8 mb-4">6. Widerrufsrecht</h2>
                 <p className="mb-4">
                     Verbrauchern steht das gesetzliche Widerrufsrecht zu. Details dazu finden Sie in unserer
-                    <a href="/widerruf" className="text-primaryColor hover:underline">
+                    <Link href="/widerruf" className="text-primaryColor hover:underline">
                         Widerrufsbelehrung
-                    </a>
+                    </Link>
                     . Bitte beachten Sie, dass das Widerrufsrecht für individuell gestaltete Produkte, die nach Ihren
                     Wünschen angefertigt werden, ausgeschlossen ist (§ 312g Abs. 2 Nr. 1 BGB).
                 </p>
