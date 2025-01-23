@@ -208,8 +208,46 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         title: purchaseData.configurator == "template" ? "Vorlage wählen" : "Platzierung",
         // description: "Passen Sie das Design auf dem Produkt an.",
     };
-    const positions = product?.templatePositions ? JSON.parse(product?.templatePositions?.value).properties : null;
-    console.log("FIIIXED", product?.fixedPositions);
+
+    // Parse and prioritize positions
+    // Parse and prioritize positions
+    const getPositions = () => {
+        if (product?.fixedPositions?.value) {
+            // Parse fixed positions and map them to the expected structure
+            const fixed = JSON.parse(product.fixedPositions.value);
+
+            // Front positions: Brust, Oberschenkel vorne, Vorne
+            const frontPositions = fixed
+                .filter((pos) => pos.includes("Brust") || pos.includes("Oberschenkel vorne") || pos.includes("Vorne"))
+                .map((name) => ({
+                    name,
+                    enabled: true,
+                    position: { x: 0.42, y: 0.42 },
+                }));
+
+            // Back positions: Rücken, Oberschenkel hinten, Hinten
+            const backPositions = fixed
+                .filter(
+                    (pos) => pos.includes("Rücken") || pos.includes("Oberschenkel hinten") || pos.includes("Hinten")
+                )
+                .map((name) => ({
+                    name,
+                    enabled: true,
+                    position: { x: 0.42, y: 0.42 },
+                }));
+
+            return {
+                front: { default: frontPositions },
+                back: { default: backPositions },
+            };
+        }
+
+        // Default to templatePositions if no fixed positions exist
+        return product?.templatePositions ? JSON.parse(product.templatePositions.value).properties : null;
+    };
+
+    const positions = getPositions();
+    console.log("FIIIXED", positions);
 
     useEffect(() => {
         if (!purchaseData.sides[currentSide]?.position && positions[currentSide]?.default) {
@@ -231,36 +269,36 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         }
     }, [currentSide, positions, purchaseData.containerWidth, purchaseData.containerHeight]);
 
-    //radio buttons
-    const handleChange = (value, posX, posY) => {
-        console.log(value, posX, posY);
-        console.log(purchaseData.containerWidth * 0.4);
-
-        // console.log(purchaseData.containerHeight * 0.36);
-        // // const newX = purchaseData.containerWidth * 0.26;
-        // // const newY = purchaseData.containerHeight * 0.18;
-        // const newX = purchaseData.containerWidth * posX;
-        // const newY = purchaseData.containerHeight * posY;
-
-        // console.log(newX, newY);
-
-        // Update the selected value state
-        setSelectedValue(value);
-
-        // Update the purchaseData dynamically based on the current side
-        setPurchaseData({
-            ...purchaseData,
+    // Handle position change
+    const handleChange = (value) => {
+        setPurchaseData((prevData) => ({
+            ...prevData,
             sides: {
-                ...purchaseData.sides,
+                ...prevData.sides,
                 [currentSide]: {
-                    ...purchaseData.sides[currentSide], // Preserve existing data for the current side
-                    position: value, // Update the position with the selected value
-                    // xPosition: newX,
-                    // yPosition: newY,
+                    ...prevData.sides[currentSide],
+                    position: value,
                 },
             },
-        });
+        }));
     };
+
+    // Initialize default position for the current side
+    useEffect(() => {
+        const defaultOption = positions[currentSide]?.default?.[0];
+        if (!purchaseData.sides[currentSide]?.position && defaultOption) {
+            setPurchaseData((prevData) => ({
+                ...prevData,
+                sides: {
+                    ...prevData.sides,
+                    [currentSide]: {
+                        ...prevData.sides[currentSide],
+                        position: defaultOption.name,
+                    },
+                },
+            }));
+        }
+    }, [currentSide, positions, setPurchaseData, purchaseData.sides]);
 
     // useEffect(() => {
     //     // console.log(
@@ -371,7 +409,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                 icon={option.icon}
                                 value={option.name}
                                 product={product}
-                                checked={selectedValue === option.name}
+                                checked={purchaseData.sides[currentSide]?.position === option.name}
                                 onChange={() => handleChange(option.name, option.position.x, option.position.y)} // Pass additional parameters
                             />
                         ))}
@@ -561,12 +599,16 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 <FormControlLabel
                     control={<Checkbox checked={copyFrontToBack} onChange={handleCopyFrontToBack} color="primary" />}
                     label="Vorderseite auf Rückseite kopieren"
-                    className="mt-8 !font-body"
+                    className="mt-8 font-body" // Use Tailwind CSS class
                     sx={{
-                        fontFamily: "Montserrat!important",
+                        "& .MuiTypography-root": {
+                            fontFamily: "Montserrat, sans-serif", // Ensure Montserrat font is applied
+                            fontWeight: "400", // Optional: Adjust font weight if needed
+                        },
                     }}
                 />
             )}
+
             {purchaseData.sides[currentSide].uploadedGraphicFile && (
                 <div className="flex items-center space-x-4 flex-wrap justify-between">
                     <div className="info w-full lg:will-change-auto">

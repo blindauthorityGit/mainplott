@@ -24,6 +24,12 @@ const Footer = () => {
                     <Link href="/impressum" className="text-primaryColor-50 lg:text-xl block font-semibold">
                         Impressum
                     </Link>
+                    <Link href="/agb" className="text-primaryColor-50 lg:text-xl block font-semibold">
+                        AGB
+                    </Link>
+                    <Link href="/widerruf" className="text-primaryColor-50 lg:text-xl block font-semibold">
+                        Widerrufserklärung
+                    </Link>
                 </div>
                 <div className="col-span-6 lg:col-span-2 mt-4 lg:mt-0">
                     <div className="text-primaryColor-50 lg:text-xl block font-semibold">MAINPLOTT</div>

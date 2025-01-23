@@ -1,42 +1,29 @@
-import React, { useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
+import { Tooltip } from "@mui/material";
 
 const IconButton = ({
     onClick,
-    icon: Icon, // Accept icon as a prop, to be used as a component
-    label = "Button", // Default label
+    icon: Icon, // Accept icon as a prop
+    label = "Button", // Default label for tooltip
     bgColor = "bg-gray-500", // Default background color
     hoverColor = "hover:bg-gray-700", // Default hover color
     textColor = "text-white", // Default text color
+    tooltipPlacement = "top", // Tooltip placement
 }) => {
-    const [isHovered, setIsHovered] = useState(false);
-
     return (
-        <motion.button
-            type="button"
-            onClick={onClick}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            className={`flex items-center ${bgColor} ${textColor} rounded-full p-2 overflow-hidden`}
-            initial="rest"
-            animate={isHovered ? "hover" : "rest"}
-        >
-            {/* Icon */}
-            <Icon className="text-xl" />
-
-            {/* Expanding Container for Text */}
-            <motion.div
-                className="flex items-center ml-2"
-                variants={{
-                    rest: { width: 0, opacity: 0 },
-                    hover: { width: "auto", opacity: 1 },
-                }}
-                transition={{ duration: 0.3 }}
-                style={{ whiteSpace: "nowrap" }} // Prevents text from wrapping
+        <Tooltip title={label} placement={tooltipPlacement} arrow>
+            <motion.button
+                type="button"
+                onClick={onClick}
+                className={`flex items-center justify-center ${bgColor} ${hoverColor} ${textColor} rounded-full p-3 shadow-md`}
+                whileHover={{ scale: 1.1 }} // Hover animation
+                whileTap={{ scale: 0.9 }} // Tap animation
+                transition={{ type: "spring", stiffness: 300, damping: 15 }}
             >
-                <motion.span className="ml-2 text-sm font-semibold">{label}</motion.span>
-            </motion.div>
-        </motion.button>
+                <Icon className="text-xl" />
+            </motion.button>
+        </Tooltip>
     );
 };
 

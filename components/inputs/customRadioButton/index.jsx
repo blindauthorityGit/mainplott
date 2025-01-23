@@ -20,6 +20,19 @@ import HoodieRueckenlinkssoben from "@/assets/icons/Hoodie-Ruecken-links-oben.sv
 import HoodieRueckenmitteoben from "@/assets/icons/Hoodie-Ruecken-mitte-oben.svg";
 import HoodieRueckenmitte from "@/assets/icons/Hoodie-Ruecken-mitte.svg";
 
+import Jackerechtsoben from "@/assets/icons/Jacke-Brust-rechts-oben.svg";
+import Jackelinkssoben from "@/assets/icons/Jacke-Brust-links-oben.svg";
+
+import JackeRueckenrechtsoben from "@/assets/icons/Jacke-Ruecken-rechts-oben.svg";
+import JackeRueckenlinkssoben from "@/assets/icons/Jacke-Ruecken-links-oben.svg";
+import JackeRueckenmitteoben from "@/assets/icons/Jacke-Ruecken-mitte-oben.svg";
+import JackeRueckenmitte from "@/assets/icons/Jacke-Ruecken-mitte.svg";
+
+import HoseVorneRechts from "@/assets/icons/Hose-vorne-rechts.svg";
+import HoseVorneLinks from "@/assets/icons/Hose-vorne-links.svg";
+import HoseHintenLinks from "@/assets/icons/Hose-hinten-links.svg";
+import HoseHintenRechts from "@/assets/icons/Hose-hinten-rechts.svg";
+
 // Example label-to-image map
 const labelImages = {
     "Label One": "/images/label1.png",
@@ -61,13 +74,21 @@ function getGraphicForProductType(product, label) {
         "Rücken Mitte": HoodieRueckenmitte,
     };
 
-    // const JackePositions = {
-    //     "Rechts oben": JackeRechtsOben,
-    // };
+    const JackePositions = {
+        "Brust rechts oben": Jackerechtsoben,
+        "Brust links oben": Jackelinkssoben,
+        "Rücken rechts oben": JackeRueckenrechtsoben,
+        "Rücken links oben": JackeRueckenlinkssoben,
+        "Rücken oben mitte": JackeRueckenmitteoben,
+        "Rücken Mitte": JackeRueckenmitte,
+    };
 
-    // const HosePositions = {
-    //     "Rechts oben": HoseRechtsOben,
-    // };
+    const HosePositions = {
+        "Oberschenkel vorne links": HoseVorneLinks,
+        "Oberschenkel vorne rechts": HoseVorneRechts,
+        "Oberschenkel hinten links": HoseHintenLinks,
+        "Oberschenkel hinten rechts": HoseHintenRechts,
+    };
 
     if (tags.includes("T-Shirt")) {
         return TShirtPositions[label] || "/images/default.png";
@@ -83,11 +104,11 @@ function getGraphicForProductType(product, label) {
         return HoodiePositions[label] || "/images/default.png";
     } else if (tags.includes("Jacke")) {
         return JackePositions[label] || "/images/default.png";
-    } else if (tags.includes("Hose")) {
+    } else if (tags.includes("hose")) {
         return HosePositions[label] || "/images/default.png";
     }
 
-    return "/images/default.png";
+    return TShirtPositions[label] || "/images/default.png";
 }
 
 const CustomRadioButton = ({ id, name, label, icon, value, checked, onChange, product }) => {

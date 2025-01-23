@@ -16,7 +16,6 @@ const ContentWrapper = ({ data, klasse, children, showToggle }) => {
         });
     };
 
-    console.log(data.descriptionHtml);
     const RichTextRenderer = ({ htmlContent }) => {
         if (!htmlContent) {
             console.error("No HTML content provided");
