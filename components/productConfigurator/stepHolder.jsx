@@ -115,7 +115,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
     const handleNextStep = async () => {
         // If we are at the Design step, export both sides first
-        console.log(purchaseData);
+        console.log("NÖXT", purchaseData);
         if (steps[currentStep] === "Design" && !isMobile && purchaseData.configurator !== "template") {
             setIsExporting(true);
             await exportAllSides({

@@ -76,6 +76,9 @@ const colorDictionary = {
     Flame: "#FF6F48",
     Azure: "#325EB3",
     "French Navy": "#1A2E52",
+    "Light Grey": "#D3D3D3",
+    Graphite: "#41424C",
+    Turquoise: "#40E0D0",
 
     // weitere Farben hinzufügen
 };

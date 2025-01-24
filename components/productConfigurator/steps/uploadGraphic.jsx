@@ -213,6 +213,16 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                         console.log("PDF file detected. Extracting and analyzing the first page...");
                         const pdfAnalysisResult = await analyzePdf(file);
                         console.log("PDF Analysis:", pdfAnalysisResult);
+                        // 2) Convert that previewImage URL to a Blob/File
+                        // const previewUrl = pdfAnalysisResult.previewImage; // e.g. "https://firebasestorage.googleapis.com/..."
+                        // const response = await fetch(previewUrl); // CORS must be allowed in Firebase
+                        // const blob = await response.blob();
+                        // // Construct a File so it looks like a typical "uploaded" image
+                        // const previewFile = new File([blob], "pdf-preview.png", {
+                        //     type: "image/png",
+                        //     lastModified: Date.now(),
+                        // });
+                        // console.log("PDF PREVIEW FILE", previewFile);
                         setPurchaseData({
                             ...purchaseData,
                             sides: {
