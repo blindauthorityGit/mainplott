@@ -8,7 +8,7 @@ export default function Impressum() {
                 <meta name="description" content="Impressum von MainPlott" />
             </Head>
 
-            <main className="max-w-screen-lg mx-auto px-4 py-8 font-body">
+            <main className="max-w-screen-lg mx-auto px-4 py-8 font-body text-textColor">
                 {/* Title */}
                 <h1 className="text-2xl lg:text-4xl font-bold text-textColor mb-2">Impressum</h1>
 

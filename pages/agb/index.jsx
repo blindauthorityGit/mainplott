@@ -8,7 +8,7 @@ export default function AGB() {
                 <meta name="description" content="Allgemeine Geschäftsbedingungen (AGB) von MainPlott" />
             </Head>
 
-            <main className="max-w-screen-lg mx-auto px-4 py-8 font-body">
+            <main className="max-w-screen-lg mx-auto px-4 py-8 font-body text-textColor">
                 <h1 className="text-2xl lg:text-4xl font-bold text-textColor mb-4">
                     Allgemeine Geschäftsbedingungen (AGB)
                 </h1>

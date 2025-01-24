@@ -8,7 +8,7 @@ export default function Datenschutz() {
                 <meta name="description" content="Datenschutzerklärung von MainPlott" />
             </Head>
 
-            <main className="max-w-screen-lg mx-auto px-4 py-8 font-body">
+            <main className="max-w-screen-lg mx-auto px-4 py-8 font-body text-textColor">
                 <h1 className="text-2xl lg:text-4xl font-bold text-textColor mb-2">Datenschutzerklärung</h1>
                 <p className="text-sm text-gray-600 mb-4">Stand: 15. Januar 2025</p>
 
