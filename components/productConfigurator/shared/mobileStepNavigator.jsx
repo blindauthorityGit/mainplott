@@ -32,10 +32,10 @@ const MobileStepNavigator = ({
 
             {/* Button row */}
             <div className="w-full bg-primaryColor-200 shadow-md p-4 flex justify-between items-center">
-                <div className="text-sm font-bold font-body">
+                <div className="text-sm font-bold text-textColor font-body">
                     Schritt {currentStep + 1} von {steps.length}
                 </div>
-                <div className="flex items-center space-x-4 text-sm">
+                <div className="flex items-center space-x-4 text-sm text-textColor">
                     <StepButton
                         onClick={handlePrevStep}
                         disabled={currentStep === 0}

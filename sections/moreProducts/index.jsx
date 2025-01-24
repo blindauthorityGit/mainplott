@@ -23,7 +23,9 @@ export default function MoreProducts({ relatedProducts, currentProductHandle }) 
 
     return (
         <div className="mt-16 font-body px-4 mb-8">
-            <h2 className="text-2xl font-bold mb-6 text-center lg:text-left">Mehr aus dieser Kategorie</h2>
+            <h2 className="text-2xl font-bold mb-6 text-center text-textColor lg:text-left">
+                Mehr aus dieser Kategorie
+            </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 <AnimatePresence>
                     {filteredProducts.slice(0, visibleCount).map((product, index) => (

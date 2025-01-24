@@ -519,7 +519,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     {selectedVariant?.backImageUrl && (
                                         <button
                                             onClick={handleRotateImage}
-                                            className="absolute top-4 right-4 bg-white p-2 rounded-full shadow-md"
+                                            className="absolute top-4 right-4 bg-white p-2 text-textColor rounded-full shadow-md"
                                         >
                                             <BiRefresh size={24} />
                                         </button>

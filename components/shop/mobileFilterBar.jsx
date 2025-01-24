@@ -71,7 +71,7 @@ export default function MobileFilterBar({
         <div className="w-full lg:hidden font-body sticky top-0 z-30">
             {/* Top bar with "Filter" button */}
             <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200 shadow-sm">
-                <h3 className="text-base font-semibold">Produkte</h3>
+                <h3 className="text-base font-semibold text-textColor">Produkte</h3>
                 <button className="flex items-center space-x-1 text-primaryColor font-medium" onClick={toggleFilter}>
                     <FiFilter />
                     <span>Filter</span>
@@ -100,7 +100,7 @@ export default function MobileFilterBar({
                         </div>
 
                         {/* Category List */}
-                        <div className="max-h-[65vh] overflow-y-auto px-4 pb-4">
+                        <div className="max-h-[65vh] overflow-y-auto text-textColor px-4 pb-4">
                             {categories.map((category) => {
                                 const isCategoryOpen = openCategory === category.name;
                                 return (

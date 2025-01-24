@@ -74,7 +74,7 @@ export default function TopBarFilter({
 
                 {/* Sort dropdown */}
                 <div className="flex items-center space-x-2">
-                    <label htmlFor="sort" className="text-sm font-semibold">
+                    <label htmlFor="sort" className="text-sm text-textColor font-semibold">
                         Sortieren nach:
                     </label>
                     <select
