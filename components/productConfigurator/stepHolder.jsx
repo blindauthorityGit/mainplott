@@ -180,7 +180,10 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     }, [currentStep]);
 
     //CHECK FOR COIRRECT PRODUCT IMAGE DEOPENSING IF CONFIG IS DONE OR NOT
-    const displayedImage = currentStep > configStepIndex && !purchaseData.tryout ? configuredImage : selectedImage; // Show configuredImage if past the config step, else selectedImage
+    const displayedImage =
+        currentStep > configStepIndex && !purchaseData.tryout && purchaseData.configurator !== "template"
+            ? configuredImage
+            : selectedImage;
 
     // SET VIEW TO FRONMT WHEN NAVIGATING
     // useEffect(() => {

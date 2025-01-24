@@ -12,19 +12,23 @@ const prepareLineItems = (cartItems) => {
                 if (variant.id && variant.quantity > 0) {
                     // Check if it's a veredelung and handle sides
                     const isVeredelung = key.toLowerCase().includes("veredelung");
-                    let customAttributes = [{ key: "price", value: variant.price?.toFixed(2) || "0.00" }];
+                    let customAttributes = [
+                        {
+                            key: "price",
+                            // Safely parse variant.price before using toFixed
+                            value: variant.price ? parseFloat(variant.price).toFixed(2) : "0.00",
+                        },
+                    ];
 
                     if (isVeredelung) {
                         const side = key.replace("Veredelung", "").toLowerCase();
                         const uploadedGraphic = sides?.[side]?.uploadedGraphic?.downloadURL;
-
                         if (uploadedGraphic) {
                             customAttributes.push({
                                 key: `uploadedGraphic_${side}`,
                                 value: uploadedGraphic,
                             });
                         }
-
                         customAttributes.push({
                             key: "title",
                             value: `Veredelung ${side}`,
@@ -39,8 +43,8 @@ const prepareLineItems = (cartItems) => {
                         });
                     }
 
-                    // Avoid duplicate entries
-                    if (!lineItems.find((item) => item.variantId === variant.id)) {
+                    // Avoid duplicates
+                    if (!lineItems.find((li) => li.variantId === variant.id)) {
                         lineItems.push({
                             variantId: variant.id,
                             quantity: variant.quantity,
@@ -54,16 +58,19 @@ const prepareLineItems = (cartItems) => {
         // Add profiDatenCheck as a separate item
         if (item.profiDatenCheck && profiDatenCheckPrice > 0) {
             const profiDatenCheckVariant = variants.profiDatenCheck;
-
             if (profiDatenCheckVariant && profiDatenCheckVariant.id) {
                 // Avoid duplicates for profiDatenCheck
-                if (!lineItems.find((item) => item.variantId === profiDatenCheckVariant.id)) {
+                if (!lineItems.find((li) => li.variantId === profiDatenCheckVariant.id)) {
                     lineItems.push({
                         variantId: profiDatenCheckVariant.id,
                         quantity: 1,
                         customAttributes: [
                             { key: "title", value: "Profi Datencheck" },
-                            { key: "price", value: profiDatenCheckPrice.toFixed(2) },
+                            {
+                                key: "price",
+                                // Safely parse profiDatenCheckPrice
+                                value: parseFloat(profiDatenCheckPrice).toFixed(2),
+                            },
                         ],
                     });
                 }
@@ -71,7 +78,6 @@ const prepareLineItems = (cartItems) => {
         }
     });
 
-    console.log("Prepared Line Items:", lineItems);
     return lineItems;
 };
 

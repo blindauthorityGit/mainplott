@@ -73,6 +73,9 @@ const colorDictionary = {
     Burgundy: "#471E26",
     Khaki: "#727161",
     Natural: "#E1DDCD",
+    Flame: "#FF6F48",
+    Azure: "#325EB3",
+    "French Navy": "#1A2E52",
 
     // weitere Farben hinzufügen
 };

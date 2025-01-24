@@ -67,6 +67,7 @@ export default function CartSidebar() {
     };
 
     const handleCheckout = async () => {
+        console.log("CHECKOUT HANDLED");
         try {
             const lineItems = prepareLineItems(cartItems); // Prepare line items from the cart
             console.log("Prepared Line Items:", lineItems);

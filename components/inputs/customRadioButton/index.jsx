@@ -57,13 +57,27 @@ function getGraphicForProductType(product, label) {
         "Rücken Mitte": TShirtRueckenmitte,
     };
 
-    // const SweaterPositions = {
-    //     "Rechts oben": SweaterRechtsOben,
-    // };
+    const SweaterPositions = {
+        "Brust rechts oben": TShirtrechtsoben,
+        "Brust links oben": TShirlinkssoben,
+        "Brust mitte oben": TShirtmitteoben,
+        "Brust Mitte": TShirtmitte,
+        "Rücken rechts oben": TShirtRueckenrechtsoben,
+        "Rücken links oben": TShirtRueckenlinkssoben,
+        "Rücken oben mitte": TShirtRueckenmitteoben,
+        "Rücken Mitte": TShirtRueckenmitte,
+    };
 
-    // const PoloPositions = {
-    //     "Rechts oben": PoloRechtsOben,
-    // };
+    const PoloPositions = {
+        "Brust rechts oben": TShirtrechtsoben,
+        "Brust links oben": TShirlinkssoben,
+        "Brust mitte oben": TShirtmitteoben,
+        "Brust Mitte": TShirtmitte,
+        "Rücken rechts oben": TShirtRueckenrechtsoben,
+        "Rücken links oben": TShirtRueckenlinkssoben,
+        "Rücken oben mitte": TShirtRueckenmitteoben,
+        "Rücken Mitte": TShirtRueckenmitte,
+    };
 
     const HoodiePositions = {
         "Brust rechts oben": Hoodierechtsoben,
