@@ -14,7 +14,7 @@ const Element = ({ question, answer }) => {
     return (
         <div className="outer font-body mb-2 lg:mb-4">
             <div
-                className="question bg-white text-lg lg:text-2xl font-semibold flex items-center p-4 lg:p-8 justify-between cursor-pointer"
+                className="question bg-white text-lg lg:text-2xl font-semibold flex items-center p-4 lg:p-8 text-textColor justify-between cursor-pointer"
                 onClick={toggleAnswer}
             >
                 {question}
@@ -28,7 +28,7 @@ const Element = ({ question, answer }) => {
                 />
             </div>
             <motion.div
-                className="answer bg-primaryColor-100  text-base overflow-hidden"
+                className="answer bg-primaryColor-100 text-textColor  text-base overflow-hidden"
                 initial="collapsed"
                 animate={isOpen ? "open" : "collapsed"}
                 variants={{

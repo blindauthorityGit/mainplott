@@ -31,7 +31,7 @@ const MobileStepNavigator = ({
             </div>
 
             {/* Button row */}
-            <div className="w-full bg-white shadow-md p-4 flex justify-between items-center">
+            <div className="w-full bg-primaryColor-200 shadow-md p-4 flex justify-between items-center">
                 <div className="text-sm font-bold font-body">
                     Schritt {currentStep + 1} von {steps.length}
                 </div>
