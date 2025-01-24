@@ -180,10 +180,28 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     }, [currentStep]);
 
     //CHECK FOR COIRRECT PRODUCT IMAGE DEOPENSING IF CONFIG IS DONE OR NOT
-    const displayedImage =
-        currentStep > configStepIndex && !purchaseData.tryout && purchaseData.configurator !== "template"
-            ? configuredImage
-            : selectedImage;
+    // In StepHolder.js
+
+    // 1) Extract the front/back original images:
+    const frontOriginal = selectedVariant?.image?.originalSrc || null;
+    const backOriginal = selectedVariant?.backImageUrl || null;
+
+    // 2) Extract the front/back *exported* images:
+    const frontExported = purchaseData?.design?.front?.downloadURL || null;
+    const backExported = purchaseData?.design?.back?.downloadURL || null;
+
+    // If we are past the config step, not in template, and not a tryout...
+    const isPostDesign =
+        currentStep > configStepIndex && purchaseData.configurator !== "template" && !purchaseData.tryout;
+
+    let displayedImage;
+    if (isPostDesign) {
+        // We want to show the *exported* images if they exist, otherwise fallback
+        displayedImage = isFrontView ? frontExported || frontOriginal : backExported || backOriginal;
+    } else {
+        // We want to show the "original" images
+        displayedImage = isFrontView ? frontOriginal : backOriginal;
+    }
 
     // SET VIEW TO FRONMT WHEN NAVIGATING
     // useEffect(() => {
