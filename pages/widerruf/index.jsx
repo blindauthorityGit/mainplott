@@ -105,9 +105,9 @@ export default function Widerruf() {
                     zurück an:
                 </p>
                 <p className="mb-4">
-                    MainPlott
+                    Gack & Konhäuser GbR
                     <br />
-                    Christian Gack
+                    Mainplott
                     <br />
                     Schießbergstr. 4<br />
                     63303 Dreieich

@@ -16,6 +16,8 @@ export default function Impressum() {
                 <section className="mt-6">
                     <h2 className="text-xl lg:text-2xl font-semibold mb-2">Angaben gemäß § 5 TMG</h2>
                     <p>
+                        Gack & Konhäuser GbR
+                        <br />
                         MainPlott
                         <br />
                         Christian Gack
@@ -30,7 +32,7 @@ export default function Impressum() {
                 <section className="mt-6">
                     <h2 className="text-xl lg:text-2xl font-semibold mb-2">Kontakt</h2>
                     <p>
-                        Telefon: +49 (0) 123 456 7890
+                        Telefon: +49 174 / 3177690
                         <br />
                         E-Mail:{" "}
                         <a href="mailto:info@mainplott.de" className="text-primaryColor hover:underline">

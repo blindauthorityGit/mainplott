@@ -31,9 +31,9 @@ export default function AGB() {
                 <h2 className="text-xl font-semibold mt-8 mb-4">2. Vertragspartner</h2>
                 <p className="mb-4">Der Kaufvertrag kommt zustande mit:</p>
                 <p className="mb-4">
-                    MainPlott
+                    Gack & Konhäuser GbR
                     <br />
-                    Christian Gack
+                    MAINPLOTT
                     <br />
                     Schießbergstr. 4<br />
                     63303 Dreieich
