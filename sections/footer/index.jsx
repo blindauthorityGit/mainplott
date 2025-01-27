@@ -15,19 +15,19 @@ const Footer = () => {
                     <img src={Logo.src} alt="Mainplott Logo" />
                 </div>
                 <div className="col-span-6 lg:col-span-2">
-                    <Link href="/contact" className="text-primaryColor-50 lg:text-xl block font-semibold">
+                    <Link href="/contact" className="text-primaryColor-300 lg:text-xl block font-semibold">
                         Kontakt
                     </Link>
-                    <Link href="/datenschutz" className="text-primaryColor-50 lg:text-xl block font-semibold">
+                    <Link href="/datenschutz" className="text-primaryColor-300 lg:text-xl block font-semibold">
                         Datenschutz
                     </Link>
-                    <Link href="/impressum" className="text-primaryColor-50 lg:text-xl block font-semibold">
+                    <Link href="/impressum" className="text-primaryColor-300 lg:text-xl block font-semibold">
                         Impressum
                     </Link>
-                    <Link href="/agb" className="text-primaryColor-50 lg:text-xl block font-semibold">
+                    <Link href="/agb" className="text-primaryColor-300 lg:text-xl block font-semibold">
                         AGB
                     </Link>
-                    <Link href="/widerruf" className="text-primaryColor-50 lg:text-xl block font-semibold">
+                    <Link href="/widerruf" className="text-primaryColor-300 lg:text-xl block font-semibold">
                         Widerrufserklärung
                     </Link>
                 </div>
