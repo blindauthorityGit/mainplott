@@ -22,44 +22,63 @@
 // };
 
 // analyzePdf.js
-// analyzePdf.js
-import * as pdfjsLib from "pdfjs-dist";
+import { getDocument, GlobalWorkerOptions } from "pdfjs-dist/build/pdf";
+import { uploadPreviewToStorage } from "@/config/firebase";
 
-// Make sure this only runs in the browser
 if (typeof window !== "undefined") {
-    // Set the workerSrc to your own hosted file
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+    // Must set before calling getDocument()
+    GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 }
 
 export async function analyzePdf(file) {
     try {
-        // Convert File to ArrayBuffer
+        if (typeof window === "undefined") {
+            // Guard: you can't run PDF rendering on the server in Vercel.
+            throw new Error("PDF analysis must run in the browser.");
+        }
+
+        // 1) Convert the File -> ArrayBuffer
         const arrayBuffer = await file.arrayBuffer();
 
-        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-        const pdfDocument = await loadingTask.promise;
+        // 2) Load the PDF
+        const pdfDoc = await getDocument({ data: arrayBuffer }).promise;
 
-        const page = await pdfDocument.getPage(1);
-        const viewport = page.getViewport({ scale: 1.5 });
+        // 3) Render the first page
+        const page = await pdfDoc.getPage(1);
+        const scale = 1.5;
+        const viewport = page.getViewport({ scale });
+
         const canvas = document.createElement("canvas");
-        const context = canvas.getContext("2d");
+        const ctx = canvas.getContext("2d", { alpha: true });
+
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
-        // Render it
-        await page.render({
-            canvasContext: context,
+        const renderTask = page.render({
+            canvasContext: ctx,
             viewport,
-        }).promise;
+            background: "rgba(0,0,0,0)", // preserve transparency
+        });
+        // This should work properly now
+        await renderTask.promise;
 
-        // Convert the canvas to a data URL
-        const dataURL = canvas.toDataURL("image/png");
+        // 4) Convert to data URL (PNG)
+        const dataUrl = canvas.toDataURL("image/png");
 
-        console.log(dataURL);
+        // 5) Turn that data URL into an ArrayBuffer for upload
+        const response = await fetch(dataUrl);
+        const previewFileBuffer = await response.arrayBuffer();
+
+        // 6) Upload to Firebase using your existing function
+        const previewDownloadUrl = await uploadPreviewToStorage(
+            previewFileBuffer,
+            file.name.replace(/\.pdf$/i, "") + "-preview.png"
+        );
 
         return {
-            previewImage: dataURL,
-            numPages: pdfDocument.numPages,
+            previewImage: previewDownloadUrl,
+            // You can also return numPages if you like:
+            numPages: pdfDoc.numPages,
         };
     } catch (error) {
         console.error("Error analyzing PDF:", error);
