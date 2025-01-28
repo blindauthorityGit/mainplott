@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { H1, H2, P } from "@/components/typography";
+import { H2 } from "@/components/typography";
 
 // COMPONENTS
 import { ListElement } from "@/components/list";
@@ -31,26 +31,41 @@ const GraphicUploadModalContent = ({
     currentStep,
     steps,
 }) => {
+    // Reference for the hidden file input element
+    const fileInputRef = useRef(null);
+
+    // Determine if the file is a PDF
+    const isPDF = file.type === "application/pdf";
+
     // Validation logic
     const errors = {};
     const warnings = {};
-    if (dpi < 300) {
-        errors.dpi = "Bitte verwenden Sie eine Grafik mit mindestens 300 DPI.";
-    }
-    if (colorSpace !== "CMYK") {
-        errors.colorSpace = "Bitte verwenden Sie eine Grafik im CMYK Farbraum.";
-    }
-    if (size > 10485760) {
-        errors.size = "Datei über 10MB.";
-    }
-    if (!alpha || alpha == "unknown") {
-        warnings.alpha = "Es könnte ein weißer Hintergrund entstehen";
+
+    if (isPDF) {
+        // PDF-specific error handling
+        if (!alpha || alpha === "unknown") {
+            warnings.alpha = "Es könnte ein weißer Hintergrund entstehen.";
+        }
+        if (size > 10485760) {
+            errors.size = "Die Datei ist größer als 10MB.";
+        }
+    } else {
+        // JPG/PNG-specific error handling
+        if (dpi < 300) {
+            errors.dpi = "Bitte verwenden Sie eine Grafik mit mindestens 300 DPI.";
+        }
+        if (colorSpace !== "CMYK") {
+            errors.colorSpace = "Bitte verwenden Sie eine Grafik im CMYK Farbraum.";
+        }
+        if (size > 10485760) {
+            errors.size = "Die Datei ist größer als 10MB.";
+        }
+        if (!alpha || alpha === "unknown") {
+            warnings.alpha = "Es könnte ein weißer Hintergrund entstehen.";
+        }
     }
 
     const hasErrors = Object.keys(errors).length > 0;
-
-    // Reference for the hidden file input element
-    const fileInputRef = useRef(null);
 
     // Function to trigger file selection dialog
     const handleUploadButtonClick = () => {
@@ -66,9 +81,6 @@ const GraphicUploadModalContent = ({
             onNewFileUpload(newFile);
         }
     };
-
-    // Determine if the file is a PDF
-    const isPDF = file.type === "application/pdf";
 
     // Function to handle Next Step and close the modal
     const handleNextStep = () => {
@@ -109,7 +121,7 @@ const GraphicUploadModalContent = ({
                 <p className="font-body text-gray-700 mb-2 lg:mb-8">
                     {hasErrors ? (
                         <span className="font-semibold text-sm lg:text-base">
-                            Die Qualität des Drucks könnte beinflusst sein.
+                            Die Qualität des Drucks könnte beeinträchtigt sein.
                         </span>
                     ) : (
                         <span className="font-semibold">Alles scheint in Ordnung zu sein</span>
@@ -117,11 +129,13 @@ const GraphicUploadModalContent = ({
                 </p>
                 {isPDF ? (
                     <>
-                        {/* PDF specific content */}
+                        {/* PDF-specific content */}
                         <ListElement
-                            description="Seitenanzahl"
+                            warning={warnings.alpha}
+                            warningMessage={warnings.alpha}
+                            description="Alphakanal"
                             index={0}
-                            value="1 Seite" // You can change this to a dynamic value if necessary
+                            value={alpha && alpha !== "unknown" ? "Transparent" : "Nicht transparent"}
                         />
                         <ListElement
                             error={errors.size}
@@ -133,7 +147,7 @@ const GraphicUploadModalContent = ({
                     </>
                 ) : (
                     <>
-                        {/* JPG/PNG specific content */}
+                        {/* JPG/PNG-specific content */}
                         <ListElement
                             error={errors.colorSpace}
                             errorMessage={errors.colorSpace}
@@ -198,7 +212,7 @@ const GraphicUploadModalContent = ({
                     className="px-4 py-2 bg-textColor text-white rounded !text-sm lg:text-base"
                     klasse="bg-textColor"
                 >
-                    {hasErrors ? "Trotzdem weiter" : "weiter"}
+                    {hasErrors ? "Trotzdem weiter" : "Weiter"}
                 </StepButton>
             </div>
         </div>

@@ -75,10 +75,18 @@ export async function analyzePdf(file) {
             file.name.replace(/\.pdf$/i, "") + "-preview.png"
         );
 
+        // 7) Extract additional metadata
+        const fileSize = file.size; // File size in bytes
+        const colorSpace = ctx.getContextAttributes().alpha ? "RGBA" : "RGB"; // Check if alpha channel is present
+        const alphaChannel = ctx.getContextAttributes().alpha; // Boolean indicating presence of alpha channel
+
+        console.log(fileSize, colorSpace, alphaChannel);
         return {
             previewImage: previewDownloadUrl,
-            // You can also return numPages if you like:
             numPages: pdfDoc.numPages,
+            fileSize, // File size in bytes
+            colorSpace, // Color space (RGBA or RGB)
+            alphaChannel, // Boolean indicating presence of alpha channel
         };
     } catch (error) {
         console.error("Error analyzing PDF:", error);

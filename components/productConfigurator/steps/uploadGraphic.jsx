@@ -15,6 +15,8 @@ import LoadingSpinner from "@/components/spinner"; // Import the loading spinner
 import { H3 } from "@/components/typography";
 import { TbDragDrop } from "react-icons/tb";
 
+import analyzeImageWithOpenAI from "@/functions/analyzeImageWithOpenAI";
+
 //IDB
 // import { saveImageToDB, getImageFromDB } from "@/indexedDB";
 
@@ -213,6 +215,15 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                         console.log("PDF file detected. Extracting and analyzing the first page...");
                         const pdfAnalysisResult = await analyzePdf(file);
                         console.log("PDF Analysis:", pdfAnalysisResult);
+                        console.log("PDF Analysis Link:", pdfAnalysisResult.previewImage);
+
+                        // Call OpenAI with the PDF preview image and a prompt
+                        const openAIResponse = await analyzeImageWithOpenAI(
+                            pdfAnalysisResult.previewImage,
+                            "What do you see?"
+                        );
+                        console.log("OpenAI Analysis:", openAIResponse);
+
                         // 2) Convert that previewImage URL to a Blob/File
                         // const previewUrl = pdfAnalysisResult.previewImage; // e.g. "https://firebasestorage.googleapis.com/..."
                         // const response = await fetch(previewUrl); // CORS must be allowed in Firebase
@@ -241,6 +252,9 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                 file={file}
                                 preview={pdfAnalysisResult.previewImage}
                                 numPages={pdfAnalysisResult.numPages}
+                                colorSpace={pdfAnalysisResult.colorSpace}
+                                alpha={pdfAnalysisResult.alphaChannel}
+                                size={pdfAnalysisResult.fileSize}
                                 previewComponent={<PdfPreview file={file} />}
                                 onNewFileUpload={handleNewFileUpload} // Pass the function here
                                 steps={steps}
