@@ -148,9 +148,11 @@ export default function CartSidebar() {
                                             src={
                                                 item.tryout
                                                     ? item.cartImage
-                                                    : item.design.front.downloadURL
+                                                    : item.design?.front?.downloadURL
                                                     ? item.design.front.downloadURL
-                                                    : item.design.back.downloadURL
+                                                    : item.design?.back?.downloadURL
+                                                    ? item.design.back.downloadURL
+                                                    : item.selectedImage // Use selectedImage if no design is available
                                             }
                                             alt={item.productName}
                                             className="w-16 mr-4"

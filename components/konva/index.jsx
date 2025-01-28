@@ -170,6 +170,8 @@ const KonvaLayer = forwardRef(
             // 1) If it's a PDF side, we load pdfPreview URL instead of reading the file
             if (isPDFSide && pdfPreviewURL) {
                 const previewImg = new window.Image();
+                previewImg.crossOrigin = "anonymous";
+
                 previewImg.src = pdfPreviewURL;
                 previewImg.onload = () => {
                     placeAndDraw(previewImg);
@@ -387,6 +389,7 @@ const KonvaLayer = forwardRef(
                             <KonvaImage
                                 // key={purchaseData.configurator} // triggers a remount on mode change
                                 ref={uploadedGraphicRef}
+                                crossOrigin="anonymous"
                                 draggable={isGraphicDraggable}
                                 x={position.x}
                                 y={position.y}

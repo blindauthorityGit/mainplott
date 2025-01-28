@@ -48,6 +48,8 @@ export default function Product({ product, sizes, relatedProducts, category, glo
         }
     }, [handle, product]);
 
+    console.log("CATEGORY", category);
+
     // Extract the product title from the Shopify data
     const productTitle = product?.productByHandle?.title || "Unbekanntes Produkt";
 
@@ -66,7 +68,7 @@ export default function Product({ product, sizes, relatedProducts, category, glo
             )}
             {product?.productByHandle?.detailbeschreibung?.value ? (
                 <div className="flex mt-4 lg:mt-20 flex-wrap lg:flex-nowrap mb-16 lg:mb-4">
-                    <div className="lg:px-24 lg:w-2/4 lg:mt-16 font-body text-sm lg:text-base !text-textColor p-4 lg:p-2 lg:p-0">
+                    <div className="lg:pl-24 lg:w-2/4 lg:mt-16 font-body text-sm lg:text-base !text-textColor p-4 lg:p-2 ">
                         <RichTextRenderer
                             richText={JSON.parse(product?.productByHandle?.detailbeschreibung.value)}
                         ></RichTextRenderer>
