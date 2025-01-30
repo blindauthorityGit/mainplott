@@ -1,6 +1,6 @@
 import "@/styles/globals.css";
 import { useState, useRef, useEffect } from "react";
-
+import Head from "next/head";
 import Menu from "../components/menu"; // Import your Menu component
 import Footer from "../sections/footer"; // Import your Menu component
 import { MenuProvider } from "../context/menuContext"; // Import the Menu Provider
@@ -9,7 +9,6 @@ import useStore from "@/store/store";
 
 import { Modal } from "../components/modal";
 import Spinner from "../components/spinner";
-
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/config/firebase";
 import useUserStore from "@/store/userStore";
@@ -61,15 +60,21 @@ export default function App({ Component, pageProps }) {
     }, [setUser]);
 
     return (
-        <MenuProvider>
-            {" "}
-            <ReactLenis ref={lenisRef} autoRaf={true} root options={{ lerp: 0.12 }}>
-                <Menu /> {/* The Menu component */}
-                <CartSidebar />
-                {/* <TawkChat /> */}
-                <Component {...pageProps} /> <Spinner></Spinner> <Modal></Modal> <Footer></Footer>
-                <CookieConsentBanner />
-            </ReactLenis>
-        </MenuProvider>
+        <>
+            <Head>
+                <link rel="icon" href="/favicon.ico" />
+                {/* Other global head tags can also go here */}
+            </Head>
+            <MenuProvider>
+                {" "}
+                <ReactLenis ref={lenisRef} autoRaf={true} root options={{ lerp: 0.12 }}>
+                    <Menu /> {/* The Menu component */}
+                    <CartSidebar />
+                    {/* <TawkChat /> */}
+                    <Component {...pageProps} /> <Spinner></Spinner> <Modal></Modal> <Footer></Footer>
+                    <CookieConsentBanner />
+                </ReactLenis>
+            </MenuProvider>
+        </>
     );
 }

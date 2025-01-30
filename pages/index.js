@@ -12,6 +12,7 @@ import IntroText from "../sections/introText";
 import FeaturesSection from "../sections/features";
 import FAQSection from "../sections/faqs";
 import TestimonialsSection from "../sections/testimonials";
+import Meta from "@/components/seo/";
 
 export default function Home({ sanityData, globalData }) {
     // Log the fetched data using useEffect
@@ -21,22 +22,25 @@ export default function Home({ sanityData, globalData }) {
     }, [sanityData, globalData]);
 
     return (
-        <MainContainer>
-            <HeroSlider data={sanityData.slider.slides.reverse()} />
-            <LinkBoxSection data={sanityData.linkBoxes}></LinkBoxSection>
-            <Spacer></Spacer>
-            <IntroText data={sanityData.textImageBlocks[0]}></IntroText>
-            <Spacer></Spacer>
-            <FeaturesSection data={globalData.features.features}></FeaturesSection>
-            <Spacer></Spacer>
-            <IntroText data={sanityData.textImageBlocks[1]} order></IntroText>
-            <Spacer></Spacer>
-            <FAQSection faqs={globalData.faqs.faqs}></FAQSection>
-            <Spacer></Spacer>
+        <>
+            <Meta data={sanityData.seo}></Meta>
+            <MainContainer>
+                <HeroSlider data={sanityData.slider.slides.reverse()} />
+                <LinkBoxSection data={sanityData.linkBoxes}></LinkBoxSection>
+                <Spacer></Spacer>
+                <IntroText data={sanityData.textImageBlocks[0]}></IntroText>
+                <Spacer></Spacer>
+                <FeaturesSection data={globalData.features.features}></FeaturesSection>
+                <Spacer></Spacer>
+                <IntroText data={sanityData.textImageBlocks[1]} order></IntroText>
+                <Spacer></Spacer>
+                <FAQSection faqs={globalData.faqs.faqs}></FAQSection>
+                <Spacer></Spacer>
 
-            <TestimonialsSection data={globalData.testimonials.testimonials}></TestimonialsSection>
-            <Spacer></Spacer>
-        </MainContainer>
+                <TestimonialsSection data={globalData.testimonials.testimonials}></TestimonialsSection>
+                <Spacer></Spacer>
+            </MainContainer>
+        </>
     );
 }
 

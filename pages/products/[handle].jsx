@@ -11,11 +11,12 @@ import SimpleConfigurator from "../../components/simpleConfigurator";
 import Breadcrumbs from "@/components/simpleConfigurator/components/breadcrumbs";
 import { SimpleGallery } from "@/components/gallery";
 
-import Spacer from "../../layout/spacer";
+import MetaShopify from "@/components/seo/shopify";
 import MoreProducts from "@/sections/moreProducts";
 import FAQSection from "@/sections/faqs";
 import useStore from "@/store/store"; // Zustand store
 import RichTextRenderer from "@/components/richTextRenderer";
+import transformShopifyProductToSEO from "@/functions/transformShopifyProductToSEO.js";
 
 //SHOPIFY
 import { getAllProductHandles, getProductByHandle, getProductsByCategory } from "../../libs/shopify.js";
@@ -48,45 +49,49 @@ export default function Product({ product, sizes, relatedProducts, category, glo
         }
     }, [handle, product]);
 
-    console.log("CATEGORY", category);
+    console.log("PRODUCT", product);
 
     // Extract the product title from the Shopify data
     const productTitle = product?.productByHandle?.title || "Unbekanntes Produkt";
-
+    const seoData = transformShopifyProductToSEO(product.productByHandle);
+    console.log(seoData);
     return (
-        <MainContainer>
-            <Breadcrumbs category={category} productTitle={productTitle} />
-            {product?.productByHandle?.konfigurator?.value == "true" ? (
-                <ProductConfigurator
-                    product={product?.productByHandle}
-                    veredelungen={product?.parsedVeredelungData}
-                    profiDatenCheck={product?.profiDatenCheckData}
-                    sizes={sizes}
-                ></ProductConfigurator>
-            ) : (
-                <SimpleConfigurator product={product?.productByHandle}></SimpleConfigurator>
-            )}
-            {product?.productByHandle?.detailbeschreibung?.value ? (
-                <div className="flex mt-4 lg:mt-20 flex-wrap lg:flex-nowrap mb-16 lg:mb-4">
-                    <div className="lg:pl-24 lg:w-2/4 lg:mt-16 font-body text-sm lg:text-base !text-textColor p-4 lg:p-2 ">
-                        <RichTextRenderer
-                            richText={JSON.parse(product?.productByHandle?.detailbeschreibung.value)}
-                        ></RichTextRenderer>
+        <>
+            <MetaShopify data={seoData} />
+            <MainContainer>
+                <Breadcrumbs category={category} productTitle={productTitle} />
+                {product?.productByHandle?.konfigurator?.value == "true" ? (
+                    <ProductConfigurator
+                        product={product?.productByHandle}
+                        veredelungen={product?.parsedVeredelungData}
+                        profiDatenCheck={product?.profiDatenCheckData}
+                        sizes={sizes}
+                    ></ProductConfigurator>
+                ) : (
+                    <SimpleConfigurator product={product?.productByHandle}></SimpleConfigurator>
+                )}
+                {product?.productByHandle?.detailbeschreibung?.value ? (
+                    <div className="flex mt-4 lg:mt-20 flex-wrap lg:flex-nowrap mb-16 lg:mb-4">
+                        <div className="lg:pl-24 lg:w-2/4 lg:mt-16 font-body text-sm lg:text-base !text-textColor p-4 lg:p-2 ">
+                            <RichTextRenderer
+                                richText={JSON.parse(product?.productByHandle?.detailbeschreibung.value)}
+                            ></RichTextRenderer>
+                        </div>
+                        {galleryImages.length > 0 && (
+                            <SimpleGallery
+                                images={galleryImages}
+                                selectedImage={selectedImage}
+                                onSelectImage={setSelectedImage}
+                            />
+                        )}{" "}
                     </div>
-                    {galleryImages.length > 0 && (
-                        <SimpleGallery
-                            images={galleryImages}
-                            selectedImage={selectedImage}
-                            onSelectImage={setSelectedImage}
-                        />
-                    )}{" "}
-                </div>
-            ) : (
-                "null"
-            )}
-            <FAQSection faqs={globalData.faqs.faqs}></FAQSection>
-            <MoreProducts relatedProducts={relatedProducts} currentProductHandle={product} />
-        </MainContainer>
+                ) : (
+                    "null"
+                )}
+                <FAQSection faqs={globalData.faqs.faqs}></FAQSection>
+                <MoreProducts relatedProducts={relatedProducts} currentProductHandle={product} />
+            </MainContainer>
+        </>
     );
 }
 

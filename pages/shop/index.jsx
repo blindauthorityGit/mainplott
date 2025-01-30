@@ -7,7 +7,8 @@ import Sidebar from "../../components/shop/sidebar";
 import MobileFilterBar from "../../components/shop/mobileFilterBar";
 import TopBarFilter from "../../components/shop/topBarFilter";
 import { getAllProducts, getAllCollectionsWithSubcollections } from "../../libs/shopify";
-
+import buildShopPageSEO from "@/functions/buildShopPageSEO"; // adapt path
+import MetaShopify from "@/components/seo/shopify";
 export default function Shop({ allProducts, globalData }) {
     const router = useRouter();
     const { cat, tags } = router.query;
@@ -166,19 +167,13 @@ export default function Shop({ allProducts, globalData }) {
         }
     });
 
+    const shopSEO = buildShopPageSEO(selectedCats, selectedTags);
+
     return (
-        <MainContainer>
-            <MobileFilterBar
-                categories={globalData.shop.categories}
-                selectedCats={selectedCats}
-                selectedTags={selectedTags}
-                onSelectCategory={handleSelectCategory}
-                onSelectTag={handleSelectTag}
-                onResetFilters={handleResetFilters}
-                allProducts={allProducts}
-            />
-            <div className="grid grid-cols-12 px-4 lg:px-0 gap-4">
-                <Sidebar
+        <>
+            <MetaShopify data={shopSEO} />
+            <MainContainer>
+                <MobileFilterBar
                     categories={globalData.shop.categories}
                     selectedCats={selectedCats}
                     selectedTags={selectedTags}
@@ -187,28 +182,39 @@ export default function Shop({ allProducts, globalData }) {
                     onResetFilters={handleResetFilters}
                     allProducts={allProducts}
                 />
-
-                <div className="col-span-12 lg:col-span-9 flex flex-col">
-                    <TopBarFilter
+                <div className="grid grid-cols-12 px-4 lg:px-0 gap-4">
+                    <Sidebar
+                        categories={globalData.shop.categories}
                         selectedCats={selectedCats}
                         selectedTags={selectedTags}
-                        totalCount={sortedProducts.length}
-                        onRemoveCat={handleRemoveCat}
-                        onRemoveTag={handleRemoveTag}
-                        sortOption={sortOption}
-                        setSortOption={setSortOption}
-                        // Pass down the search state + setter
-                        searchTerm={searchTerm}
-                        setSearchTerm={setSearchTerm}
+                        onSelectCategory={handleSelectCategory}
+                        onSelectTag={handleSelectTag}
+                        onResetFilters={handleResetFilters}
+                        allProducts={allProducts}
                     />
-                    {sortedProducts.length > 0 ? (
-                        <ProductListings products={sortedProducts} />
-                    ) : (
-                        "Keine Produkte vorhanden"
-                    )}
+
+                    <div className="col-span-12 lg:col-span-9 flex flex-col">
+                        <TopBarFilter
+                            selectedCats={selectedCats}
+                            selectedTags={selectedTags}
+                            totalCount={sortedProducts.length}
+                            onRemoveCat={handleRemoveCat}
+                            onRemoveTag={handleRemoveTag}
+                            sortOption={sortOption}
+                            setSortOption={setSortOption}
+                            // Pass down the search state + setter
+                            searchTerm={searchTerm}
+                            setSearchTerm={setSearchTerm}
+                        />
+                        {sortedProducts.length > 0 ? (
+                            <ProductListings products={sortedProducts} />
+                        ) : (
+                            "Keine Produkte vorhanden"
+                        )}
+                    </div>
                 </div>
-            </div>
-        </MainContainer>
+            </MainContainer>
+        </>
     );
 }
 
