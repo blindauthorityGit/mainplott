@@ -11,7 +11,7 @@ import SimpleConfigurator from "../../components/simpleConfigurator";
 import Breadcrumbs from "@/components/simpleConfigurator/components/breadcrumbs";
 import { SimpleGallery } from "@/components/gallery";
 
-import MetaShopify from "@/components/seo/shopify";
+import MetaShopify from "@/components/SEO/shopify";
 import MoreProducts from "@/sections/moreProducts";
 import FAQSection from "@/sections/faqs";
 import useStore from "@/store/store"; // Zustand store

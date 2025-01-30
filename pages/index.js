@@ -12,7 +12,7 @@ import IntroText from "../sections/introText";
 import FeaturesSection from "../sections/features";
 import FAQSection from "../sections/faqs";
 import TestimonialsSection from "../sections/testimonials";
-import Meta from "@/components/seo/";
+import Meta from "/components/SEO/";
 
 export default function Home({ sanityData, globalData }) {
     // Log the fetched data using useEffect

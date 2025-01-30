@@ -8,7 +8,7 @@ import MobileFilterBar from "../../components/shop/mobileFilterBar";
 import TopBarFilter from "../../components/shop/topBarFilter";
 import { getAllProducts, getAllCollectionsWithSubcollections } from "../../libs/shopify";
 import buildShopPageSEO from "@/functions/buildShopPageSEO"; // adapt path
-import MetaShopify from "@/components/seo/shopify";
+import MetaShopify from "@/components/SEO/shopify";
 export default function Shop({ allProducts, globalData }) {
     const router = useRouter();
     const { cat, tags } = router.query;
