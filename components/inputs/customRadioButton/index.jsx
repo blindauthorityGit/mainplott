@@ -145,14 +145,14 @@ const CustomRadioButton = ({ id, name, label, icon, value, checked, onChange, pr
         <div
             className={`
         flex flex-col items-center justify-center p-4 cursor-pointer 
-        border rounded-md transition-shadow hover:shadow-md
+        border rounded-md transition-shadow hover:shadow-md w-2/4 lg:w-auto
         ${cardBorder}
       `}
             onClick={handleCardClick}
         >
             {/* Image (above the label) */}
             {/* Using Next.js <Image> as an example; if not using Next.js, replace with <img> */}
-            <div className="w-20 h-20 mb-2 relative">
+            <div className="w-12 h-12 lg:w-20 lg:h-20 mb-2 relative">
                 <Image src={imageSrc} alt={label} layout="fill" objectFit="contain" />
             </div>
 
@@ -168,9 +168,12 @@ const CustomRadioButton = ({ id, name, label, icon, value, checked, onChange, pr
             />
 
             {/* Label + optional icon */}
-            <label htmlFor={id} className={`flex items-center gap-1 ${textColor}`}>
+            <label
+                htmlFor={id}
+                className={`flex items-center justify-center text-sm lg:text-base gap-1 ${textColor} min-w-[80px] sm:min-w-[100px] md:min-w-[120px] text-center`}
+            >
                 {icon && <span className="w-5 h-5">{icon}</span>}
-                {label}
+                <span className="truncate">{label}</span>
             </label>
         </div>
     );

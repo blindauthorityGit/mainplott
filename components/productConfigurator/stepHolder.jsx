@@ -405,6 +405,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         };
     }, [revealMobileSteps]);
 
+    console.log("STEEEEPS", steps[currentStep]);
     return (
         <div className="grid grid-cols-12 lg:px-12 2xl:px-24 lg:gap-4 h-full" {...swipeHandlers}>
             {/* If exporting, show overlay */}
@@ -490,7 +491,10 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                         ) : (
                             displayedImage &&
                             (!isMobile ||
-                                (steps[currentStep] !== "Konfigurator" && steps[currentStep] !== "Upload")) && (
+                                (steps[currentStep] !== "Konfigurator" &&
+                                    steps[currentStep] !== "Upload" &&
+                                    steps[currentStep] !== "Optionen" &&
+                                    steps[currentStep] !== "Zusammenfassung")) && (
                                 <motion.div
                                     className="relative mix-blend-multiply"
                                     key={displayedImage}

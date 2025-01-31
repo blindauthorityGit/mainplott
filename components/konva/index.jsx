@@ -4,10 +4,9 @@ import useStore from "@/store/store";
 import { Button } from "@mui/material";
 import { FiZoomIn, FiZoomOut, FiRefreshCw } from "react-icons/fi";
 import { exportCanvas } from "@/functions/exportCanvas";
-import dataURLToBlob from "@/functions/dataURLToBlob";
-import { uploadImageToStorage } from "@/config/firebase";
 import MobileSliders from "@/components/productConfigurator/mobile/mobileSliders";
 import getImagePlacement from "@/functions/getImagePlacement";
+import useIsMobile from "@/hooks/isMobile";
 
 const KonvaLayer = forwardRef(
     (
@@ -32,16 +31,16 @@ const KonvaLayer = forwardRef(
         const productImageRef = useRef(null);
         const uploadedGraphicRef = useRef(null);
         const transformerRef = useRef(null);
-        const boundaryRectRef = useRef(null); // <--- bounding rectangle
+        const boundaryRectRef = useRef(null); // bounding rectangle reference
 
         const {
             purchaseData,
             setPurchaseData,
-            setConfiguredImage,
             setStageRef,
             setTransformerRef,
-            // We won't use setBoundaryPathRef in this example, but it's in your code
+            // setBoundaryPathRef, etc. if needed
         } = useStore();
+
         const { containerWidth, containerHeight } = purchaseData;
 
         const [zoomLevel, setZoomLevel] = useState(1);
@@ -51,6 +50,9 @@ const KonvaLayer = forwardRef(
         const [showTransformer, setShowTransformer] = useState(purchaseData.configurator !== "template");
 
         const [isTemplate, setIsTemplate] = useState(purchaseData.configurator !== "template");
+
+        // Simple hook returning boolean if mobile
+        const isMobile = useIsMobile();
 
         useEffect(() => {
             setIsTemplate(purchaseData.configurator !== "template");
@@ -62,10 +64,13 @@ const KonvaLayer = forwardRef(
         useEffect(() => {
             setIsGraphicDraggable(purchaseData.configurator !== "template");
             setShowTransformer(purchaseData.configurator !== "template");
+
+            // Clear transformer nodes if needed
             if (transformerRef.current && uploadedGraphicRef.current) {
                 transformerRef.current.nodes([]);
                 transformerRef.current.getLayer().batchDraw();
             }
+            // If it’s a “template” mode, reset the stage zoom
             if (purchaseData.configurator === "template") {
                 handleResetZoom();
             }
@@ -83,7 +88,6 @@ const KonvaLayer = forwardRef(
         useEffect(() => {
             setStageRef(stageRef.current);
             setTransformerRef(transformerRef.current);
-            // Omit setBoundaryPathRef(...) for clarity
 
             return () => {
                 setStageRef(null);
@@ -101,7 +105,7 @@ const KonvaLayer = forwardRef(
             img.src = productImage;
             img.onload = () => {
                 if (!productImageRef.current) return;
-                // Fit image "contain" inside containerWidth x containerHeight
+
                 const containerAspect = containerWidth / containerHeight;
                 const imageAspect = img.width / img.height;
 
@@ -130,7 +134,6 @@ const KonvaLayer = forwardRef(
         // Load uploaded graphic
         // ---------------------------
         useEffect(() => {
-            // If there's no uploaded file at all, we skip.
             if (!uploadedGraphicFile) return;
 
             console.log("UPLOADED GRAPHIC:", uploadedGraphicFile, uploadedGraphicURL);
@@ -143,7 +146,7 @@ const KonvaLayer = forwardRef(
             function placeAndDraw(loadedImg) {
                 if (!uploadedGraphicRef.current) return;
 
-                const { x, y, offsetX, offsetY, finalWidth, finalHeight } = getImagePlacement({
+                const { finalWidth, finalHeight } = getImagePlacement({
                     containerWidth,
                     containerHeight,
                     imageNaturalWidth: loadedImg.width,
@@ -152,39 +155,30 @@ const KonvaLayer = forwardRef(
 
                 uploadedGraphicRef.current.width(finalWidth);
                 uploadedGraphicRef.current.height(finalHeight);
-                // If you want to set an initial position or offsets, do so here
-                // uploadedGraphicRef.current.x(x);
-                // uploadedGraphicRef.current.y(y);
                 uploadedGraphicRef.current.offsetX(0);
                 uploadedGraphicRef.current.offsetY(0);
                 uploadedGraphicRef.current.image(loadedImg);
                 uploadedGraphicRef.current.getLayer().batchDraw();
 
-                // If we have a transformer, attach it to the uploaded image
+                // Attach the transformer
                 if (transformerRef.current) {
                     transformerRef.current.nodes([uploadedGraphicRef.current]);
                     transformerRef.current.getLayer().batchDraw();
                 }
             }
 
-            // 1) If it's a PDF side, we load pdfPreview URL instead of reading the file
             if (isPDFSide && pdfPreviewURL) {
                 const previewImg = new window.Image();
                 previewImg.crossOrigin = "anonymous";
-
                 previewImg.src = pdfPreviewURL;
-                previewImg.onload = () => {
-                    placeAndDraw(previewImg);
-                };
+                previewImg.onload = () => placeAndDraw(previewImg);
             } else {
-                // 2) Otherwise, treat it like a normal image (JPG/PNG)
+                // normal image
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const normalImg = new window.Image();
                     normalImg.src = e.target.result;
-                    normalImg.onload = () => {
-                        placeAndDraw(normalImg);
-                    };
+                    normalImg.onload = () => placeAndDraw(normalImg);
                 };
                 reader.readAsDataURL(uploadedGraphicFile);
             }
@@ -194,8 +188,9 @@ const KonvaLayer = forwardRef(
         // Export logic
         // ---------------------------
         const handleExport = () => {
+            // Possibly reset zoom so export is always 1:1
             handleResetZoom();
-            const dataURL = exportCanvas(stageRef, transformerRef, null, 1); // pass null for boundaryPathRef
+            const dataURL = exportCanvas(stageRef, transformerRef, null, 1);
             console.log("Export dataURL:", dataURL);
             return dataURL;
         };
@@ -207,7 +202,7 @@ const KonvaLayer = forwardRef(
         }, [onExportReady]);
 
         // ---------------------------
-        // Drag / Scale logic
+        // Drag / Scale logic for the graphic
         // ---------------------------
         const handleGraphicDragStart = () => {
             setIsDraggingGraphic(true);
@@ -234,24 +229,14 @@ const KonvaLayer = forwardRef(
         // ---------------
         // BOUNDING LOGIC
         // ---------------
-        // This dragBoundFunc will clamp the graphic's position so it can't leave the boundaryRectRef.
         const dragBoundFunc = (pos) => {
             const boundingRectNode = boundaryRectRef.current;
             const shapeNode = uploadedGraphicRef.current;
             if (!boundingRectNode || !shapeNode) return pos;
 
-            // The bounding rectangle’s absolute position on the Stage:
             const boundingRect = boundingRectNode.getClientRect();
-
-            // shapeRect is the shape’s current bounding box
-            // *before* we move it to pos.x/pos.y.
-            // Konva calls dragBoundFunc to see if new pos is allowed.
             const shapeRect = shapeNode.getClientRect();
 
-            // We want the shape’s top-left corner to move to pos.x / pos.y
-            // So the “newLeft” & “newTop” become pos.x / pos.y
-            // Then “newRight” & “newBottom” are pos.x + shapeRect.width, pos.y + shapeRect.height
-            // (assuming no offset or anchor shift).
             const newLeft = pos.x;
             const newTop = pos.y;
             const newRight = pos.x + shapeRect.width;
@@ -280,16 +265,11 @@ const KonvaLayer = forwardRef(
             return { x: clampedX, y: clampedY };
         };
 
-        // This boundBoxFunc will clamp the scale so that the graphic never grows beyond the boundary rect.
         const boundBoxFunc = (oldBox, newBox) => {
             const boundingRectNode = boundaryRectRef.current;
             if (!boundingRectNode || !uploadedGraphicRef.current) return newBox;
 
             const boundingRect = boundingRectNode.getClientRect();
-
-            // newBox is the prospective new bounding box after transform
-            // We'll do a simple check: if newBox goes outside boundingRect, revert
-            // More advanced logic might clamp scale partially, but let's revert for simplicity:
 
             if (
                 newBox.x < boundingRect.x ||
@@ -308,9 +288,11 @@ const KonvaLayer = forwardRef(
         const handleResetZoom = () => {
             setZoomLevel(1);
             setStagePosition({ x: 0, y: 0 });
-            stageRef.current.scale({ x: 1, y: 1 });
-            stageRef.current.position({ x: 0, y: 0 });
-            stageRef.current.batchDraw();
+            if (stageRef.current) {
+                stageRef.current.scale({ x: 1, y: 1 });
+                stageRef.current.position({ x: 0, y: 0 });
+                stageRef.current.batchDraw();
+            }
         };
 
         useEffect(() => {
@@ -324,9 +306,7 @@ const KonvaLayer = forwardRef(
             handleResetZoom();
         }, [purchaseData.currentSide]);
 
-        // For example, read from product or purchaseData to compute boundingRect
-        // Maybe you store these fractions in each product, so e.g. product.boundingBox = { x: 0.2, y: 0.1, width: 0.6, height: 0.7 }
-        // Or you hardcode them for demonstration:
+        // Example boundingRect
         const boundingRect = {
             x: containerWidth * 0.22,
             y: containerHeight * 0.15,
@@ -335,19 +315,21 @@ const KonvaLayer = forwardRef(
         };
 
         useEffect(() => {
-            // Save boundingRect in purchaseData
+            // Save boundingRect in purchaseData or do something with it
             setPurchaseData((prev) => ({
                 ...prev,
-                boundingRect, // store x,y,width,height in global state
+                boundingRect,
             }));
-        }, [containerWidth, containerHeight /* also product changes if any*/]);
+        }, [containerWidth, containerHeight]);
 
         useEffect(() => {
             if (stageRef.current) {
-                // Force Konva to re-draw the stage
                 stageRef.current.batchDraw();
             }
         }, [purchaseData.configurator]);
+
+        // The key: disable Stage dragging on mobile. So single-finger swipes on mobile do not move stage.
+        const stageIsDraggable = !isDraggingGraphic && !isMobile;
 
         return (
             <div style={{ touchAction: "none" }}>
@@ -358,36 +340,31 @@ const KonvaLayer = forwardRef(
                     height={containerHeight}
                     scaleX={zoomLevel}
                     scaleY={zoomLevel}
-                    draggable={!isDraggingGraphic}
                     x={stagePosition.x}
                     y={stagePosition.y}
+                    draggable={stageIsDraggable} // <-- Off for mobile, on for desktop if not dragging the graphic
                     onMouseOver={() => stageRef.current && (stageRef.current.container().style.cursor = "grab")}
                     onMouseOut={() => stageRef.current && (stageRef.current.container().style.cursor = "default")}
                 >
                     <Layer>
-                        {/* Product Image (behind everything) */}
+                        {/* Product Image (background) */}
                         {productImage && <KonvaImage ref={productImageRef} />}
 
-                        {/* 
-              Our boundingRect above the product image but behind the graphic.
-              Let's center it at (containerWidth*0.5, containerHeight*0.5)
-              We'll pick some arbitrary width & height for demonstration.
-            */}
+                        {/* bounding box */}
                         <Rect
-                            ref={boundaryRectRef} // <-- add this!
+                            ref={boundaryRectRef}
                             x={boundingRect.x}
                             y={boundingRect.y}
                             width={boundingRect.width}
                             height={boundingRect.height}
-                            // fill="rgba(0, 255, 0, 0.1)"
-                            // stroke="green"
+                            // fill="rgba(0,255,0,0.1)"
+                            // stroke="red"
                             // strokeWidth={2}
                         />
 
                         {/* Uploaded Graphic */}
                         {purchaseData.configurator !== "template" && (uploadedGraphicFile || uploadedGraphicURL) && (
                             <KonvaImage
-                                // key={purchaseData.configurator} // triggers a remount on mode change
                                 ref={uploadedGraphicRef}
                                 crossOrigin="anonymous"
                                 draggable={isGraphicDraggable}
@@ -398,19 +375,14 @@ const KonvaLayer = forwardRef(
                                 onDragStart={handleGraphicDragStart}
                                 onDragEnd={handleGraphicDragEnd}
                                 onTransformEnd={handleGraphicTransformEnd}
-                                dragBoundFunc={dragBoundFunc} // <--- bounding logic for drag
+                                dragBoundFunc={dragBoundFunc}
                             />
                         )}
 
-                        {/* Transformer with a scale bounding function */}
+                        {/* Transformer */}
                         {purchaseData.configurator !== "template" &&
                             (uploadedGraphicFile || uploadedGraphicURL) &&
-                            showTransformer && (
-                                <Transformer
-                                    ref={transformerRef}
-                                    boundBoxFunc={boundBoxFunc} // <--- bounding logic for scale
-                                />
-                            )}
+                            showTransformer && <Transformer ref={transformerRef} boundBoxFunc={boundBoxFunc} />}
                     </Layer>
                 </Stage>
 
@@ -423,39 +395,47 @@ const KonvaLayer = forwardRef(
                         containerWidth={containerWidth}
                         containerHeight={containerHeight}
                         zoomLevel={zoomLevel}
-                        setZoomLevel={setZoomLevel}
+                        setZoomLevel={(val) => {
+                            setZoomLevel(val);
+                            if (stageRef.current) {
+                                stageRef.current.scale({ x: val, y: val });
+                                stageRef.current.batchDraw();
+                            }
+                        }}
                     />
-                    <Button
-                        className="!bg-textColor justify-center text-center !text-2xl !hidden lg:!block"
-                        onClick={() => {
-                            const newZoomLevel = Math.min(zoomLevel + 0.1, 3);
-                            setZoomLevel(newZoomLevel);
-                            stageRef.current.scale({ x: newZoomLevel, y: newZoomLevel });
-                            stageRef.current.batchDraw();
-                        }}
-                        variant="contained"
-                        color="primary"
-                    >
-                        <FiZoomIn />
-                    </Button>
-                    <Button
-                        className="!bg-textColor !text-2xl !hidden lg:!block"
-                        onClick={() => {
-                            const newZoomLevel = Math.max(zoomLevel - 0.1, 1);
-                            setZoomLevel(newZoomLevel);
-                            stageRef.current.scale({ x: newZoomLevel, y: newZoomLevel });
-                            stageRef.current.batchDraw();
-                        }}
-                        variant="contained"
-                        color="primary"
-                    >
-                        <FiZoomOut />
-                    </Button>
-                    <Button
-                        onClick={handleResetZoom}
-                        className="!bg-primaryColor-600 !text-2xl !hidden lg:!block"
-                        variant="contained"
-                    >
+
+                    {/* Desktop-only Zoom Buttons */}
+                    {!isMobile && (
+                        <>
+                            <Button
+                                className="!bg-textColor justify-center text-center !text-2xl"
+                                onClick={() => {
+                                    const newZoomLevel = Math.min(zoomLevel + 0.1, 3);
+                                    setZoomLevel(newZoomLevel);
+                                    stageRef.current.scale({ x: newZoomLevel, y: newZoomLevel });
+                                    stageRef.current.batchDraw();
+                                }}
+                                variant="contained"
+                                color="primary"
+                            >
+                                <FiZoomIn />
+                            </Button>
+                            <Button
+                                className="!bg-textColor !text-2xl"
+                                onClick={() => {
+                                    const newZoomLevel = Math.max(zoomLevel - 0.1, 1);
+                                    setZoomLevel(newZoomLevel);
+                                    stageRef.current.scale({ x: newZoomLevel, y: newZoomLevel });
+                                    stageRef.current.batchDraw();
+                                }}
+                                variant="contained"
+                                color="primary"
+                            >
+                                <FiZoomOut />
+                            </Button>
+                        </>
+                    )}
+                    <Button onClick={handleResetZoom} className="!bg-primaryColor-600 !text-2xl" variant="contained">
                         <FiRefreshCw />
                     </Button>
                 </div>
