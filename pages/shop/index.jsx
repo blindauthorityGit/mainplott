@@ -61,25 +61,59 @@ export default function Shop({ allProducts, globalData }) {
         updateURL(newCats, selectedTags);
     };
 
-    const handleSelectTag = (categoryName, tagName) => {
+    // Example: getAllTagsForCategory('Workwear') => ['handwerk', 'baustelle']
+    //          getAllTagsForCategory('Streetwear') => ['t-shirt', 'hoodie', 'sweater', 'jacken']
+    function getAllTagsForCategory(mainCatValue, categoriesData) {
+        // 1) Find the category object among all "top-level" categories
+        //    that contains a subcategory with .value === mainCatValue
+        for (const cat of categoriesData) {
+            for (const sub of cat.subcategories) {
+                if (sub.value === mainCatValue) {
+                    // Found the matching subcategory (main-cat in your code)
+                    // If it has subSubcategories, gather them:
+                    if (Array.isArray(sub.subSubcategories) && sub.subSubcategories.length > 0) {
+                        return sub.subSubcategories.map((ssc) => ssc.value.toLowerCase());
+                    }
+                    // Otherwise it’s a “direct” subcategory with no subSub, so the sub’s own .value is the “tag”
+                    return [sub.value.toLowerCase()];
+                }
+            }
+        }
+        return [];
+    }
+
+    function handleSelectTag(mainCatValue, subTagValue) {
         let newCats = [...selectedCats];
         let newTags = [...selectedTags];
 
-        if (newCats.includes("all")) newCats = [];
-
-        // If adding a tag, ensure the collection is included
-        if (!newCats.includes(categoryName)) {
-            newCats.push(categoryName);
+        // If "all" is present, remove it
+        if (newCats.includes("all")) {
+            newCats = [];
         }
 
-        if (newTags.includes(tagName)) {
-            newTags = newTags.filter((t) => t !== tagName);
-            // If removing a tag and no tags remain for that category, consider removing that category too?
-            // We'll keep it simple and leave the category if no tags remain.
+        if (newTags.includes(subTagValue)) {
+            // We are removing that tag from selectedTags
+            newTags = newTags.filter((t) => t !== subTagValue);
+
+            // Now check if there are ANY sub-tags from mainCatValue left in newTags
+            if (newCats.includes(mainCatValue)) {
+                const allTags = getAllTagsForCategory(mainCatValue, globalData.shop.categories);
+                // intersection = which of allTags are still in newTags
+                const intersection = allTags.filter((tag) => newTags.includes(tag));
+                if (intersection.length === 0) {
+                    // no sub-tags from this main cat remain => remove that main cat
+                    newCats = newCats.filter((c) => c !== mainCatValue);
+                }
+            }
         } else {
-            newTags.push(tagName);
+            // We are adding that tag to selectedTags
+            if (!newCats.includes(mainCatValue)) {
+                newCats.push(mainCatValue);
+            }
+            newTags.push(subTagValue);
         }
 
+        // If we ended up with no cats, reset to ["all"]
         if (newCats.length === 0) {
             newCats = ["all"];
         }
@@ -87,7 +121,7 @@ export default function Shop({ allProducts, globalData }) {
         setSelectedCats(newCats);
         setSelectedTags(newTags);
         updateURL(newCats, newTags);
-    };
+    }
 
     const handleResetFilters = () => {
         setSelectedCats(["all"]);
