@@ -5,12 +5,6 @@ import urlFor from "@/functions/urlFor";
 
 /**
  * MobileFilterBar
- *
- * Mobile-first filter bar with minimal expansions:
- * - Starts with all categories collapsed
- * - Tapping a category expands subcategories
- * - Tapping a subcategory (with sub-sub) expands further
- * - Single-level approach: only one category open at a time
  */
 export default function MobileFilterBar({
     categories,
@@ -20,19 +14,19 @@ export default function MobileFilterBar({
     onResetFilters,
     allProducts,
 }) {
-    // Track which main category is currently open
+    // Track which main category is open
     const [openCategory, setOpenCategory] = useState(null);
-    // Track which sub-category is currently open
+    // Track which sub-category is open
     const [openSubCategory, setOpenSubCategory] = useState(null);
 
-    // Whether the filter menu is open or closed in mobile view
+    // Whether the entire filter menu is open
     const [filterOpen, setFilterOpen] = useState(false);
 
-    // Short helpers for checking selection
+    // Helpers to check selection
     const isCatSelected = (catName) => selectedCats.includes(catName);
     const isTagSelected = (tagName) => selectedTags.includes(tagName);
 
-    // Count how many products match a given collection or tag
+    // Count how many products are in a collection
     const countProductsForCollection = (collectionName) => {
         const colLower = collectionName.toLowerCase();
         return allProducts.filter((p) => {
@@ -41,30 +35,42 @@ export default function MobileFilterBar({
         }).length;
     };
 
+    // Count how many products match a tag
     const countProductsForTag = (tagName) => {
         const tagLower = tagName.toLowerCase();
         return allProducts.filter((p) => p.node.tags.map((t) => t.toLowerCase()).includes(tagLower)).length;
     };
 
-    // Toggle the main filter panel
+    // Expand/collapse the main filter panel
     const toggleFilter = () => {
         setFilterOpen((prev) => !prev);
-        // If closing, also reset openCategory to avoid confusion next time
+        // if closing, reset open states
         if (filterOpen) {
             setOpenCategory(null);
             setOpenSubCategory(null);
         }
     };
 
-    // Expand or collapse a main category
+    // Expand/collapse a main category
     const toggleCategory = (catName) => {
         setOpenSubCategory(null);
         setOpenCategory((prev) => (prev === catName ? null : catName));
     };
 
-    // Expand or collapse a subcategory
+    // Expand/collapse a subcategory
     const toggleSubCategory = (subCatName) => {
         setOpenSubCategory((prev) => (prev === subCatName ? null : subCatName));
+    };
+
+    // Handle “Alle Produkte” => reset & close
+    const handleAllProductsClick = () => {
+        onResetFilters();
+        setFilterOpen(false);
+    };
+
+    // “Filter Anwenden” => close gracefully
+    const handleApplyFilters = () => {
+        setFilterOpen(false);
     };
 
     return (
@@ -93,14 +99,14 @@ export default function MobileFilterBar({
                         <div className="p-4 border-b border-gray-200">
                             <button
                                 className="w-full py-2 text-center rounded-md font-semibold text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                                onClick={onResetFilters}
+                                onClick={handleAllProductsClick}
                             >
                                 Alle Produkte
                             </button>
                         </div>
 
                         {/* Category List */}
-                        <div className="max-h-[65vh] overflow-y-auto text-textColor px-4 pb-4">
+                        <div className="max-h-[60vh] overflow-y-auto text-textColor px-4 pb-4">
                             {categories.map((category) => {
                                 const isCategoryOpen = openCategory === category.name;
                                 return (
@@ -132,13 +138,14 @@ export default function MobileFilterBar({
                                                         const subCatOpen = openSubCategory === subCatName;
                                                         const isCheckedSub = isCatSelected(subCatName);
 
-                                                        // Count
+                                                        // Count:
                                                         const totalCount = hasSubSub
                                                             ? countProductsForCollection(subCatName)
                                                             : countProductsForTag(subCatName);
 
                                                         return (
                                                             <div key={subCatName} className="mb-2">
+                                                                {/* SubCategory row */}
                                                                 <div
                                                                     className="flex items-center justify-between py-1 cursor-pointer"
                                                                     onClick={() => {
@@ -162,6 +169,7 @@ export default function MobileFilterBar({
                                                                             {subCatName} ({totalCount})
                                                                         </p>
                                                                     </div>
+                                                                    {/* If no sub-sub, show checkbox right away */}
                                                                     {!hasSubSub && (
                                                                         <input
                                                                             type="checkbox"
@@ -234,6 +242,16 @@ export default function MobileFilterBar({
                                     </div>
                                 );
                             })}
+                        </div>
+
+                        {/* "FILTER ANWENDEN" Button at Bottom */}
+                        <div className="p-4 border-t border-gray-200">
+                            <button
+                                className="w-full py-2 text-center rounded-md font-semibold text-sm bg-primaryColor text-white hover:bg-primaryColor-700 transition-colors"
+                                onClick={handleApplyFilters}
+                            >
+                                FILTER ANWENDEN
+                            </button>
                         </div>
                     </motion.div>
                 )}
