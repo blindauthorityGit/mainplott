@@ -16,6 +16,8 @@ export default async function handler(req, res) {
         // Respond to Shopify to acknowledge the webhook
         res.status(200).send("Webhook received");
     } else {
+        console.log("WEBGOOK ERROR");
+
         res.status(405).send("Method Not Allowed");
     }
 }

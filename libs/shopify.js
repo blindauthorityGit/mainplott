@@ -1,13 +1,13 @@
 import shopify from "@shopify/shopify-api";
 
 const domain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN;
-const token = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
+const token = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN;
 
-console.log(domain, token);
+// console.log(domain, token);
 
 async function callShopify(query) {
     const fetchUrl = `https://${domain}/api/2023-01/graphql.json`;
-    console.log(token, domain);
+    // console.log(token, domain);
 
     const fetchOptions = {
         endpoint: fetchUrl,
