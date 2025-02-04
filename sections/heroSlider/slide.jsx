@@ -28,7 +28,10 @@ const Slide = ({ image, mobileImage, headline, text, buttonText, buttonLink }) =
                     whileTap={{ scale: 0.9, opacity: 0.8 }} // Scale effect on tap
                     transition={{ duration: 0.15, ease: "easeOut" }} // Smooth transition
                 >
-                    <MainButton klasse="mb-6 lg:mb-0" link={buttonLink}>
+                    <MainButton
+                        klasse="mb-6 lg:mb-0 !bg-transparent border-4 font-bold border-textColor !text-textColor"
+                        link={buttonLink}
+                    >
                         {buttonText}
                     </MainButton>
                 </motion.div>

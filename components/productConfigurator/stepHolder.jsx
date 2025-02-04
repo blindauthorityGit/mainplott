@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion"; // Import framer-motion for animations
 import { React, useState, useEffect, useRef, forwardRef } from "react";
-import { BiRefresh } from "react-icons/bi"; // Import the rotate icon from react-icons
+import { BiRefresh, BiChevronLeft, BiChevronRight, BiShoppingBag } from "react-icons/bi"; // Import the rotate icon from react-icons
 import StepIndicator from "./shared/stepIndicator";
 import MobileStepNavigator from "./shared/mobileStepNavigator";
 import useStore from "@/store/store"; // Your Zustand store
@@ -582,6 +582,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                         disabled={isPrevDisabled(currentStep)}
                         klasse="bg-textColor"
                     >
+                        <BiChevronLeft className="inline-block mr-2 text-lg" />
                         zurück
                     </StepButton>
                     {steps[currentStep] === "Zusammenfassung" ? (
@@ -662,6 +663,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                             className="px-4 py-2 !bg-successColor text-white rounded"
                             klasse="!bg-successColor"
                         >
+                            <BiShoppingBag className="inline-block mr-2 text-lg" />
                             In den Einkaufswagen
                         </StepButton>
                     ) : (
@@ -673,6 +675,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                             klasse="bg-textColor"
                         >
                             Weiter
+                            <BiChevronRight className="inline-block ml-2 text-lg" />
                         </StepButton>
                     )}
                 </div>

@@ -58,7 +58,7 @@ export default function Menu() {
         <>
             {/* Original Header */}
             <header className="relative font-body">
-                <div className="container mx-auto flex justify-between items-center lg:p-2 2xl:py-8  relative font-semibold">
+                <div className="container mx-auto flex justify-between items-center lg:p-2 2xl:py-12  relative font-semibold">
                     {/* Left Section - Links */}
                     <nav className="hidden md:flex space-x-4 text-sm 2xl:text-base">
                         <Link
