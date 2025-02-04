@@ -74,13 +74,22 @@ const MegaMenu = ({ isVisible, data, onClose }) => {
                                                     alt=""
                                                     className="h-6 w-6 fill-primaryColor-400"
                                                 />
+
                                                 <Link
                                                     href={`/${point.link}`}
-                                                    onClick={() => {
-                                                        onClose();
-                                                    }}
+                                                    onClick={onClose}
+                                                    className="relative group"
                                                 >
-                                                    <span>{point.text}</span>
+                                                    <span className="relative text-textColor">{point.text}</span>
+
+                                                    {/* Animated Underline */}
+                                                    <motion.div
+                                                        className="absolute left-0 bottom-0 h-[2px] bg-primaryColor-400"
+                                                        initial={{ width: "0%" }} // Start hidden
+                                                        whileHover={{ width: "100%" }} // Expand on hover
+                                                        exit={{ width: 0, x: "100%" }} // Slide out to the right on exit
+                                                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                                                    />
                                                 </Link>
                                             </motion.div>
                                         ))}

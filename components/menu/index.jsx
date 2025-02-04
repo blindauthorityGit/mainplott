@@ -58,7 +58,7 @@ export default function Menu() {
         <>
             {/* Original Header */}
             <header className="relative font-body">
-                <div className="container mx-auto flex justify-between items-center lg:p-2 2xl:p-4 relative font-semibold">
+                <div className="container mx-auto flex justify-between items-center lg:p-2 2xl:py-8  relative font-semibold">
                     {/* Left Section - Links */}
                     <nav className="hidden md:flex space-x-4 text-sm 2xl:text-base">
                         <Link
@@ -89,7 +89,7 @@ export default function Menu() {
                     </nav>
 
                     {/* Center Section - Logo with Home Link */}
-                    <div className="flex-1 text-center hidden lg:flex md:flex-none md:text-left">
+                    <div className="absolute left-1/2 transform -translate-x-1/2">
                         <Link href="/" className="text-2xl font-bold text-gray-900">
                             <img
                                 src={urlFor(menuData.logo).url()}
@@ -110,28 +110,16 @@ export default function Menu() {
                     <div className="flex items-center space-x-4 md:space-x-4">
                         {/* CTA Button */}
                         <MainButton
-                            klasse="!mt-0 !max-w-[240px] !min-w-[0]"
+                            klasse="!mt-0 !max-w-[240px] font-base !min-w-[0] px-12 !text-white"
                             link="/shop?cat=all"
-                            className="hidden md:inline-block  text-white "
+                            className="hidden md:inline-block   "
                         >
-                            Shop
+                            zum Shop
                         </MainButton>
-
-                        {/* Cart Icon with Badge */}
-                        <button className="relative  md:inline-flex items-center">
-                            <FaShoppingCart onClick={openCartSidebar} className="text-3xl text-gray-700" />
-                            {cartItems.length > 0 && (
-                                <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full px-2 text-xs">
-                                    {cartItems.length}
-                                </span>
-                            )}
-                        </button>
-
                         {/* Burger Menu */}
                         <button onClick={() => setIsOpen(!isOpen)} className="text-textColor pr-4 md:hidden">
                             {isOpen ? <FiX className="text-3xl" /> : <FiMenu className="text-3xl" />}
                         </button>
-
                         <div className="hidden lg:block">
                             {!user ? (
                                 <>
@@ -150,7 +138,16 @@ export default function Menu() {
                                     </button>
                                 </>
                             )}
-                        </div>
+                        </div>{" "}
+                        {/* Cart Icon with Badge */}
+                        <button className="relative  md:inline-flex items-center">
+                            <FaShoppingCart onClick={openCartSidebar} className="text-3xl text-gray-700" />
+                            {cartItems.length > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full px-2 text-xs">
+                                    {cartItems.length}
+                                </span>
+                            )}
+                        </button>
                     </div>
                 </div>
 
@@ -195,7 +192,7 @@ export default function Menu() {
                             </nav>
 
                             {/* Center Section - Logo with Home Link */}
-                            <div className="flex-1 text-center md:flex-none md:text-left">
+                            <div className="absolute left-1/2 transform -translate-x-1/2">
                                 <Link href="/" className="text-2xl font-bold text-gray-900">
                                     <img src={LogoSM.src} alt="Logo" className="h-12 inline-block mx-auto md:mx-0" />
                                 </Link>
@@ -204,19 +201,13 @@ export default function Menu() {
                             {/* Right Section - CTA Button, Cart */}
                             <div className="flex items-center space-x-4 md:space-x-4">
                                 {/* CTA Button */}
-                                <MainButton klasse="!mt-0 !max-w-[240px] !min-w-[0]" link="/shop?cat=all">
-                                    Shop
+                                <MainButton
+                                    klasse="!mt-0 !max-w-[240px] font-base !min-w-[0] px-12 !text-white"
+                                    link="/shop?cat=all"
+                                >
+                                    zum Shop
                                 </MainButton>
-
                                 {/* Cart Icon with Badge */}
-                                <button className="relative hidden md:inline-flex items-center">
-                                    <FaShoppingCart onClick={openCartSidebar} className="text-3xl text-gray-700" />
-                                    {cartItems.length > 0 && (
-                                        <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full px-2 text-xs">
-                                            {cartItems.length}
-                                        </span>
-                                    )}
-                                </button>
                                 <div className="hidden lg:block">
                                     {!user ? (
                                         <>
@@ -238,7 +229,15 @@ export default function Menu() {
                                             </button>
                                         </>
                                     )}
-                                </div>
+                                </div>{" "}
+                                <button className="relative hidden md:inline-flex items-center">
+                                    <FaShoppingCart onClick={openCartSidebar} className="text-3xl text-gray-700" />
+                                    {cartItems.length > 0 && (
+                                        <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full px-2 text-xs">
+                                            {cartItems.length}
+                                        </span>
+                                    )}
+                                </button>
                             </div>
                         </div>
                     </motion.header>

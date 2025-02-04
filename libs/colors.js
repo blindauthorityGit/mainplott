@@ -79,6 +79,8 @@ const colorDictionary = {
     "Light Grey": "#D3D3D3",
     Graphite: "#41424C",
     Turquoise: "#40E0D0",
+    "Heather Grey": "#BEBBBB",
+    "Steel Grey": "#71797E",
 
     // weitere Farben hinzufügen
 };

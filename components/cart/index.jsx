@@ -104,7 +104,7 @@ export default function CartSidebar() {
             const checkoutUrl = await createCart(lineItems, cartAttributesToSend);
             if (checkoutUrl) {
                 console.log("Redirecting to Checkout:", checkoutUrl);
-                // window.location.href = checkoutUrl; // Redirect to the checkout URL
+                window.location.href = checkoutUrl; // Redirect to the checkout URL
             } else {
                 throw new Error("Checkout URL not returned by Shopify API.");
             }
