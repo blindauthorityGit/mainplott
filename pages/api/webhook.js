@@ -1,4 +1,6 @@
 export default async function handler(req, res) {
+    console.log(req, res);
+    console.log("WEBGOOK");
     if (req.method === "POST") {
         // Parse the incoming webhook payload
         const webhookPayload = req.body;
