@@ -76,7 +76,7 @@ const LinkBox = ({ klasse, iconUrl, link, image, text, icon, details, title }) =
                     <h3 className="relative !mb-4 !font-bold text-textColor xl:!text-2xl !font-body text-base  lg:text-xl   2xl:text-5xl 2xl:mb-8">
                         {text}
                     </h3>
-                    {title && <H3 klasse="relative !mb-4">{title}</H3>}
+                    {title && <H3 klasse="relative 2xl:font-bold !mb-4">{title}</H3>}
 
                     {details && <P klasse="lg:!-mt-3">{details}</P>}
                 </motion.div>

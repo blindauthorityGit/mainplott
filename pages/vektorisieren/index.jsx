@@ -1,34 +1,65 @@
 import React, { useState } from "react";
-import { MainContainer } from "@/layout/container"; // Assuming MainContainer is part of the layout structure
-import { H2, P } from "@/components/typography"; // Typography components
-import { Button, TextField } from "@mui/material"; // For form elements
-import { motion } from "framer-motion"; // For subtle animations
+import { MainContainer } from "@/layout/container";
+import { H2, P } from "@/components/typography";
+import { Button, TextField } from "@mui/material";
+import { motion } from "framer-motion";
 
 export default function Vektorisieren() {
+    // We now store the actual file object (for upload)
     const [file, setFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
     const [formData, setFormData] = useState({
         name: "",
         email: "",
         phone: "",
         message: "",
     });
+    const [submitting, setSubmitting] = useState(false);
+    const [responseMsg, setResponseMsg] = useState("");
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
         if (selectedFile) {
-            setFile(URL.createObjectURL(selectedFile));
+            setFile(selectedFile);
+            setPreviewUrl(URL.createObjectURL(selectedFile));
         }
     };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("Form data submitted:", formData, file);
-        // Add logic to handle form submission (e.g., API call)
+        setSubmitting(true);
+        setResponseMsg("");
+
+        const data = new FormData();
+        data.append("name", formData.name);
+        data.append("email", formData.email);
+        data.append("phone", formData.phone);
+        data.append("message", formData.message);
+        data.append("file", file);
+
+        try {
+            const res = await fetch("/api/vektorisieren", {
+                method: "POST",
+                body: data,
+            });
+            const json = await res.json();
+            if (res.ok) {
+                setResponseMsg("Ihre Anfrage wurde erfolgreich versendet!");
+                // Optionally reset form fields here.
+            } else {
+                setResponseMsg("Beim Versenden der Anfrage ist ein Fehler aufgetreten.");
+                console.error(json.error);
+            }
+        } catch (error) {
+            console.error("Error submitting form", error);
+            setResponseMsg("Beim Versenden der Anfrage ist ein Fehler aufgetreten.");
+        }
+        setSubmitting(false);
     };
 
     return (
@@ -40,7 +71,7 @@ export default function Vektorisieren() {
                 className="grid grid-cols-12 px-4 lg:px-0 font-body pt-12"
             >
                 {/* Header Section */}
-                <div className=" mb-12 col-span-6">
+                <div className="mb-12 col-span-6">
                     <H2 klasse="text-primaryColor">Vektorisieren von Grafiken</H2>
                     <P klasse="mt-4 text-lg text-textColor">
                         Optimieren Sie Ihre Grafiken für perfekten Druck! Unser Vektorisierungsservice wandelt Ihre
@@ -56,7 +87,7 @@ export default function Vektorisieren() {
                         <div className="flex flex-col">
                             <label className="font-semibold mb-2 text-textColor">Ihre Grafik hochladen</label>
                             <div className="border-dashed border-2 border-primaryColor p-6 rounded-md text-center">
-                                {!file ? (
+                                {!previewUrl ? (
                                     <label className="cursor-pointer">
                                         <input
                                             type="file"
@@ -68,7 +99,7 @@ export default function Vektorisieren() {
                                     </label>
                                 ) : (
                                     <img
-                                        src={file}
+                                        src={previewUrl}
                                         alt="Preview"
                                         className="max-w-full h-auto mx-auto rounded-md shadow-md"
                                     />
@@ -129,9 +160,12 @@ export default function Vektorisieren() {
                             type="submit"
                             variant="contained"
                             className="bg-primaryColor text-white px-4 py-2 rounded"
+                            disabled={submitting}
                         >
-                            Absenden
+                            {submitting ? "Bitte warten..." : "Absenden"}
                         </Button>
+
+                        {responseMsg && <P klasse="text-center">{responseMsg}</P>}
                     </form>
                 </div>
             </motion.div>

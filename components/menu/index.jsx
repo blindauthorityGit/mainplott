@@ -89,7 +89,7 @@ export default function Menu() {
                     </nav>
 
                     {/* Center Section - Logo with Home Link */}
-                    <div className="absolute left-1/2 transform -translate-x-1/2">
+                    <div className="absolute hidden lg:block  left-1/2 transform -translate-x-1/2">
                         <Link href="/" className="text-2xl font-bold text-gray-900">
                             <img
                                 src={urlFor(menuData.logo).url()}

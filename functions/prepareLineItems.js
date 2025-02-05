@@ -4,6 +4,10 @@ const prepareLineItems = (cartItems) => {
     cartItems.forEach((item) => {
         const { variants, profiDatenCheckPrice, sides, personalisierungsText } = item;
 
+        // Determine if we are in configurator mode.
+        // configurator is true if item.configurator is NOT "template"
+        const isConfigurator = item.configurator !== "template";
+
         // Add standard product variants
         if (variants) {
             Object.keys(variants).forEach((key) => {
@@ -21,7 +25,11 @@ const prepareLineItems = (cartItems) => {
                     ];
 
                     if (isVeredelung) {
-                        const side = key.replace("Veredelung", "").toLowerCase();
+                        // Determine the side from the key.
+                        // For example: "frontVeredelung" becomes "front"
+                        const side = key.replace(/veredelung/i, "").toLowerCase();
+
+                        // (Optional) If there is an uploaded graphic for this side, add its URL
                         const uploadedGraphic = sides?.[side]?.uploadedGraphic?.downloadURL;
                         if (uploadedGraphic) {
                             customAttributes.push({
@@ -29,10 +37,38 @@ const prepareLineItems = (cartItems) => {
                                 value: uploadedGraphic,
                             });
                         }
+
+                        // Always include the title
                         customAttributes.push({
                             key: "title",
                             value: `Veredelung ${side}`,
                         });
+
+                        // === NEW: Add custom attribute for placement ===
+                        customAttributes.push({
+                            key: "Platzierung",
+                            value: isConfigurator ? "Freie Platzierung" : "Fixe Position",
+                        });
+
+                        if (!isConfigurator) {
+                            // When not using the configurator, add an attribute for the chosen position.
+                            const pos = sides?.[side]?.position;
+                            if (pos) {
+                                customAttributes.push({
+                                    key: "Position",
+                                    value: pos,
+                                });
+                            }
+                        } else {
+                            // When using the configurator, also add the design attribute (if available).
+                            const designURL = item.design?.[side]?.downloadURL;
+                            if (designURL) {
+                                customAttributes.push({
+                                    key: "Design",
+                                    value: designURL,
+                                });
+                            }
+                        }
                     }
 
                     // Add personalisierungsText as a custom attribute if it exists

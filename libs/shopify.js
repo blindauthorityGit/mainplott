@@ -591,11 +591,14 @@ export async function fetchMetaobjects(metaobjectGids) {
 
 // libs/shopify.js
 
-export async function createCart(lineItems, cartAttributes) {
+export async function createCart(lineItems, cartAttributes, note) {
     console.log("LINE ITEMS", lineItems);
-    console.log("cartAtributes", cartAttributes);
+    console.log("cartAttributes", cartAttributes);
 
-    // Construct the query dynamically with inlined lineItems
+    // Prepare the note field if provided.
+    const noteField = note && note.trim() !== "" ? `, note: ${JSON.stringify(note)}` : "";
+    console.log("NOTE", noteField);
+    // Construct the query dynamically with inlined lineItems and note (if any)
     const query = `
         mutation {
             cartCreate(input: {
@@ -619,6 +622,7 @@ export async function createCart(lineItems, cartAttributes) {
                 attributes: [
                     ${cartAttributes.map((attr) => `{ key: "${attr.key}", value: "${attr.value}" }`).join(", ")}
                 ]
+                ${noteField}
             }) {
                 cart {
                     id

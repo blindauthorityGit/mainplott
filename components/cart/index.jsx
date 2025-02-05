@@ -67,7 +67,7 @@ export default function CartSidebar() {
     };
 
     const handleCheckout = async () => {
-        console.log("CHECKOUT HANDLED");
+        console.log("CHECKOUT HANDLED", userNotes);
         try {
             const lineItems = prepareLineItems(cartItems); // Prepare line items from the cart
             console.log("Prepared Line Items:", lineItems);
@@ -101,10 +101,10 @@ export default function CartSidebar() {
             const cartAttributesToSend = cartAttributes.length > 0 ? cartAttributes : [];
 
             // Call createCart API with lineItems and cartAttributes
-            const checkoutUrl = await createCart(lineItems, cartAttributesToSend);
+            const checkoutUrl = await createCart(lineItems, cartAttributesToSend, userNotes);
             if (checkoutUrl) {
                 console.log("Redirecting to Checkout:", checkoutUrl);
-                window.location.href = checkoutUrl; // Redirect to the checkout URL
+                // window.location.href = checkoutUrl; // Redirect to the checkout URL
             } else {
                 throw new Error("Checkout URL not returned by Shopify API.");
             }
@@ -152,7 +152,10 @@ export default function CartSidebar() {
                                                     ? item.design.front.downloadURL
                                                     : item.design?.back?.downloadURL
                                                     ? item.design.back.downloadURL
-                                                    : item.selectedImage // Use selectedImage if no design is available
+                                                    : item.selectedImage ||
+                                                      (item.product?.images?.edges?.length > 0
+                                                          ? item.product.images.edges[0].node.originalSrc
+                                                          : "")
                                             }
                                             alt={item.productName}
                                             className="w-16 mr-4"
@@ -204,12 +207,13 @@ export default function CartSidebar() {
                                     </div>
                                 ))
                             ) : (
-                                <p>Your cart is empty.</p>
+                                <P>Ihr Einkaufswagen ist leer.</P>
                             )}
                         </div>
 
                         {/* Coupon Code Input */}
                         <div className="my-4">
+                            <P klasse="mb-2 font-semibold">Besondere Anmerkungen:</P>
                             <TextField
                                 fullWidth
                                 multiline
