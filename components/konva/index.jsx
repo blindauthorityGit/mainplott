@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, forwardRef } from "react";
-import { Stage, Layer, Image as KonvaImage, Rect, Transformer } from "react-konva";
+import { Stage, Layer, Image as KonvaImage, Rect, Transformer, Text } from "react-konva";
 import useStore from "@/store/store";
 import { Button } from "@mui/material";
 import { FiZoomIn, FiZoomOut, FiRefreshCw } from "react-icons/fi";
@@ -7,6 +7,7 @@ import { exportCanvas } from "@/functions/exportCanvas";
 import MobileSliders from "@/components/productConfigurator/mobile/mobileSliders";
 import getImagePlacement from "@/functions/getImagePlacement";
 import useIsMobile from "@/hooks/isMobile";
+import Konva from "konva";
 
 const KonvaLayer = forwardRef(
     (
@@ -31,27 +32,35 @@ const KonvaLayer = forwardRef(
         const productImageRef = useRef(null);
         const uploadedGraphicRef = useRef(null);
         const transformerRef = useRef(null);
-        const boundaryRectRef = useRef(null); // bounding rectangle reference
+        const boundaryRectRef = useRef(null);
+        const tooltipRef = useRef(null);
 
-        const {
-            purchaseData,
-            setPurchaseData,
-            setStageRef,
-            setTransformerRef,
-            // setBoundaryPathRef, etc. if needed
-        } = useStore();
-
+        const { purchaseData, setPurchaseData, setStageRef, setTransformerRef } = useStore();
         const { containerWidth, containerHeight } = purchaseData;
+
+        // NEW: Track when the images have loaded
+        const [productImageLoaded, setProductImageLoaded] = useState(false);
+        const [graphicLoaded, setGraphicLoaded] = useState(false);
+
+        // Compute overall loaded state:
+        const isImagesLoaded = productImageLoaded && (!uploadedGraphicFile || graphicLoaded);
 
         const [zoomLevel, setZoomLevel] = useState(1);
         const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
         const [isDraggingGraphic, setIsDraggingGraphic] = useState(false);
         const [isGraphicDraggable, setIsGraphicDraggable] = useState(purchaseData.configurator !== "template");
-        const [showTransformer, setShowTransformer] = useState(purchaseData.configurator !== "template");
 
+        const [transformerVisible, setTransformerVisible] = useState(false);
         const [isTemplate, setIsTemplate] = useState(purchaseData.configurator !== "template");
 
-        // Simple hook returning boolean if mobile
+        // --- Hover state for the edit area ---
+        const [isEditAreaHovered, setIsEditAreaHovered] = useState(false);
+        const fadeOutTimeoutRef = useRef(null);
+        const hoveredRef = useRef(false);
+        useEffect(() => {
+            hoveredRef.current = isEditAreaHovered;
+        }, [isEditAreaHovered]);
+
         const isMobile = useIsMobile();
 
         useEffect(() => {
@@ -63,32 +72,25 @@ const KonvaLayer = forwardRef(
         // ---------------------------
         useEffect(() => {
             setIsGraphicDraggable(purchaseData.configurator !== "template");
-            setShowTransformer(purchaseData.configurator !== "template");
-
-            // Clear transformer nodes if needed
             if (transformerRef.current && uploadedGraphicRef.current) {
                 transformerRef.current.nodes([]);
                 transformerRef.current.getLayer().batchDraw();
             }
-            // If it’s a “template” mode, reset the stage zoom
             if (purchaseData.configurator === "template") {
                 handleResetZoom();
             }
         }, [purchaseData.configurator]);
 
-        // If Transformer is showing and we have an uploaded graphic
         useEffect(() => {
-            if (uploadedGraphicRef.current && showTransformer) {
+            if (uploadedGraphicRef.current && transformerVisible) {
                 transformerRef.current.nodes([uploadedGraphicRef.current]);
                 transformerRef.current.getLayer().batchDraw();
             }
-        }, [showTransformer]);
+        }, [transformerVisible]);
 
-        // Save references in Zustand
         useEffect(() => {
             setStageRef(stageRef.current);
             setTransformerRef(transformerRef.current);
-
             return () => {
                 setStageRef(null);
                 setTransformerRef(null);
@@ -96,7 +98,7 @@ const KonvaLayer = forwardRef(
         }, [setStageRef, setTransformerRef]);
 
         // ---------------------------
-        // Load product image
+        // Load product image and mark as loaded
         // ---------------------------
         useEffect(() => {
             if (!productImage) return;
@@ -105,10 +107,8 @@ const KonvaLayer = forwardRef(
             img.src = productImage;
             img.onload = () => {
                 if (!productImageRef.current) return;
-
                 const containerAspect = containerWidth / containerHeight;
                 const imageAspect = img.width / img.height;
-
                 let newWidth, newHeight;
                 if (imageAspect > containerAspect) {
                     newWidth = containerWidth;
@@ -117,63 +117,88 @@ const KonvaLayer = forwardRef(
                     newHeight = containerHeight;
                     newWidth = newHeight * imageAspect;
                 }
-
                 const offsetX = (containerWidth - newWidth) / 2;
                 const offsetY = (containerHeight - newHeight) / 2;
-
                 productImageRef.current.width(newWidth);
                 productImageRef.current.height(newHeight);
                 productImageRef.current.x(offsetX);
                 productImageRef.current.y(offsetY);
                 productImageRef.current.image(img);
                 productImageRef.current.getLayer().batchDraw();
+                // Mark product image as loaded:
+                setProductImageLoaded(true);
             };
         }, [productImage, containerWidth, containerHeight]);
 
         // ---------------------------
-        // Load uploaded graphic
+        // Load uploaded graphic and mark as loaded
         // ---------------------------
         useEffect(() => {
             if (!uploadedGraphicFile) return;
-
-            console.log("UPLOADED GRAPHIC:", uploadedGraphicFile, uploadedGraphicURL);
-
             const currentSideData = purchaseData.sides?.[purchaseData.currentSide] || {};
             const isPDFSide = currentSideData.isPDF;
             const pdfPreviewURL = currentSideData.preview;
-
-            // Helper to place the loaded image in the Konva canvas
             function placeAndDraw(loadedImg) {
                 if (!uploadedGraphicRef.current) return;
-
                 const { finalWidth, finalHeight } = getImagePlacement({
                     containerWidth,
                     containerHeight,
                     imageNaturalWidth: loadedImg.width,
                     imageNaturalHeight: loadedImg.height,
                 });
-
                 uploadedGraphicRef.current.width(finalWidth);
                 uploadedGraphicRef.current.height(finalHeight);
+                // Optionally, set the offset to center rotation:
+                // uploadedGraphicRef.current.offsetX(finalWidth / 2);
+                // uploadedGraphicRef.current.offsetY(finalHeight / 2);
                 uploadedGraphicRef.current.offsetX(0);
                 uploadedGraphicRef.current.offsetY(0);
                 uploadedGraphicRef.current.image(loadedImg);
                 uploadedGraphicRef.current.getLayer().batchDraw();
-
-                // Attach the transformer
-                if (transformerRef.current) {
-                    transformerRef.current.nodes([uploadedGraphicRef.current]);
-                    transformerRef.current.getLayer().batchDraw();
-                }
+                setPurchaseData((prev) => ({
+                    ...prev,
+                    sides: {
+                        ...prev.sides,
+                        [prev.currentSide]: {
+                            ...prev.sides[prev.currentSide],
+                            width: finalWidth,
+                            height: finalHeight,
+                        },
+                    },
+                }));
+                // Mark graphic as loaded:
+                setGraphicLoaded(true);
+                setTransformerVisible(true);
+                if (transformerRef.current) transformerRef.current.opacity(1);
+                if (tooltipRef.current) tooltipRef.current.opacity(1);
+                setTimeout(() => {
+                    if (!hoveredRef.current) {
+                        if (transformerRef.current) {
+                            new Konva.Tween({
+                                node: transformerRef.current,
+                                duration: 0.5,
+                                opacity: 0,
+                                onFinish: () => setTransformerVisible(false),
+                            }).play();
+                        } else {
+                            setTransformerVisible(false);
+                        }
+                        if (tooltipRef.current) {
+                            new Konva.Tween({
+                                node: tooltipRef.current,
+                                duration: 0.5,
+                                opacity: 0,
+                            }).play();
+                        }
+                    }
+                }, 3000);
             }
-
             if (isPDFSide && pdfPreviewURL) {
                 const previewImg = new window.Image();
                 previewImg.crossOrigin = "anonymous";
                 previewImg.src = pdfPreviewURL;
                 previewImg.onload = () => placeAndDraw(previewImg);
             } else {
-                // normal image
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const normalImg = new window.Image();
@@ -188,7 +213,6 @@ const KonvaLayer = forwardRef(
         // Export logic
         // ---------------------------
         const handleExport = () => {
-            // Possibly reset zoom so export is always 1:1
             handleResetZoom();
             const dataURL = exportCanvas(stageRef, transformerRef, null, 1);
             console.log("Export dataURL:", dataURL);
@@ -202,7 +226,7 @@ const KonvaLayer = forwardRef(
         }, [onExportReady]);
 
         // ---------------------------
-        // Drag / Scale logic for the graphic
+        // Drag / Scale / Rotation logic for the graphic
         // ---------------------------
         const handleGraphicDragStart = () => {
             setIsDraggingGraphic(true);
@@ -211,66 +235,60 @@ const KonvaLayer = forwardRef(
         const handleGraphicDragEnd = (e) => {
             setIsDraggingGraphic(false);
             if (isGraphicDraggable) {
-                setPosition({ x: e.target.x(), y: e.target.y() });
+                setPosition({ x: e.target.x(), y: e.target.y() }, e.target.rotation());
+            }
+        };
+
+        // Update parent's scale continuously so slider stays in sync
+        const handleGraphicTransform = (e) => {
+            if (isGraphicDraggable) {
+                const currentScale = e.target.scaleX(); // assuming uniform scale
+                setScale(currentScale);
             }
         };
 
         const handleGraphicTransformEnd = (e) => {
             if (isGraphicDraggable) {
                 const newScale = Math.min(e.target.scaleX(), 3.5);
-                console.log("end da sizer");
                 setScale(newScale);
                 e.target.scaleX(newScale);
                 e.target.scaleY(newScale);
+                const newRotation = e.target.rotation();
+                setPosition({ x: e.target.x(), y: e.target.y() }, newRotation);
                 e.target.getLayer().batchDraw();
             }
         };
 
-        // ---------------
+        // ---------------------------
         // BOUNDING LOGIC
-        // ---------------
+        // ---------------------------
         const dragBoundFunc = (pos) => {
             const boundingRectNode = boundaryRectRef.current;
             const shapeNode = uploadedGraphicRef.current;
             if (!boundingRectNode || !shapeNode) return pos;
-
             const boundingRect = boundingRectNode.getClientRect();
             const shapeRect = shapeNode.getClientRect();
-
-            const newLeft = pos.x;
-            const newTop = pos.y;
-            const newRight = pos.x + shapeRect.width;
-            const newBottom = pos.y + shapeRect.height;
-
             let clampedX = pos.x;
             let clampedY = pos.y;
-
-            // Left clamp
-            if (newLeft < boundingRect.x) {
+            if (pos.x < boundingRect.x) {
                 clampedX = boundingRect.x;
             }
-            // Right clamp
-            if (newRight > boundingRect.x + boundingRect.width) {
+            if (pos.x + shapeRect.width > boundingRect.x + boundingRect.width) {
                 clampedX = boundingRect.x + boundingRect.width - shapeRect.width;
             }
-            // Top clamp
-            if (newTop < boundingRect.y) {
+            if (pos.y < boundingRect.y) {
                 clampedY = boundingRect.y;
             }
-            // Bottom clamp
-            if (newBottom > boundingRect.y + boundingRect.height) {
+            if (pos.y + shapeRect.height > boundingRect.y + boundingRect.height) {
                 clampedY = boundingRect.y + boundingRect.height - shapeRect.height;
             }
-
             return { x: clampedX, y: clampedY };
         };
 
         const boundBoxFunc = (oldBox, newBox) => {
             const boundingRectNode = boundaryRectRef.current;
             if (!boundingRectNode || !uploadedGraphicRef.current) return newBox;
-
             const boundingRect = boundingRectNode.getClientRect();
-
             if (
                 newBox.x < boundingRect.x ||
                 newBox.y < boundingRect.y ||
@@ -282,9 +300,9 @@ const KonvaLayer = forwardRef(
             return newBox;
         };
 
-        // ---------------
+        // ---------------------------
         // Reset Zoom
-        // ---------------
+        // ---------------------------
         const handleResetZoom = () => {
             setZoomLevel(1);
             setStagePosition({ x: 0, y: 0 });
@@ -301,12 +319,10 @@ const KonvaLayer = forwardRef(
             }
         }, [resetHandler]);
 
-        // If we switch sides (front/back), reset
         useEffect(() => {
             handleResetZoom();
         }, [purchaseData.currentSide]);
 
-        // Example boundingRect
         const boundingRect = {
             x: containerWidth * 0.22,
             y: containerHeight * 0.15,
@@ -315,7 +331,6 @@ const KonvaLayer = forwardRef(
         };
 
         useEffect(() => {
-            // Save boundingRect in purchaseData or do something with it
             setPurchaseData((prev) => ({
                 ...prev,
                 boundingRect,
@@ -328,11 +343,47 @@ const KonvaLayer = forwardRef(
             }
         }, [purchaseData.configurator]);
 
-        // The key: disable Stage dragging on mobile. So single-finger swipes on mobile do not move stage.
         const stageIsDraggable = !isDraggingGraphic && !isMobile;
 
+        const handleEditAreaMouseEnter = () => {
+            if (fadeOutTimeoutRef.current) {
+                clearTimeout(fadeOutTimeoutRef.current);
+                fadeOutTimeoutRef.current = null;
+            }
+            setIsEditAreaHovered(true);
+            setTransformerVisible(true);
+            if (transformerRef.current) transformerRef.current.opacity(1);
+            if (tooltipRef.current) tooltipRef.current.opacity(1);
+        };
+
+        const handleEditAreaMouseLeave = () => {
+            fadeOutTimeoutRef.current = setTimeout(() => {
+                setIsEditAreaHovered(false);
+                if (transformerRef.current) {
+                    new Konva.Tween({
+                        node: transformerRef.current,
+                        duration: 0.2,
+                        opacity: 0,
+                        onFinish: () => setTransformerVisible(false),
+                    }).play();
+                } else {
+                    setTransformerVisible(false);
+                }
+                if (tooltipRef.current) {
+                    new Konva.Tween({
+                        node: tooltipRef.current,
+                        duration: 0.2,
+                        opacity: 0,
+                    }).play();
+                }
+            }, 100);
+        };
+
         return (
-            <div style={{ touchAction: "none" }}>
+            // Wrap the Stage in a container with a fade-in transition.
+            <div
+                style={{ touchAction: "none", opacity: isImagesLoaded ? 1 : 0, transition: "opacity 0.3s ease-in-out" }}
+            >
                 <Stage
                     ref={stageRef}
                     className="mix-blend-multiply"
@@ -342,27 +393,23 @@ const KonvaLayer = forwardRef(
                     scaleY={zoomLevel}
                     x={stagePosition.x}
                     y={stagePosition.y}
-                    draggable={stageIsDraggable} // <-- Off for mobile, on for desktop if not dragging the graphic
-                    onMouseOver={() => stageRef.current && (stageRef.current.container().style.cursor = "grab")}
-                    onMouseOut={() => stageRef.current && (stageRef.current.container().style.cursor = "default")}
+                    draggable={stageIsDraggable}
+                    onMouseOver={() => {
+                        if (stageRef.current) stageRef.current.container().style.cursor = "grab";
+                    }}
+                    onMouseOut={() => {
+                        if (stageRef.current) stageRef.current.container().style.cursor = "default";
+                    }}
                 >
                     <Layer>
-                        {/* Product Image (background) */}
                         {productImage && <KonvaImage ref={productImageRef} />}
-
-                        {/* bounding box */}
                         <Rect
                             ref={boundaryRectRef}
                             x={boundingRect.x}
                             y={boundingRect.y}
                             width={boundingRect.width}
                             height={boundingRect.height}
-                            // fill="rgba(0,255,0,0.1)"
-                            // stroke="red"
-                            // strokeWidth={2}
                         />
-
-                        {/* Uploaded Graphic */}
                         {purchaseData.configurator !== "template" && (uploadedGraphicFile || uploadedGraphicURL) && (
                             <KonvaImage
                                 ref={uploadedGraphicRef}
@@ -372,25 +419,47 @@ const KonvaLayer = forwardRef(
                                 y={position.y}
                                 scaleX={scale}
                                 scaleY={scale}
+                                rotation={position.rotation || 0}
                                 onDragStart={handleGraphicDragStart}
                                 onDragEnd={handleGraphicDragEnd}
+                                onTransform={handleGraphicTransform}
                                 onTransformEnd={handleGraphicTransformEnd}
                                 dragBoundFunc={dragBoundFunc}
+                                onMouseEnter={handleEditAreaMouseEnter}
+                                onMouseLeave={handleEditAreaMouseLeave}
+                                hitFunc={(context, shape) => {
+                                    const sideTolerance = 30;
+                                    const topTolerance = 60;
+                                    const bottomTolerance = 30;
+                                    context.beginPath();
+                                    context.rect(
+                                        -sideTolerance,
+                                        -topTolerance,
+                                        shape.width() + sideTolerance * 2,
+                                        shape.height() + topTolerance + bottomTolerance
+                                    );
+                                    context.closePath();
+                                    context.fillStrokeShape(shape);
+                                }}
                             />
                         )}
-
-                        {/* Transformer */}
                         {purchaseData.configurator !== "template" &&
                             (uploadedGraphicFile || uploadedGraphicURL) &&
-                            showTransformer && <Transformer ref={transformerRef} boundBoxFunc={boundBoxFunc} />}
+                            transformerVisible && (
+                                <Transformer
+                                    ref={transformerRef}
+                                    boundBoxFunc={boundBoxFunc}
+                                    onMouseEnter={handleEditAreaMouseEnter}
+                                    onMouseLeave={handleEditAreaMouseLeave}
+                                    borderStroke="#FFFFFF"
+                                    anchorStroke="#A42CD6"
+                                    anchorFill="#A42CD6"
+                                />
+                            )}
                     </Layer>
                 </Stage>
-
                 {/* Zoom & Reset UI */}
-                <div
-                    className="top-16 right-10 flex-col"
-                    style={{ position: "absolute", display: "flex", gap: "10px" }}
-                >
+                <div className="top-8 left-0 flex-col" style={{ position: "absolute", display: "flex", gap: "10px" }}>
                     <MobileSliders
                         containerWidth={containerWidth}
                         containerHeight={containerHeight}
@@ -403,12 +472,15 @@ const KonvaLayer = forwardRef(
                             }
                         }}
                     />
-
-                    {/* Desktop-only Zoom Buttons */}
                     {!isMobile && (
                         <>
                             <Button
-                                className="!bg-textColor justify-center text-center !text-2xl"
+                                sx={{
+                                    minWidth: "32px",
+                                    padding: "8px",
+                                    fontSize: "0.875rem",
+                                }}
+                                className="!bg-textColor"
                                 onClick={() => {
                                     const newZoomLevel = Math.min(zoomLevel + 0.1, 3);
                                     setZoomLevel(newZoomLevel);
@@ -418,10 +490,15 @@ const KonvaLayer = forwardRef(
                                 variant="contained"
                                 color="primary"
                             >
-                                <FiZoomIn />
+                                <FiZoomIn size={16} />
                             </Button>
                             <Button
-                                className="!bg-textColor !text-2xl"
+                                sx={{
+                                    minWidth: "32px",
+                                    padding: "8px",
+                                    fontSize: "0.875rem",
+                                }}
+                                className="!bg-textColor"
                                 onClick={() => {
                                     const newZoomLevel = Math.max(zoomLevel - 0.1, 1);
                                     setZoomLevel(newZoomLevel);
@@ -431,12 +508,21 @@ const KonvaLayer = forwardRef(
                                 variant="contained"
                                 color="primary"
                             >
-                                <FiZoomOut />
+                                <FiZoomOut size={16} />
                             </Button>
                         </>
                     )}
-                    <Button onClick={handleResetZoom} className="!bg-primaryColor-600 !text-2xl" variant="contained">
-                        <FiRefreshCw />
+                    <Button
+                        sx={{
+                            minWidth: "32px",
+                            padding: "8px",
+                            fontSize: "0.875rem",
+                        }}
+                        onClick={handleResetZoom}
+                        variant="contained"
+                        className="!bg-primaryColor-600"
+                    >
+                        <FiRefreshCw size={16} />
                     </Button>
                 </div>
             </div>
@@ -445,5 +531,4 @@ const KonvaLayer = forwardRef(
 );
 
 KonvaLayer.displayName = "KonvaLayer";
-
 export default KonvaLayer;

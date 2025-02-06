@@ -121,18 +121,29 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         console.log(purchaseData);
 
         if (isChecked && purchaseData.sides.front.uploadedGraphic) {
-            const centeredX = purchaseData.containerWidth / 2;
-            const centeredY = purchaseData.containerHeight / 2;
+            // Retrieve stored graphic dimensions and current scale from the front side
+            const graphicWidth = purchaseData.sides.front.width || 0;
+            const graphicHeight = purchaseData.sides.front.height || 0;
+            const scale = purchaseData.sides.front.scale || 1;
 
-            // Copy front design to back, with a new entry in purchaseData and centered position
+            // Compute the displayed (scaled) dimensions
+            const displayedWidth = graphicWidth * scale;
+            const displayedHeight = graphicHeight * scale;
+
+            // Compute centered positions so that the graphic's center aligns with the container's center
+            const centeredX = (purchaseData.containerWidth - displayedWidth) / 2;
+            const centeredY = (purchaseData.containerHeight - displayedHeight) / 2;
+
+            // Copy front design to back, resetting rotation and using the centered positions
             setPurchaseData({
                 ...purchaseData,
                 sides: {
                     ...purchaseData.sides, // Keep both front and back
                     back: {
                         ...purchaseData.sides.front, // Copy all front design properties to back
-                        xPosition: centeredX, // Set to centered position
+                        xPosition: centeredX,
                         yPosition: centeredY,
+                        rotation: 0, // Reset rotation for the back side
                     },
                 },
             });

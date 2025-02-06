@@ -435,7 +435,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                 }}
                             >
                                 <KonvaLayer
-                                    key={purchaseData.configurator}
+                                    key={purchaseData.currentSide} // <-- Add this key so it remounts when side changes
                                     onExportReady={(fn) => (exportCanvasRef.current = fn)}
                                     ref={konvaLayerRef}
                                     uploadedGraphicFile={
@@ -449,17 +449,15 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     productImage={selectedImage}
                                     boundaries={
                                         {
-                                            // MIN_X: 50,
-                                            // MAX_X: 450,
-                                            // MIN_Y: 50,
-                                            // MAX_Y: 500,
+                                            /* ... */
                                         }
                                     }
                                     position={{
                                         x: purchaseData.sides[purchaseData.currentSide].xPosition,
                                         y: purchaseData.sides[purchaseData.currentSide].yPosition,
+                                        rotation: purchaseData.sides[purchaseData.currentSide].rotation || 0,
                                     }}
-                                    setPosition={(newPos) =>
+                                    setPosition={(newPos, newRotation) =>
                                         setPurchaseData({
                                             ...purchaseData,
                                             sides: {
@@ -468,12 +466,12 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                                     ...purchaseData.sides[purchaseData.currentSide],
                                                     xPosition: newPos.x,
                                                     yPosition: newPos.y,
+                                                    rotation: newRotation, // Save the new rotation value here
                                                 },
                                             },
                                         })
                                     }
                                     scale={purchaseData.sides[purchaseData.currentSide].scale}
-                                    // setScale={(newScale) => setPurchaseData({ ...purchaseData, scale: newScale })}
                                     setScale={(newScale) =>
                                         setPurchaseData({
                                             ...purchaseData,
