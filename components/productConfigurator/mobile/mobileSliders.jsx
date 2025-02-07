@@ -154,7 +154,7 @@ export default function MobileSliders({ containerWidth, containerHeight, zoomLev
     return (
         <div>
             {/* Floating Buttons */}
-            <div className="fixed top-4 right-4 flex flex-col gap-3 z-50 lg:hidden">
+            <div className="fixed top-32 right-4 flex flex-col gap-3 z-50 lg:hidden">
                 {controls.map((control) => (
                     <button
                         key={control.key}
@@ -183,7 +183,7 @@ export default function MobileSliders({ containerWidth, containerHeight, zoomLev
                 {activeControl && (
                     <motion.div
                         key="slider-panel"
-                        className="fixed -bottom-24 left-0 right-0 bg-white p-4 rounded-t-2xl shadow-2xl z-[999]"
+                        className="fixed -bottom-0 left-0 right-0 bg-white p-4 rounded-t-2xl shadow-2xl z-[999]"
                         initial={{ opacity: 0, y: "100%" }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: "100%" }}

@@ -8,6 +8,15 @@ import MobileSliders from "@/components/productConfigurator/mobile/mobileSliders
 import getImagePlacement from "@/functions/getImagePlacement";
 import { exportCanvas } from "@/functions/exportCanvas";
 
+/**
+ * MobileKonvaLayer
+ *
+ * Changes vs. previous:
+ * - The Transformer is explicitly attached to the uploaded graphic whenever editing + graphic is loaded.
+ * - Stage has listening={isEditing}, so we can scroll over the canvas when editing is off.
+ * - Always visible Transformer border in edit mode (no hover logic).
+ * - Page scrolling is fully available when editing is off (body overflow auto).
+ */
 const MobileKonvaLayer = forwardRef(
     (
         {
@@ -36,25 +45,21 @@ const MobileKonvaLayer = forwardRef(
         const { purchaseData, setPurchaseData, setStageRef, setTransformerRef } = useStore();
         const { containerWidth, containerHeight } = purchaseData;
 
-        // Track loaded states
+        // Track load states
         const [productImageLoaded, setProductImageLoaded] = useState(false);
         const [graphicLoaded, setGraphicLoaded] = useState(false);
 
-        // Overall loaded condition
+        // Combined loaded
         const isImagesLoaded = productImageLoaded && (!uploadedGraphicFile || graphicLoaded);
 
-        // Zoom & stage
+        // Zoom
         const [zoomLevel, setZoomLevel] = useState(1);
         const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
 
-        // Whether user is currently dragging the graphic
-        const [isDraggingGraphic, setIsDraggingGraphic] = useState(false);
-
-        // MOBILE-SPECIFIC STATE:
-        // "isEditing" toggles all editing capabilities (draggable, transformer, etc.)
+        // Mobile edit toggle
         const [isEditing, setIsEditing] = useState(false);
 
-        // Attach stage & transformer refs to store
+        // Set up stage & transformer references
         useEffect(() => {
             setStageRef(stageRef.current);
             setTransformerRef(transformerRef.current);
@@ -64,16 +69,16 @@ const MobileKonvaLayer = forwardRef(
             };
         }, [setStageRef, setTransformerRef]);
 
-        // Disable/enable scrolling of the page when editing
+        // Disable page scrolling in edit mode; enable otherwise
         useEffect(() => {
             if (typeof document !== "undefined") {
                 document.body.style.overflow = isEditing ? "hidden" : "auto";
             }
         }, [isEditing]);
 
-        // ------------------------------------------------
-        // Load Product Image
-        // ------------------------------------------------
+        // -------------------------------------------
+        // Product Image Load
+        // -------------------------------------------
         useEffect(() => {
             if (!productImage) return;
             const img = new window.Image();
@@ -106,9 +111,9 @@ const MobileKonvaLayer = forwardRef(
             };
         }, [productImage, containerWidth, containerHeight]);
 
-        // ------------------------------------------------
-        // Load Uploaded Graphic
-        // ------------------------------------------------
+        // -------------------------------------------
+        // Uploaded Graphic Load
+        // -------------------------------------------
         useEffect(() => {
             if (!uploadedGraphicFile) return;
 
@@ -127,7 +132,6 @@ const MobileKonvaLayer = forwardRef(
 
                 uploadedGraphicRef.current.width(finalWidth);
                 uploadedGraphicRef.current.height(finalHeight);
-                // Optionally set offset
                 uploadedGraphicRef.current.offsetX(0);
                 uploadedGraphicRef.current.offsetY(0);
                 uploadedGraphicRef.current.image(loadedImg);
@@ -144,17 +148,17 @@ const MobileKonvaLayer = forwardRef(
                         },
                     },
                 }));
+
                 setGraphicLoaded(true);
             }
 
-            // If PDF side with preview
+            // PDF preview or normal image
             if (isPDFSide && pdfPreviewURL) {
                 const previewImg = new window.Image();
                 previewImg.crossOrigin = "anonymous";
                 previewImg.src = pdfPreviewURL;
                 previewImg.onload = () => placeAndDraw(previewImg);
             } else {
-                // Normal image
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const normalImg = new window.Image();
@@ -173,9 +177,25 @@ const MobileKonvaLayer = forwardRef(
             purchaseData.sides,
         ]);
 
-        // ------------------------------------------------
-        // Handle Export
-        // ------------------------------------------------
+        // -------------------------------------------
+        // Attach to Transformer whenever editing + loaded
+        // -------------------------------------------
+        useEffect(() => {
+            if (!transformerRef.current) return;
+
+            // If editing and the graphic is loaded, attach it to the transformer
+            if (isEditing && graphicLoaded && uploadedGraphicRef.current) {
+                transformerRef.current.nodes([uploadedGraphicRef.current]);
+                transformerRef.current.getLayer().batchDraw();
+            } else {
+                // Otherwise, detach
+                transformerRef.current.nodes([]);
+            }
+        }, [isEditing, graphicLoaded]);
+
+        // -------------------------------------------
+        // Export
+        // -------------------------------------------
         const handleExport = () => {
             handleResetZoom();
             const dataURL = exportCanvas(stageRef, transformerRef, null, 1);
@@ -189,15 +209,10 @@ const MobileKonvaLayer = forwardRef(
             }
         }, [onExportReady]);
 
-        // ------------------------------------------------
-        // Drag & Transform
-        // ------------------------------------------------
-        const handleGraphicDragStart = () => {
-            setIsDraggingGraphic(true);
-        };
-
+        // -------------------------------------------
+        // Transform / Drag Handlers
+        // -------------------------------------------
         const handleGraphicDragEnd = (e) => {
-            setIsDraggingGraphic(false);
             if (isEditing) {
                 setPosition({ x: e.target.x(), y: e.target.y() }, e.target.rotation());
             }
@@ -205,7 +220,8 @@ const MobileKonvaLayer = forwardRef(
 
         const handleGraphicTransform = (e) => {
             if (isEditing) {
-                const currentScale = e.target.scaleX(); // uniform scale
+                // uniform scale
+                const currentScale = e.target.scaleX();
                 setScale(currentScale);
             }
         };
@@ -222,10 +238,13 @@ const MobileKonvaLayer = forwardRef(
             }
         };
 
-        // ------------------------------------------------
-        // Bounding
-        // ------------------------------------------------
+        // -------------------------------------------
+        // Bounding Logic
+        // -------------------------------------------
         const dragBoundFunc = (pos) => {
+            if (!isEditing) {
+                return pos; // no bounding if not editing
+            }
             const boundingRectNode = boundaryRectRef.current;
             const shapeNode = uploadedGraphicRef.current;
             if (!boundingRectNode || !shapeNode) return pos;
@@ -251,8 +270,12 @@ const MobileKonvaLayer = forwardRef(
         };
 
         const boundBoxFunc = (oldBox, newBox) => {
+            if (!isEditing) {
+                return newBox; // no bounding if not editing
+            }
             const boundingRectNode = boundaryRectRef.current;
             if (!boundingRectNode || !uploadedGraphicRef.current) return newBox;
+
             const boundingRect = boundingRectNode.getClientRect();
 
             if (
@@ -266,9 +289,9 @@ const MobileKonvaLayer = forwardRef(
             return newBox;
         };
 
-        // ------------------------------------------------
+        // -------------------------------------------
         // Reset Zoom
-        // ------------------------------------------------
+        // -------------------------------------------
         const handleResetZoom = () => {
             setZoomLevel(1);
             setStagePosition({ x: 0, y: 0 });
@@ -279,19 +302,19 @@ const MobileKonvaLayer = forwardRef(
             }
         };
 
-        // Let parent pass a reset function (desktop does the same)
+        // Parent reset
         useEffect(() => {
             if (resetHandler) {
                 resetHandler(() => handleResetZoom());
             }
         }, [resetHandler]);
 
-        // On side change, reset zoom
+        // Reset zoom on side switch
         useEffect(() => {
             handleResetZoom();
         }, [purchaseData.currentSide]);
 
-        // Store boundingRect in purchaseData for reference
+        // boundingRect
         const boundingRect = {
             x: containerWidth * 0.22,
             y: containerHeight * 0.15,
@@ -312,26 +335,24 @@ const MobileKonvaLayer = forwardRef(
             }
         }, [purchaseData.configurator]);
 
-        // Stage is NOT draggable on mobile; we want normal page scroll
-        // (EXCEPT we disable scrolling at the body level if editing = true)
+        // Stage is not draggable on mobile
+        // listening={isEditing} => ignore all pointer events if not editing
         const stageIsDraggable = false;
 
-        // ------------------------------------------------
+        // -------------------------------------------
         // Mobile Edit / Save
-        // ------------------------------------------------
+        // -------------------------------------------
         const handleEditToggle = () => {
             setIsEditing(true);
         };
-
         const handleSave = () => {
-            // The final position/scale is already stored in purchaseData
-            // whenever user drags or transforms. So we just exit editing mode.
             setIsEditing(false);
         };
 
-        // Use a container style that toggles touchAction
-        // "auto" => normal scrolling, "none" => no scroll
+        // Container style: let the user scroll if not editing
         const containerStyle = {
+            // If isEditing => "none" (prevent page pinch/scroll).
+            // Otherwise => "auto" so they can scroll *over* the canvas.
             touchAction: isEditing ? "none" : "auto",
             opacity: isImagesLoaded ? 1 : 0,
             transition: "opacity 0.3s ease-in-out",
@@ -339,7 +360,6 @@ const MobileKonvaLayer = forwardRef(
 
         return (
             <div style={containerStyle}>
-                {/* Konva Stage */}
                 <Stage
                     ref={stageRef}
                     className="mix-blend-multiply"
@@ -350,17 +370,13 @@ const MobileKonvaLayer = forwardRef(
                     x={stagePosition.x}
                     y={stagePosition.y}
                     draggable={stageIsDraggable}
-                    onMouseOver={() => {
-                        if (stageRef.current) {
-                            stageRef.current.container().style.cursor = isEditing ? "grab" : "default";
-                        }
-                    }}
-                    onMouseOut={() => {
-                        if (stageRef.current) stageRef.current.container().style.cursor = "default";
-                    }}
+                    listening={isEditing} // only catch events in edit mode
                 >
                     <Layer>
+                        {/* Product Image */}
                         {productImage && <KonvaImage ref={productImageRef} />}
+
+                        {/* Boundary Rect */}
                         <Rect
                             ref={boundaryRectRef}
                             x={boundingRect.x}
@@ -368,7 +384,8 @@ const MobileKonvaLayer = forwardRef(
                             width={boundingRect.width}
                             height={boundingRect.height}
                         />
-                        {/* The uploaded graphic, only draggable if isEditing is true */}
+
+                        {/* Uploaded Graphic */}
                         {(uploadedGraphicFile || uploadedGraphicURL) && (
                             <KonvaImage
                                 ref={uploadedGraphicRef}
@@ -379,7 +396,6 @@ const MobileKonvaLayer = forwardRef(
                                 scaleX={scale}
                                 scaleY={scale}
                                 rotation={position.rotation || 0}
-                                onDragStart={handleGraphicDragStart}
                                 onDragEnd={handleGraphicDragEnd}
                                 onTransform={handleGraphicTransform}
                                 onTransformEnd={handleGraphicTransformEnd}
@@ -387,7 +403,7 @@ const MobileKonvaLayer = forwardRef(
                             />
                         )}
 
-                        {/* Transformer: always visible during edit mode if a graphic is loaded */}
+                        {/* Transformer: explicitly shown in edit mode */}
                         {isEditing && (uploadedGraphicFile || uploadedGraphicURL) && (
                             <Transformer
                                 ref={transformerRef}
@@ -400,16 +416,12 @@ const MobileKonvaLayer = forwardRef(
                     </Layer>
                 </Stage>
 
-                {/* 
-          EDIT / SAVE BUTTONS 
-          We'll fade them in/out using opacity + pointerEvents,
-          so we can animate instead of conditionally render.
-        */}
+                {/* EDIT / SAVE Buttons (fade in/out) */}
                 <div style={{ marginTop: 10 }}>
                     <Button
                         variant="contained"
                         color="primary"
-                        // Fade out "EDIT" when isEditing is true
+                        // fade out "EDIT" if editing
                         style={{
                             transition: "opacity 0.3s ease-in-out",
                             opacity: isEditing ? 0 : 1,
@@ -422,7 +434,7 @@ const MobileKonvaLayer = forwardRef(
                     <Button
                         variant="contained"
                         color="success"
-                        // Fade in "SAVE" when isEditing is true
+                        // fade in "SAVE" if editing
                         style={{
                             marginLeft: 10,
                             transition: "opacity 0.3s ease-in-out",
@@ -435,11 +447,7 @@ const MobileKonvaLayer = forwardRef(
                     </Button>
                 </div>
 
-                {/* 
-          ZOOM & RESET UI 
-          Also fade in/out. 
-          Only interactive in edit mode.
-        */}
+                {/* Zoom & Reset (fade in/out in edit mode) */}
                 <div
                     style={{
                         position: "absolute",
