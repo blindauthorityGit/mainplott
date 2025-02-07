@@ -2,8 +2,9 @@ import React, { useRef, useEffect, useState, forwardRef } from "react";
 import { Stage, Layer, Image as KonvaImage, Rect, Transformer } from "react-konva";
 import Konva from "konva";
 import useStore from "@/store/store";
-import { Button } from "@mui/material";
+import { Button, IconButton } from "@mui/material";
 import { FiRefreshCw } from "react-icons/fi";
+import { FaArrowsRotate } from "react-icons/fa6"; // <-- React icon
 import MobileSliders from "@/components/productConfigurator/mobile/mobileSliders";
 import getImagePlacement from "@/functions/getImagePlacement";
 import { exportCanvas } from "@/functions/exportCanvas";
@@ -11,11 +12,11 @@ import { exportCanvas } from "@/functions/exportCanvas";
 /**
  * MobileKonvaLayer
  *
- * Changes vs. previous:
- * - The Transformer is explicitly attached to the uploaded graphic whenever editing + graphic is loaded.
+ * - Explicitly attaches Transformer to uploaded graphic in edit mode.
  * - Stage has listening={isEditing}, so we can scroll over the canvas when editing is off.
  * - Always visible Transformer border in edit mode (no hover logic).
  * - Page scrolling is fully available when editing is off (body overflow auto).
+ * - NEW: A round button with a React icon for toggling product sides when not editing.
  */
 const MobileKonvaLayer = forwardRef(
     (
@@ -349,6 +350,20 @@ const MobileKonvaLayer = forwardRef(
             setIsEditing(false);
         };
 
+        // -------------------------------------------
+        // Change Side (round button with a React icon)
+        // -------------------------------------------
+        const handleSideChange = () => {
+            // Suppose we want to toggle between front/back
+            // If you want a direct approach with newValue=0 or 1, you can do so:
+            const nextValue = purchaseData.currentSide === "front" ? 1 : 0;
+            // Then set currentSide based on nextValue
+            setPurchaseData((prevState) => ({
+                ...prevState,
+                currentSide: nextValue === 0 ? "front" : "back",
+            }));
+        };
+
         // Container style: let the user scroll if not editing
         const containerStyle = {
             // If isEditing => "none" (prevent page pinch/scroll).
@@ -356,6 +371,7 @@ const MobileKonvaLayer = forwardRef(
             touchAction: isEditing ? "none" : "auto",
             opacity: isImagesLoaded ? 1 : 0,
             transition: "opacity 0.3s ease-in-out",
+            position: "relative",
         };
 
         return (
@@ -488,6 +504,31 @@ const MobileKonvaLayer = forwardRef(
                         <FiRefreshCw size={16} />
                     </Button>
                 </div>
+
+                {/* 
+          Side-change button:
+          - Only visible if not editing
+          - Round shape with React icon 
+        */}
+                <IconButton
+                    onClick={handleSideChange}
+                    sx={{
+                        position: "absolute",
+                        top: 0,
+                        right: 20,
+                        borderRadius: "50%",
+                        width: 56,
+                        height: 56,
+                        backgroundColor: "primary.main",
+                        color: "#fff",
+                        transition: "opacity 0.3s ease-in-out",
+                        opacity: isEditing ? 0 : 1,
+                        pointerEvents: isEditing ? "none" : "auto",
+                        boxShadow: "0px 2px 5px rgba(0,0,0,0.3)",
+                    }}
+                >
+                    <FaArrowsRotate size={24} />
+                </IconButton>
             </div>
         );
     }
