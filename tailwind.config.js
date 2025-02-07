@@ -1,6 +1,5 @@
-// /** @type {import('tailwindcss').Config} */
+/** @type {import('tailwindcss').Config} */
 const defaultTheme = require("tailwindcss/defaultTheme");
-
 const { fontFamily } = require("tailwindcss/defaultTheme");
 
 module.exports = {
@@ -8,10 +7,23 @@ module.exports = {
         "./pages/**/*.{js,ts,jsx,tsx,mdx}",
         "./components/**/*.{js,ts,jsx,tsx,mdx}",
         "./app/**/*.{js,ts,jsx,tsx,mdx}",
-        "./sections/**/*.{js,ts,jsx,tsx}", // Add sections folder if you’re using one
-        "./layout/**/*.{js,ts,jsx,tsx}", // Add sections folder if you’re using one
+        "./sections/**/*.{js,ts,jsx,tsx}",
+        "./layout/**/*.{js,ts,jsx,tsx}",
     ],
     theme: {
+        // Customize the container plugin:
+        container: {
+            center: true, // Centers the container by default.
+            padding: "1rem", // Optional: Adds some padding on smaller screens.
+            screens: {
+                // You can set custom container widths for each breakpoint.
+                sm: "100%", // For small screens, the container spans the full width.
+                md: "100%",
+                lg: "1024px", // Example for large screens.
+                xl: "1280px", // Example for extra-large screens.
+                "2xl": "1400px", // Custom max-width for ultra-wide screens.
+            },
+        },
         extend: {
             fontFamily: {
                 ...fontFamily,
@@ -33,28 +45,13 @@ module.exports = {
                     900: "#5b4049",
                     950: "#312026",
                 },
-
-                accentColor: {
-                    DEFAULT: "#F3EEC3",
-                },
-                textColor: {
-                    DEFAULT: "#393836",
-                },
-                successColor: {
-                    DEFAULT: "#297373",
-                },
-                errorColor: {
-                    DEFAULT: "#9E2A2B",
-                },
-                infoColor: {
-                    DEFAULT: "#B0D0D3",
-                },
-                warningColor: {
-                    DEFAULT: "#F18F01",
-                },
-                blackColor: {
-                    DEFAULT: "#090C08",
-                },
+                accentColor: { DEFAULT: "#F3EEC3" },
+                textColor: { DEFAULT: "#393836" },
+                successColor: { DEFAULT: "#297373" },
+                errorColor: { DEFAULT: "#9E2A2B" },
+                infoColor: { DEFAULT: "#B0D0D3" },
+                warningColor: { DEFAULT: "#F18F01" },
+                blackColor: { DEFAULT: "#090C08" },
                 background: "#F9F9F9",
                 foreground: "var(--foreground)",
             },

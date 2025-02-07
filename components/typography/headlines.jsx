@@ -5,7 +5,7 @@ const H1 = React.forwardRef(({ children, klasse, style }, ref) => {
         <h1
             ref={ref}
             style={style}
-            className={`text-[clamp(32px,calc(64px+0.0957*(100vw-320px)),56px)] uppercase  !leading-[0.95] 3xl:tracking-tight text-balance md:text-5xl lg:text-5xl xl:text-6xl 2xl:text-[6.75rem] 4xl:text-[8.5rem] mb-4 lg:mb-6  font-headline text-textColor ${klasse}`}
+            className={`text-[clamp(32px,calc(64px+0.0957*(100vw-320px)),56px)] uppercase  !leading-[0.95] 3xl:tracking-tight text-balance md:text-5xl lg:text-5xl xl:text-6xl 2xl:text-[5.75rem] 4xl:text-[7.5rem] mb-4 lg:mb-6  font-headline text-textColor ${klasse}`}
         >
             {children}
         </h1>
