@@ -152,9 +152,9 @@ export default function MobileSliders({ containerWidth, containerHeight, zoomLev
         activeSlider && activeSlider !== "reset" ? controls.find((c) => c.key === activeSlider) : null;
 
     return (
-        <div>
+        <>
             {/* Floating Buttons */}
-            <div className="fixed top-32 right-4 flex flex-col gap-3 z-50 lg:hidden">
+            <div className="absolute top-0 right-4 flex flex-col gap-3 z-50 lg:hidden">
                 {controls.map((control) => (
                     <button
                         key={control.key}
@@ -210,6 +210,6 @@ export default function MobileSliders({ containerWidth, containerHeight, zoomLev
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </>
     );
 }

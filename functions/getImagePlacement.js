@@ -1,4 +1,5 @@
 // utils/imagePositioning.js
+
 export default function getImagePlacement({
     containerWidth,
     containerHeight,
@@ -7,6 +8,7 @@ export default function getImagePlacement({
     desiredWidth = 120,
     desiredHeight = 120,
     centerImage = true,
+    isMobile,
 }) {
     // Calculate the final displayed width and height
     // If you want to keep a fixed size, just use desiredWidth and desiredHeight.

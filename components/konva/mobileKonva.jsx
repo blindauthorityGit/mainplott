@@ -3,11 +3,12 @@ import { Stage, Layer, Image as KonvaImage, Rect, Transformer } from "react-konv
 import Konva from "konva";
 import useStore from "@/store/store";
 import { Button, IconButton } from "@mui/material";
-import { FiRefreshCw } from "react-icons/fi";
+import { FiRefreshCw, FiEdit, FiSave } from "react-icons/fi";
 import { FaArrowsRotate } from "react-icons/fa6"; // <-- React icon
 import MobileSliders from "@/components/productConfigurator/mobile/mobileSliders";
 import getImagePlacement from "@/functions/getImagePlacement";
 import { exportCanvas } from "@/functions/exportCanvas";
+import useIsMobile from "@/hooks/isMobile";
 
 /**
  * MobileKonvaLayer
@@ -59,6 +60,8 @@ const MobileKonvaLayer = forwardRef(
 
         // Mobile edit toggle
         const [isEditing, setIsEditing] = useState(false);
+
+        const isMobile = useIsMobile();
 
         // Set up stage & transformer references
         useEffect(() => {
@@ -124,17 +127,21 @@ const MobileKonvaLayer = forwardRef(
 
             function placeAndDraw(loadedImg) {
                 if (!uploadedGraphicRef.current) return;
-                const { finalWidth, finalHeight } = getImagePlacement({
+                const { x, y, finalWidth, finalHeight } = getImagePlacement({
                     containerWidth,
                     containerHeight,
                     imageNaturalWidth: loadedImg.width,
                     imageNaturalHeight: loadedImg.height,
+                    isMobile,
                 });
 
-                uploadedGraphicRef.current.width(finalWidth);
-                uploadedGraphicRef.current.height(finalHeight);
+                console.log(x, y);
+
+                uploadedGraphicRef.current.width(finalWidth / 2);
+                uploadedGraphicRef.current.height(finalHeight / 2);
                 uploadedGraphicRef.current.offsetX(0);
                 uploadedGraphicRef.current.offsetY(0);
+
                 uploadedGraphicRef.current.image(loadedImg);
                 uploadedGraphicRef.current.getLayer().batchDraw();
 
@@ -165,6 +172,7 @@ const MobileKonvaLayer = forwardRef(
                     const normalImg = new window.Image();
                     normalImg.src = e.target.result;
                     normalImg.onload = () => placeAndDraw(normalImg);
+                    console.log(purchaseData);
                 };
                 reader.readAsDataURL(uploadedGraphicFile);
             }
@@ -433,19 +441,22 @@ const MobileKonvaLayer = forwardRef(
                 </Stage>
 
                 {/* EDIT / SAVE Buttons (fade in/out) */}
-                <div style={{ marginTop: 10 }}>
+                <div className="text-center w-full flex justify-center" style={{ marginTop: 10 }}>
                     <Button
                         variant="contained"
                         color="primary"
                         // fade out "EDIT" if editing
                         style={{
                             transition: "opacity 0.3s ease-in-out",
-                            opacity: isEditing ? 0 : 1,
+                            display: isEditing ? "none" : "flex",
                             pointerEvents: isEditing ? "none" : "auto",
+                            background: "#bb969d ",
+                            width: "100%",
                         }}
                         onClick={handleEditToggle}
                     >
-                        EDIT
+                        <FiEdit></FiEdit>
+                        <span className="pl-3">BEARBEITEN</span>
                     </Button>
                     <Button
                         variant="contained"
@@ -454,20 +465,24 @@ const MobileKonvaLayer = forwardRef(
                         style={{
                             marginLeft: 10,
                             transition: "opacity 0.3s ease-in-out",
-                            opacity: isEditing ? 1 : 0,
+                            display: isEditing ? "flex" : "none",
                             pointerEvents: isEditing ? "auto" : "none",
+                            background: "#297373",
+                            width: "100%",
                         }}
                         onClick={handleSave}
                     >
-                        SAVE
+                        <FiSave></FiSave>
+                        <span className="pl-3">ÄNDERUNG SPEICHERN</span>
                     </Button>
                 </div>
 
                 {/* Zoom & Reset (fade in/out in edit mode) */}
                 <div
+                    className="w-full"
                     style={{
                         position: "absolute",
-                        top: 8,
+                        top: 0,
                         left: 0,
                         display: "flex",
                         flexDirection: "column",
@@ -491,18 +506,6 @@ const MobileKonvaLayer = forwardRef(
                             }
                         }}
                     />
-                    <Button
-                        sx={{
-                            minWidth: "32px",
-                            padding: "8px",
-                            fontSize: "0.875rem",
-                        }}
-                        onClick={handleResetZoom}
-                        variant="contained"
-                        className="!bg-primaryColor-600"
-                    >
-                        <FiRefreshCw size={16} />
-                    </Button>
                 </div>
 
                 {/* 
@@ -515,11 +518,11 @@ const MobileKonvaLayer = forwardRef(
                     sx={{
                         position: "absolute",
                         top: 0,
-                        right: 20,
+                        right: 0,
                         borderRadius: "50%",
                         width: 56,
                         height: 56,
-                        backgroundColor: "primary.main",
+                        backgroundColor: "#393836",
                         color: "#fff",
                         transition: "opacity 0.3s ease-in-out",
                         opacity: isEditing ? 0 : 1,

@@ -357,7 +357,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 indicatorColor="primary"
                 aria-label="Product side tabs"
                 centered={isMobile}
-                className="mb-8 font-body text-xl"
+                className="mb-8 font-body text-xl !hidden lg:!flex"
                 style={{ color: "#4f46e5", textAlign: "center" }} // Inline style to override default MUI color
                 sx={{
                     "& .MuiTabs-indicator": {
