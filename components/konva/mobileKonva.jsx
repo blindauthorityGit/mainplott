@@ -44,6 +44,8 @@ const MobileKonvaLayer = forwardRef(
         const transformerRef = useRef(null);
         const boundaryRectRef = useRef(null);
 
+        const [copyFrontToBack, setCopyFrontToBack] = useState(false);
+
         const { purchaseData, setPurchaseData, setStageRef, setTransformerRef } = useStore();
         const { containerWidth, containerHeight } = purchaseData;
 
@@ -62,6 +64,9 @@ const MobileKonvaLayer = forwardRef(
         const [isEditing, setIsEditing] = useState(false);
 
         const isMobile = useIsMobile();
+        // Get the current side data from the store.
+        const currentSide = purchaseData.currentSide;
+        const currentSideData = purchaseData.sides[currentSide] || {};
 
         // Set up stage & transformer references
         useEffect(() => {
@@ -217,6 +222,188 @@ const MobileKonvaLayer = forwardRef(
                 onExportReady(handleExport);
             }
         }, [onExportReady]);
+
+        const handleGraphicUpload = async (event) => {
+            console.log("UPLOADED");
+            const newFile = event.target.files[0];
+
+            const image = new Image();
+            image.src = URL.createObjectURL(newFile);
+            console.log(purchaseData.containerWidth, purchaseData.containerHeight);
+            image.onload = () => {
+                const imageWidth = image.width;
+                const imageHeight = image.height;
+                console.log(purchaseData.containerWidth, purchaseData.containerHeight, imageWidth, imageHeight);
+                const { x, y } = getImagePlacement({
+                    containerWidth: purchaseData.containerWidth,
+                    containerHeight: purchaseData.containerHeight,
+                    imageNaturalWidth: image.width,
+                    imageNaturalHeight: image.height,
+                });
+                console.log("MEINE FUNCTION", x, y, currentSide);
+                // Calculate centered position
+                const centeredX = (purchaseData.containerWidth - imageWidth) / 2;
+                const centeredY = (purchaseData.containerHeight - imageHeight) / 2;
+
+                console.log("SPOSITIONE", centeredX, centeredY);
+
+                setPurchaseData({
+                    ...purchaseData,
+                    sides: {
+                        ...purchaseData.sides,
+                        [currentSide]: {
+                            ...purchaseData.sides[currentSide],
+                            xPosition: x,
+                            yPosition: y,
+                        },
+                    },
+                });
+            };
+
+            if (newFile) {
+                await handleFileUpload({
+                    newFile,
+                    currentSide,
+                    purchaseData,
+                    setUploadedFile,
+                    setPurchaseData,
+                    setModalOpen,
+                    setShowSpinner,
+                    setModalContent,
+                    setUploading,
+                    setUploadError,
+                    setColorSpace,
+                    setDpi,
+                    steps,
+                    currentStep,
+                    setCurrentStep,
+                });
+            }
+        };
+
+        const handleCopyFrontToBack = (event) => {
+            // const isChecked = event.target.checked;
+            setCopyFrontToBack(true);
+            console.log(purchaseData);
+
+            if (purchaseData.sides.front.uploadedGraphic) {
+                console.log(purchaseData);
+
+                // Retrieve stored graphic dimensions and current scale from the front side
+                const graphicWidth = purchaseData.sides.front.width || 0;
+                const graphicHeight = purchaseData.sides.front.height || 0;
+                const scale = purchaseData.sides.front.scale || 1;
+
+                // Compute the displayed (scaled) dimensions
+                const displayedWidth = graphicWidth * scale;
+                const displayedHeight = graphicHeight * scale;
+
+                // Compute centered positions so that the graphic's center aligns with the container's center
+                const centeredX = (purchaseData.containerWidth - displayedWidth) / 2;
+                const centeredY = (purchaseData.containerHeight - displayedHeight) / 2;
+
+                // Copy front design to back, resetting rotation and using the centered positions
+                setPurchaseData({
+                    ...purchaseData,
+                    sides: {
+                        ...purchaseData.sides, // Keep both front and back
+                        back: {
+                            ...purchaseData.sides.front, // Cop y allfront design properties to back
+                            xPosition: centeredX,
+                            yPosition: centeredY,
+                            rotation: 0, // Reset rotation for the back side
+                        },
+                    },
+                });
+            }
+        };
+
+        const renderButtonContainer = () => {
+            if (!currentSideData.uploadedGraphicFile) {
+                return (
+                    <>
+                        <Button
+                            variant="contained"
+                            component="label"
+                            sx={{
+                                mt: 1.5, // Tailwind equivalent for mt-6
+                                px: 3, // Tailwind equivalent for px-6
+                                py: 1, // Tailwind equivalent for py-2
+                                backgroundColor: "#ba979d",
+                                color: "white",
+                                fontFamily: "Montserrat",
+                                borderRadius: "8px",
+                                "&:hover": {
+                                    backgroundColor: "#F3EEC3", // you could use your accent color light variant
+                                },
+                                boxShadow: "none",
+                                width: "100%",
+                            }}
+                        >
+                            Datei hochladen
+                            <input type="file" hidden onChange={handleGraphicUpload} />
+                        </Button>
+                        {currentSide === "back" && (
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={handleCopyFrontToBack}
+                                sx={{
+                                    mt: 1.5,
+                                    px: 3,
+                                    py: 1,
+                                    backgroundColor: "#ba979d",
+                                    color: "white",
+                                    fontFamily: "Montserrat",
+                                    borderRadius: "8px",
+                                    "&:hover": {
+                                        backgroundColor: "#F3EEC3",
+                                    },
+                                    boxShadow: "none",
+                                    width: "100%",
+                                }}
+                            >
+                                COPY FRONT DESIGN
+                            </Button>
+                        )}
+                    </>
+                );
+            } else {
+                // Graphic exists: show Edit button if not editing, Save button if editing.
+                return (
+                    <>
+                        {!isEditing && (
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={handleEditToggle}
+                                startIcon={<FiEdit size={20} />}
+                                sx={{
+                                    background: "#bb969d",
+                                    width: "100%",
+                                }}
+                            >
+                                BEARBEITEN
+                            </Button>
+                        )}
+                        {isEditing && (
+                            <Button
+                                variant="contained"
+                                color="success"
+                                onClick={handleSave}
+                                startIcon={<FiSave size={20} />}
+                                sx={{
+                                    background: "#297373",
+                                    width: "100%",
+                                }}
+                            >
+                                SAVE
+                            </Button>
+                        )}
+                    </>
+                );
+            }
+        };
 
         // -------------------------------------------
         // Transform / Drag Handlers
@@ -441,41 +628,8 @@ const MobileKonvaLayer = forwardRef(
                 </Stage>
 
                 {/* EDIT / SAVE Buttons (fade in/out) */}
-                <div className="text-center w-full flex justify-center" style={{ marginTop: 10 }}>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        // fade out "EDIT" if editing
-                        style={{
-                            transition: "opacity 0.3s ease-in-out",
-                            display: isEditing ? "none" : "flex",
-                            pointerEvents: isEditing ? "none" : "auto",
-                            background: "#bb969d ",
-                            width: "100%",
-                        }}
-                        onClick={handleEditToggle}
-                    >
-                        <FiEdit></FiEdit>
-                        <span className="pl-3">BEARBEITEN</span>
-                    </Button>
-                    <Button
-                        variant="contained"
-                        color="success"
-                        // fade in "SAVE" if editing
-                        style={{
-                            marginLeft: 10,
-                            transition: "opacity 0.3s ease-in-out",
-                            display: isEditing ? "flex" : "none",
-                            pointerEvents: isEditing ? "auto" : "none",
-                            background: "#297373",
-                            width: "100%",
-                        }}
-                        onClick={handleSave}
-                    >
-                        <FiSave></FiSave>
-                        <span className="pl-3">ÄNDERUNG SPEICHERN</span>
-                    </Button>
-                </div>
+                {/* Button Container: Centered vertically and horizontally */}
+                <div className="mt-4">{renderButtonContainer()}</div>
 
                 {/* Zoom & Reset (fade in/out in edit mode) */}
                 <div
