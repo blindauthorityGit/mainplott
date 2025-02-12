@@ -311,6 +311,10 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         }
     }, [currentSide, positions, setPurchaseData, purchaseData.sides]);
 
+    useEffect(() => {
+        setActiveTab(purchaseData.currentSide === "front" ? 0 : 1);
+    }, [purchaseData.currentSide]);
+
     // useEffect(() => {
     //     // console.log(
     //     //     positions[currentSide].default,

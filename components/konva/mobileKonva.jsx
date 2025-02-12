@@ -4,6 +4,7 @@ import Konva from "konva";
 import useStore from "@/store/store";
 import { Button, IconButton } from "@mui/material";
 import { FiRefreshCw, FiEdit, FiSave } from "react-icons/fi";
+import { BiRefresh } from "react-icons/bi";
 import { FaArrowsRotate } from "react-icons/fa6"; // <-- React icon
 import MobileSliders from "@/components/productConfigurator/mobile/mobileSliders";
 import getImagePlacement from "@/functions/getImagePlacement";
@@ -286,7 +287,7 @@ const MobileKonvaLayer = forwardRef(
             setCopyFrontToBack(true);
             console.log(purchaseData);
 
-            if (purchaseData.sides.front.uploadedGraphic) {
+            if (purchaseData.sides.front.uploadedGraphicFile || purchaseData.sides.front.uploadedGraphic) {
                 console.log(purchaseData);
 
                 // Retrieve stored graphic dimensions and current scale from the front side
@@ -322,7 +323,7 @@ const MobileKonvaLayer = forwardRef(
             if (!currentSideData.uploadedGraphicFile) {
                 return (
                     <>
-                        <Button
+                        {/* <Button
                             variant="contained"
                             component="label"
                             sx={{
@@ -352,20 +353,20 @@ const MobileKonvaLayer = forwardRef(
                                     mt: 1.5,
                                     px: 3,
                                     py: 1,
-                                    backgroundColor: "#ba979d",
+                                    backgroundColor: "#393836",
                                     color: "white",
                                     fontFamily: "Montserrat",
                                     borderRadius: "8px",
                                     "&:hover": {
-                                        backgroundColor: "#F3EEC3",
+                                        backgroundColor: "#393836",
                                     },
                                     boxShadow: "none",
                                     width: "100%",
                                 }}
                             >
-                                COPY FRONT DESIGN
+                                Front Design kopieren
                             </Button>
-                        )}
+                        )} */}
                     </>
                 );
             } else {
@@ -552,6 +553,7 @@ const MobileKonvaLayer = forwardRef(
             // Suppose we want to toggle between front/back
             // If you want a direct approach with newValue=0 or 1, you can do so:
             const nextValue = purchaseData.currentSide === "front" ? 1 : 0;
+            console.log(purchaseData.currentSide);
             // Then set currentSide based on nextValue
             setPurchaseData((prevState) => ({
                 ...prevState,
@@ -667,7 +669,7 @@ const MobileKonvaLayer = forwardRef(
           - Only visible if not editing
           - Round shape with React icon 
         */}
-                <IconButton
+                {/* <IconButton
                     onClick={handleSideChange}
                     sx={{
                         position: "absolute",
@@ -685,7 +687,14 @@ const MobileKonvaLayer = forwardRef(
                     }}
                 >
                     <FaArrowsRotate size={24} />
-                </IconButton>
+                </IconButton> */}
+                <button
+                    onClick={handleSideChange}
+                    className="absolute -top-1 right-4 bg-white p-2 text-textColor rounded-full shadow-md"
+                    style={{ opacity: isEditing ? 0 : 1 }}
+                >
+                    <BiRefresh size={24} />
+                </button>
             </div>
         );
     }
