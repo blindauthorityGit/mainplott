@@ -216,7 +216,7 @@ export default function Shop({ allProducts, globalData }) {
                     onResetFilters={handleResetFilters}
                     allProducts={allProducts}
                 />
-                <div className="grid grid-cols-12 px-4 lg:px-0 gap-4">
+                <div className="grid grid-cols-12 px-0 lg:px-0 gap-4">
                     <Sidebar
                         categories={globalData.shop.categories}
                         selectedCats={selectedCats}

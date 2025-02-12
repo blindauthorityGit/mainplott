@@ -126,6 +126,8 @@ const MobileKonvaLayer = forwardRef(
         // -------------------------------------------
         useEffect(() => {
             if (!uploadedGraphicFile) return;
+            // If the graphic is already loaded, do not re-run placement.
+            if (graphicLoaded) return;
 
             const currentSideData = purchaseData.sides?.[purchaseData.currentSide] || {};
             const isPDFSide = currentSideData.isPDF;
@@ -136,11 +138,11 @@ const MobileKonvaLayer = forwardRef(
 
                 let placement;
                 if (purchaseData.product.konfigBox && purchaseData.product.konfigBox.value) {
-                    // Use your new fixed placement logic for products with a konfigBox.
+                    // Use fixed placement logic if konfigBox exists.
                     placement = getFixedImagePlacement({
                         imageNaturalWidth: loadedImg.width,
                         imageNaturalHeight: loadedImg.height,
-                        boundingRect, // boundingRect is computed below (or earlier) based on purchaseData
+                        boundingRect, // computed below
                         centerImage: true,
                     });
                 } else {
@@ -154,24 +156,21 @@ const MobileKonvaLayer = forwardRef(
                     });
                 }
 
-                // For mobile, if needed, you might decide to divide the dimensions by 2 (as in your original code)
-                // or use them directly.
-                // (Adjust the division factor if necessary.)
+                // For mobile, you divide dimensions by 2 if needed.
                 uploadedGraphicRef.current.width(placement.finalWidth / 2);
                 uploadedGraphicRef.current.height(placement.finalHeight / 2);
 
-                // For konfigBox-based placement, apply the calculated x and y.
                 if (purchaseData.product.konfigBox && purchaseData.product.konfigBox.value) {
                     uploadedGraphicRef.current.x(placement.x);
                     uploadedGraphicRef.current.y(placement.y);
                 }
-                // Otherwise, you might rely on other default positioning.
 
                 uploadedGraphicRef.current.offsetX(0);
                 uploadedGraphicRef.current.offsetY(0);
                 uploadedGraphicRef.current.image(loadedImg);
                 uploadedGraphicRef.current.getLayer().batchDraw();
 
+                // Update state with the placed dimensions (if needed).
                 setPurchaseData((prev) => ({
                     ...prev,
                     sides: {
@@ -184,10 +183,10 @@ const MobileKonvaLayer = forwardRef(
                     },
                 }));
 
+                // Mark graphic as loaded so this effect won't run again.
                 setGraphicLoaded(true);
             }
 
-            // PDF preview or normal image
             if (isPDFSide && pdfPreviewURL) {
                 const previewImg = new window.Image();
                 previewImg.crossOrigin = "anonymous";
@@ -199,7 +198,6 @@ const MobileKonvaLayer = forwardRef(
                     const normalImg = new window.Image();
                     normalImg.src = e.target.result;
                     normalImg.onload = () => placeAndDraw(normalImg);
-                    console.log(purchaseData);
                 };
                 reader.readAsDataURL(uploadedGraphicFile);
             }
@@ -209,8 +207,7 @@ const MobileKonvaLayer = forwardRef(
             containerWidth,
             containerHeight,
             purchaseData.currentSide,
-            setPurchaseData,
-            purchaseData.sides,
+            // Remove purchaseData.sides from the dependency array so that it doesn't trigger re-placement.
         ]);
 
         // -------------------------------------------
