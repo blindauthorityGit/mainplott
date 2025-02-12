@@ -259,7 +259,13 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
 
             // Front positions: Brust, Oberschenkel vorne, Vorne
             const frontPositions = fixed
-                .filter((pos) => pos.includes("Brust") || pos.includes("Oberschenkel vorne") || pos.includes("Vorne"))
+                .filter(
+                    (pos) =>
+                        pos.includes("Brust") ||
+                        pos.includes("Oberschenkel vorne") ||
+                        pos.includes("Vorne") ||
+                        pos.includes("Front")
+                )
                 .map((name) => ({
                     name,
                     enabled: true,
@@ -293,6 +299,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     useEffect(() => {
         if (!purchaseData.sides[currentSide]?.position && positions[currentSide]?.default) {
             const defaultOption = positions[currentSide].default[0];
+            console.log(defaultOption);
             setSelectedValue(defaultOption.name);
 
             setPurchaseData({

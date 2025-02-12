@@ -226,7 +226,7 @@ export default function Signup() {
                         type="button"
                         onClick={() => setMode("login")}
                         className={`px-4 py-2 rounded-l-md border border-gray-300
-              ${mode === "login" ? "bg-blue-500 text-white" : "bg-white text-gray-700"}`}
+              ${mode === "login" ? "bg-primaryColor text-white" : "bg-white text-gray-700"}`}
                     >
                         Login
                     </button>
@@ -234,7 +234,7 @@ export default function Signup() {
                         type="button"
                         onClick={() => setMode("signup")}
                         className={`px-4 py-2 rounded-r-md border border-gray-300
-              ${mode === "signup" ? "bg-blue-500 text-white" : "bg-white text-gray-700"}`}
+              ${mode === "signup" ? "bg-primaryColor text-white" : "bg-white text-gray-700"}`}
                     >
                         Signup
                     </button>

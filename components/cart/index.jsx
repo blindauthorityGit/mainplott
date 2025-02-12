@@ -7,6 +7,7 @@ import { H2, H3, H5, P } from "@/components/typography";
 import { TextField, InputAdornment, Button } from "@mui/material";
 import { uploadPurchaseToFirestore } from "@/config/firebase"; // Import the upload function
 import prepareLineItems from "@/functions/prepareLineItems";
+import { calculateNetPrice } from "@/functions/calculateNetPrice"; // Import your net price function
 
 import { createCart } from "@/libs/shopify";
 export default function CartSidebar() {
@@ -31,7 +32,7 @@ export default function CartSidebar() {
     // Calculate the total price with or without discount
     useEffect(() => {
         const subtotal = cartItems.reduce((sum, item) => sum + Number(item.totalPrice), 0);
-        setTotalPrice(subtotal.toFixed(2)); // 10% discount if applied
+        setTotalPrice(calculateNetPrice(subtotal.toFixed(2))); // 10% discount if applied
     }, [cartItems, discountApplied]);
 
     // console.log(cartItems);
@@ -176,7 +177,10 @@ export default function CartSidebar() {
                                                     : item.quantity}
                                             </p>
                                             <p className="text-sm">
-                                                Preis: € {item.tryout ? 0 : Number(item.totalPrice).toFixed(2)}
+                                                Preis: €{" "}
+                                                {item.tryout
+                                                    ? 0
+                                                    : calculateNetPrice(Number(item.totalPrice).toFixed(2))}
                                             </p>
                                         </div>
                                         {/* <div className="flex items-center mt-2">

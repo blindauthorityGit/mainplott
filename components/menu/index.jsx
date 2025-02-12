@@ -17,6 +17,8 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/config/firebase";
 import MobileMenu from "./mobileMenu";
 
+import { useRouter } from "next/router";
+
 export default function Menu() {
     const [isOpen, setIsOpen] = useState(false);
     const [isMegaMenuVisible, setIsMegaMenuVisible] = useState(false); // State for MegaMenu visibility
@@ -25,6 +27,7 @@ export default function Menu() {
     const menuData = useMenu(); // Access menu data from context
     const { cartItems, openCartSidebar } = useStore(); // Assuming cartItems is an array in Zustand
     const user = useUserStore((state) => state.user);
+    const router = useRouter();
 
     console.log("USER", user);
 
@@ -47,6 +50,8 @@ export default function Menu() {
         try {
             await signOut(auth);
             console.log("User logged out successfully");
+            router.push("/");
+
             // Optionally, reset the user in your Zustand store
             useUserStore.setState({ user: null });
         } catch (error) {

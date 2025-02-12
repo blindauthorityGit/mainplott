@@ -33,6 +33,8 @@ import HoseVorneLinks from "@/assets/icons/Hose-vorne-links.svg";
 import HoseHintenLinks from "@/assets/icons/Hose-hinten-links.svg";
 import HoseHintenRechts from "@/assets/icons/Hose-hinten-rechts.svg";
 
+import Front from "@/assets/icons/front.svg";
+
 // Example label-to-image map
 const labelImages = {
     "Label One": "/images/label1.png",
@@ -104,6 +106,10 @@ function getGraphicForProductType(product, label) {
         "Oberschenkel hinten rechts": HoseHintenRechts,
     };
 
+    const ItemPositions = {
+        Front: Front,
+    };
+
     if (tags.includes("T-Shirt")) {
         return TShirtPositions[label] || "/images/default.png";
     } else if (tags.includes("Tshirt")) {
@@ -120,6 +126,8 @@ function getGraphicForProductType(product, label) {
         return JackePositions[label] || "/images/default.png";
     } else if (tags.includes("hose")) {
         return HosePositions[label] || "/images/default.png";
+    } else if (tags.includes("werbematerial")) {
+        return ItemPositions[label] || "/images/default.png";
     }
 
     return TShirtPositions[label] || "/images/default.png";

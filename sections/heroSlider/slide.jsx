@@ -18,8 +18,8 @@ const Slide = ({ image, mobileImage, headline, text, buttonText, buttonLink }) =
     };
 
     return (
-        <div className="grid grid-cols-12 lg:px-56 relative items-center mt-[-1rem] lg:mt-[-2rem]">
-            <div className="col-span-12 lg:col-span-6 text-center lg:text-left -mt-[3rem] z-30 px-6 lg:px-0 lg:mt-12">
+        <div className="grid grid-cols-12 lg:px-56 relative items-center mt-[-1rem] lg:mt-[-0rem]">
+            <div className="col-span-12 lg:col-span-6 text-center lg:text-left -mt-[3rem] z-30 px-6 lg:px-0 lg:mt-6">
                 <H1>{colorLastWord(headline)}</H1>
                 <P klasse="hidden lg:block">{text}</P>
 
@@ -29,7 +29,7 @@ const Slide = ({ image, mobileImage, headline, text, buttonText, buttonLink }) =
                     transition={{ duration: 0.15, ease: "easeOut" }} // Smooth transition
                 >
                     <MainButton
-                        klasse="mb-6 lg:mb-0 !bg-transparent border-4 font-bold border-textColor !text-textColor"
+                        klasse="mb-6 lg:mb-0 !bg-textColor !font-medium !text-white border-2  font-bold border-textColor !text-textColor"
                         link={buttonLink}
                     >
                         {buttonText}

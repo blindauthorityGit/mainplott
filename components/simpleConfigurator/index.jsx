@@ -149,7 +149,7 @@ export default function SimpleConfigurator({ product }) {
                             </div>
                         </motion.div>
                     </AnimatePresence>
-                    <div className="mt-auto lg:flex justify-end hidden lg:px-16 lg:mt-8">
+                    <div className="mt-auto lg:flex justify-end  lg:px-16 lg:mt-8">
                         <StepButton
                             onClick={() => {
                                 const updatedVariants = {

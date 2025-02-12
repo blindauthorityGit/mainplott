@@ -16,6 +16,7 @@ import { useSwipeable } from "react-swipeable";
 //FUNCTIONS
 import { isNextDisabled, isPrevDisabled, handlePrevStep, handleNextStep } from "@/functions/stepHandlers";
 import exportAllSides from "@/functions/exportAllSides";
+import { calculateNetPrice } from "@/functions/calculateNetPrice"; // Import your net price function
 
 // Dynamically import the KonvaLayer component with no SSR
 // Provide a fallback
@@ -328,6 +329,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     // StepHolder.js (excerpt)
 
     const handleAddToCart = () => {
+        console.log("PÖRCHASE DATA", purchaseData);
         const updatedPurchaseData = { ...purchaseData };
         const { sides, variants } = updatedPurchaseData;
 
@@ -365,7 +367,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                 id: selectedVariant.node.id,
                                 size: null,
                                 quantity: totalQuantity,
-                                price: parseFloat(matchedDiscount.price),
+                                price: calculateNetPrice(parseFloat(matchedDiscount.price)),
                                 title: `${veredelungDetail.title} ${
                                     sideKey.charAt(0).toUpperCase() + sideKey.slice(1)
                                 }`,
@@ -643,6 +645,8 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                     {steps[currentStep] === "Zusammenfassung" ? (
                         <StepButton
                             onClick={() => {
+                                console.log("PÖRCHASE DATA", purchaseData);
+
                                 const updatedPurchaseData = { ...purchaseData };
                                 const { sides, variants } = updatedPurchaseData;
 
@@ -685,7 +689,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                                         id: selectedVariant.node.id,
                                                         size: null,
                                                         quantity: totalQuantity,
-                                                        price: parseFloat(matchedDiscount.price),
+                                                        price: calculateNetPrice(parseFloat(matchedDiscount.price)),
                                                         title: `${veredelungDetail.title} ${
                                                             sideKey.charAt(0).toUpperCase() + sideKey.slice(1)
                                                         }`,

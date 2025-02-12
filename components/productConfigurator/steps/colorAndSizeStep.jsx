@@ -10,6 +10,7 @@ import useStore from "@/store/store"; // Your Zustand store
 import formatVariants from "@/functions/formatVariants"; // Function for formatting variants
 import { getColorHex } from "@/libs/colors";
 import useUserStore from "@/store/userStore";
+import { calculateNetPrice } from "@/functions/calculateNetPrice"; // Import your net price function
 
 import { P, H3 } from "@/components/typography";
 
@@ -219,7 +220,13 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     };
 
     const handleToggle = (newState) => {
-        setPurchaseData({ ...purchaseData, tryout: newState, quantity: 1, cartImage: selectedImage, totalPrice: 0 });
+        setPurchaseData({
+            ...purchaseData,
+            tryout: newState,
+            quantity: 1,
+            cartImage: selectedImage,
+            totalPrice: price,
+        });
         setIsChecked(newState);
     };
 
@@ -277,7 +284,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
 
                 <div>
                     <div className="flex justify-end items-end mt-8">
-                        <H3 klasse="!mb-2">EUR {Number(price).toFixed(2) || "0.00"}</H3>
+                        <H3 klasse="!mb-2">EUR {calculateNetPrice(Number(price)).toFixed(2) || "0.00"}</H3>
                         {/* <P klasse="!text-xs mb-2 pl-2">EUR 210/Stk.</P> */}
                     </div>
                     {/* <P>{`${price / }`}</P> */}

@@ -7,16 +7,13 @@ import useUserStore from "@/store/userStore";
  * @returns {number} - Der reduzierte Betrag für Firmenkunden (Netto) oder die originale Summe.
  */
 export const calculateNetPrice = (inputSum) => {
-    // Hole den User aus dem Zustand
     const user = useUserStore.getState().user;
 
-    // Prüfe, ob ein User vorhanden ist und ob er ein Firmenkunde ist
     if (user && user.userType === "firmenkunde") {
-        // Berechne Netto-Preis: Reduziere um 19% und runde auf 2 Dezimalstellen
-        const netPrice = parseFloat((Number(inputSum) / 1.19).toFixed(2));
-        return netPrice;
+        // Firmenkunde → Netto
+        return inputSum;
+    } else {
+        // Privatkunde → 19 % aufschlagen
+        return parseFloat((Number(inputSum) * 1.19).toFixed(2));
     }
-
-    // Wenn kein User oder kein Firmenkunde, gib die originale Summe zurück
-    return inputSum;
 };
