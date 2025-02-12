@@ -94,14 +94,44 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         });
     };
 
+    const sideData = purchaseData.sides[currentSide] || {};
+    let allowedMaxScale = 3.5; // fallback value
+    if (
+        purchaseData.boundingRect &&
+        sideData.width &&
+        sideData.height &&
+        sideData.xPosition != null &&
+        sideData.yPosition != null
+    ) {
+        allowedMaxScale = Math.min(
+            (purchaseData.boundingRect.x + purchaseData.boundingRect.width - sideData.xPosition) / sideData.width,
+            (purchaseData.boundingRect.y + purchaseData.boundingRect.height - sideData.yPosition) / sideData.height
+        );
+    }
+
     const handleScaleChange = (event, newValue) => {
+        const sideData = purchaseData.sides[currentSide] || {};
+        let allowedMaxScale = 3.5; // fallback
+        if (
+            boundingRect &&
+            sideData.width &&
+            sideData.height &&
+            sideData.xPosition != null &&
+            sideData.yPosition != null
+        ) {
+            allowedMaxScale = Math.min(
+                (boundingRect.x + boundingRect.width - sideData.xPosition) / sideData.width,
+                (boundingRect.y + boundingRect.height - sideData.yPosition) / sideData.height
+            );
+        }
+        const clampedValue = Math.min(newValue, allowedMaxScale);
         setPurchaseData({
             ...purchaseData,
             sides: {
                 ...purchaseData.sides,
                 [currentSide]: {
                     ...purchaseData.sides[currentSide],
-                    scale: newValue,
+                    scale: clampedValue,
                 },
             },
         });
@@ -568,7 +598,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                             <Slider
                                 value={purchaseData.sides[currentSide].scale}
                                 min={0.3}
-                                max={3.5}
+                                max={allowedMaxScale} // computed above
                                 step={0.01}
                                 onChange={handleScaleChange}
                                 aria-labelledby="scale-slider"

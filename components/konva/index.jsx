@@ -5,7 +5,7 @@ import { Button } from "@mui/material";
 import { FiZoomIn, FiZoomOut, FiRefreshCw } from "react-icons/fi";
 import { exportCanvas } from "@/functions/exportCanvas";
 import MobileSliders from "@/components/productConfigurator/mobile/mobileSliders";
-import getImagePlacement from "@/functions/getImagePlacement";
+import getImagePlacement, { getFixedImagePlacement } from "@/functions/getImagePlacement";
 import useIsMobile from "@/hooks/isMobile";
 import Konva from "konva";
 
@@ -129,7 +129,68 @@ const KonvaLayer = forwardRef(
                 setProductImageLoaded(true);
             };
         }, [productImage, containerWidth, containerHeight]);
+        // Calculate the bounding rectangle using either the konfigBox data (if available)
+        // or fall back to default values.
+        let boundingRect;
 
+        if (purchaseData.product.konfigBox && purchaseData.product.konfigBox.value) {
+            try {
+                console.log("konfigBox is da");
+                // Parse the JSON from konfigBox. Expected format: {"width": 1, "height": 0.128}
+                const konfig = JSON.parse(purchaseData.product.konfigBox.value);
+                // Multiply the parsed relative values by container dimensions.
+                const width = konfig.width * containerWidth;
+                const height = konfig.height * containerHeight;
+                // Center the bounding box. (Alternatively, you can calculate x and y differently if needed.)
+                const x = (containerWidth - width) / 2;
+                const y = (containerHeight - height) / 2;
+                boundingRect = { x, y, width, height };
+
+                setPurchaseData((prev) => ({
+                    ...prev,
+                    boundingRect: { x, y, width, height },
+                }));
+            } catch (error) {
+                console.error("Error parsing konfigBox JSON:", error);
+                // Fallback to the default values if parsing fails.
+                boundingRect = {
+                    x: containerWidth * 0.22,
+                    y: containerHeight * 0.15,
+                    width: containerWidth * 0.55,
+                    height: containerHeight * 0.76,
+                };
+
+                setPurchaseData((prev) => ({
+                    ...prev,
+                    boundingRect: {
+                        x: containerWidth * 0.22,
+                        y: containerHeight * 0.15,
+                        width: containerWidth * 0.55,
+                        height: containerHeight * 0.76,
+                    },
+                }));
+            }
+        } else {
+            console.log("konfigBox is NITA da");
+
+            // If there's no konfigBox provided, use the default values.
+            boundingRect = {
+                x: containerWidth * 0.22,
+                y: containerHeight * 0.15,
+                width: containerWidth * 0.55,
+                height: containerHeight * 0.76,
+            };
+
+            setPurchaseData((prev) => ({
+                ...prev,
+                boundingRect: {
+                    x: containerWidth * 0.22,
+                    y: containerHeight * 0.15,
+                    width: containerWidth * 0.55,
+                    height: containerHeight * 0.76,
+                },
+            }));
+        }
         // ---------------------------
         // Load uploaded graphic and mark as loaded
         // ---------------------------
@@ -138,35 +199,56 @@ const KonvaLayer = forwardRef(
             const currentSideData = purchaseData.sides?.[purchaseData.currentSide] || {};
             const isPDFSide = currentSideData.isPDF;
             const pdfPreviewURL = currentSideData.preview;
+
             function placeAndDraw(loadedImg) {
                 if (!uploadedGraphicRef.current) return;
-                const { finalWidth, finalHeight } = getImagePlacement({
-                    containerWidth,
-                    containerHeight,
-                    imageNaturalWidth: loadedImg.width,
-                    imageNaturalHeight: loadedImg.height,
-                });
-                uploadedGraphicRef.current.width(finalWidth);
-                uploadedGraphicRef.current.height(finalHeight);
-                // Optionally, set the offset to center rotation:
-                // uploadedGraphicRef.current.offsetX(finalWidth / 2);
-                // uploadedGraphicRef.current.offsetY(finalHeight / 2);
+
+                let placement;
+                // If the product has a konfigBox, use the new logic:
+                if (purchaseData.product.konfigBox && purchaseData.product.konfigBox.value) {
+                    placement = getFixedImagePlacement({
+                        imageNaturalWidth: loadedImg.width,
+                        imageNaturalHeight: loadedImg.height,
+                        // 'boundingRect' is already computed earlier in your component (based on konfigBox or defaults)
+                        boundingRect,
+                        centerImage: true,
+                    });
+                } else {
+                    // Otherwise, fall back to your original helper.
+                    placement = getImagePlacement({
+                        containerWidth,
+                        containerHeight,
+                        imageNaturalWidth: loadedImg.width,
+                        imageNaturalHeight: loadedImg.height,
+                    });
+                }
+
+                // Apply the placement values to your graphic:
+                uploadedGraphicRef.current.width(placement.finalWidth);
+                uploadedGraphicRef.current.height(placement.finalHeight);
+                if (purchaseData.product.konfigBox && purchaseData.product.konfigBox.value) {
+                    uploadedGraphicRef.current.x(placement.x);
+                    uploadedGraphicRef.current.y(placement.y);
+                }
+                // Optionally, set offsets for rotation:
                 uploadedGraphicRef.current.offsetX(0);
                 uploadedGraphicRef.current.offsetY(0);
                 uploadedGraphicRef.current.image(loadedImg);
                 uploadedGraphicRef.current.getLayer().batchDraw();
+
                 setPurchaseData((prev) => ({
                     ...prev,
                     sides: {
                         ...prev.sides,
                         [prev.currentSide]: {
                             ...prev.sides[prev.currentSide],
-                            width: finalWidth,
-                            height: finalHeight,
+                            width: placement.finalWidth,
+                            height: placement.finalHeight,
                         },
                     },
                 }));
-                // Mark graphic as loaded:
+
+                // Mark graphic as loaded and handle transformer visibility, etc.
                 setGraphicLoaded(true);
                 setTransformerVisible(true);
                 if (transformerRef.current) transformerRef.current.opacity(1);
@@ -193,6 +275,7 @@ const KonvaLayer = forwardRef(
                     }
                 }, 3000);
             }
+
             if (isPDFSide && pdfPreviewURL) {
                 const previewImg = new window.Image();
                 previewImg.crossOrigin = "anonymous";
@@ -282,6 +365,7 @@ const KonvaLayer = forwardRef(
             if (pos.y + shapeRect.height > boundingRect.y + boundingRect.height) {
                 clampedY = boundingRect.y + boundingRect.height - shapeRect.height;
             }
+
             return { x: clampedX, y: clampedY };
         };
 
@@ -322,13 +406,6 @@ const KonvaLayer = forwardRef(
         useEffect(() => {
             handleResetZoom();
         }, [purchaseData.currentSide]);
-
-        const boundingRect = {
-            x: containerWidth * 0.22,
-            y: containerHeight * 0.15,
-            width: containerWidth * 0.55,
-            height: containerHeight * 0.76,
-        };
 
         useEffect(() => {
             setPurchaseData((prev) => ({
@@ -409,6 +486,7 @@ const KonvaLayer = forwardRef(
                             y={boundingRect.y}
                             width={boundingRect.width}
                             height={boundingRect.height}
+                            stroke="#ff0069"
                         />
                         {purchaseData.configurator !== "template" && (uploadedGraphicFile || uploadedGraphicURL) && (
                             <KonvaImage

@@ -5,7 +5,7 @@ import urlFor from "../../functions/urlFor";
 import Logo from "../../assets/logoSM.png";
 
 const MetaShopify = ({ data }) => {
-    const fallbackDescription = "Kurse bei MainGlückskind - Wo kleine Herzen groß werden";
+    const fallbackDescription = "Mainplott";
 
     return (
         <Head>

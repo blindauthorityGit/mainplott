@@ -197,7 +197,9 @@ export async function getProductByHandle(handle) {
           }
           fixedPositions: metafield(namespace: "custom", key: "positioning") {
               value
-            
+          }
+          konfigBox: metafield(namespace: "custom", key: "konfigurator_box") {
+              value
           }
 
        customImages: metafield(namespace: "custom", key: "custom_images") {

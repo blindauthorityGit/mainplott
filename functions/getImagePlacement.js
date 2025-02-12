@@ -50,3 +50,54 @@ export default function getImagePlacement({
         finalHeight,
     };
 }
+
+// --- New function ---
+// This function is used only if the product has a konfigBox.
+// It applies the following logic:
+// - If the bounding box’s width OR height is below 200px, scale the image so it fills the box.
+// - Otherwise (if both dimensions are at least 200px), use a scale of 1 if the image fits,
+//   or shrink it (if needed) so it fits.
+export function getFixedImagePlacement({
+    imageNaturalWidth,
+    imageNaturalHeight,
+    boundingRect, // { x, y, width, height }
+    centerImage = true,
+}) {
+    let scaleFactor;
+
+    // For a "small" bounding box, fill it completely.
+    if (boundingRect.width < 200 || boundingRect.height < 200) {
+        scaleFactor = Math.min(boundingRect.width / imageNaturalWidth, boundingRect.height / imageNaturalHeight);
+    } else {
+        // For larger bounding boxes, use natural size (scale=1) if it fits
+        // Otherwise, scale down to fit.
+        if (imageNaturalWidth <= boundingRect.width && imageNaturalHeight <= boundingRect.height) {
+            scaleFactor = 1;
+        } else {
+            scaleFactor = Math.min(boundingRect.width / imageNaturalWidth, boundingRect.height / imageNaturalHeight);
+        }
+    }
+
+    const finalWidth = imageNaturalWidth * scaleFactor;
+    const finalHeight = imageNaturalHeight * scaleFactor;
+
+    let x, y;
+    if (centerImage) {
+        // Center the image inside the bounding box.
+        x = boundingRect.x + (boundingRect.width - finalWidth) / 2;
+        y = boundingRect.y + (boundingRect.height - finalHeight) / 2;
+    } else {
+        x = boundingRect.x;
+        y = boundingRect.y;
+    }
+
+    return {
+        x,
+        y,
+        finalWidth,
+        finalHeight,
+        scale: scaleFactor,
+        offsetX: 0,
+        offsetY: 0,
+    };
+}
