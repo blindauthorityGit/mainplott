@@ -7,7 +7,7 @@ import { FiRefreshCw, FiEdit, FiSave } from "react-icons/fi";
 import { BiRefresh } from "react-icons/bi";
 import { FaArrowsRotate } from "react-icons/fa6"; // <-- React icon
 import MobileSliders from "@/components/productConfigurator/mobile/mobileSliders";
-import getImagePlacement from "@/functions/getImagePlacement";
+import getImagePlacement, { getFixedImagePlacement } from "@/functions/getImagePlacement";
 import { exportCanvas } from "@/functions/exportCanvas";
 import useIsMobile from "@/hooks/isMobile";
 
@@ -133,21 +133,42 @@ const MobileKonvaLayer = forwardRef(
 
             function placeAndDraw(loadedImg) {
                 if (!uploadedGraphicRef.current) return;
-                const { x, y, finalWidth, finalHeight } = getImagePlacement({
-                    containerWidth,
-                    containerHeight,
-                    imageNaturalWidth: loadedImg.width,
-                    imageNaturalHeight: loadedImg.height,
-                    isMobile,
-                });
 
-                console.log(x, y);
+                let placement;
+                if (purchaseData.product.konfigBox && purchaseData.product.konfigBox.value) {
+                    // Use your new fixed placement logic for products with a konfigBox.
+                    placement = getFixedImagePlacement({
+                        imageNaturalWidth: loadedImg.width,
+                        imageNaturalHeight: loadedImg.height,
+                        boundingRect, // boundingRect is computed below (or earlier) based on purchaseData
+                        centerImage: true,
+                    });
+                } else {
+                    // Otherwise, use the original helper.
+                    placement = getImagePlacement({
+                        containerWidth,
+                        containerHeight,
+                        imageNaturalWidth: loadedImg.width,
+                        imageNaturalHeight: loadedImg.height,
+                        isMobile,
+                    });
+                }
 
-                uploadedGraphicRef.current.width(finalWidth / 2);
-                uploadedGraphicRef.current.height(finalHeight / 2);
+                // For mobile, if needed, you might decide to divide the dimensions by 2 (as in your original code)
+                // or use them directly.
+                // (Adjust the division factor if necessary.)
+                uploadedGraphicRef.current.width(placement.finalWidth / 2);
+                uploadedGraphicRef.current.height(placement.finalHeight / 2);
+
+                // For konfigBox-based placement, apply the calculated x and y.
+                if (purchaseData.product.konfigBox && purchaseData.product.konfigBox.value) {
+                    uploadedGraphicRef.current.x(placement.x);
+                    uploadedGraphicRef.current.y(placement.y);
+                }
+                // Otherwise, you might rely on other default positioning.
+
                 uploadedGraphicRef.current.offsetX(0);
                 uploadedGraphicRef.current.offsetY(0);
-
                 uploadedGraphicRef.current.image(loadedImg);
                 uploadedGraphicRef.current.getLayer().batchDraw();
 
@@ -157,8 +178,8 @@ const MobileKonvaLayer = forwardRef(
                         ...prev.sides,
                         [prev.currentSide]: {
                             ...prev.sides[prev.currentSide],
-                            width: finalWidth,
-                            height: finalHeight,
+                            width: placement.finalWidth,
+                            height: placement.finalHeight,
                         },
                     },
                 }));
@@ -352,7 +373,7 @@ const MobileKonvaLayer = forwardRef(
                                 sx={{
                                     mt: 1.5,
                                     px: 3,
-                                    py: 1,
+                                    py: 1,ad
                                     backgroundColor: "#393836",
                                     color: "white",
                                     fontFamily: "Montserrat",
