@@ -60,7 +60,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     } = useStore();
     const [imageHeight, setImageHeight] = useState(null);
     const [imageSize, setImageSize] = useState({ width: null, height: null });
-    const [isFrontView, setIsFrontView] = useState(true); // Track if we're viewing the front or back
+    const [isFrontView, setIsFrontView] = useState(purchaseData.currentSide === "front"); // Track if we're viewing the front or back
     const configStepIndex = steps.findIndex((step) => step === "Design"); // Dynamically find the config step
     const [isLoadingImage, setIsLoadingImage] = useState(false); // State to track loading
     const [isExporting, setIsExporting] = useState(false); // Track exporting state
@@ -110,7 +110,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
     const handleNextStep = async () => {
         // If we are at the Design step, export both sides first
-        console.log("NÖXT", purchaseData);
+        console.log(steps[currentStep]);
         if (steps[currentStep] === "Design" && !isMobile && purchaseData.configurator !== "template") {
             setIsExporting(true);
             await exportAllSides({
@@ -185,17 +185,18 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     const frontExported = purchaseData?.design?.front?.downloadURL || null;
     const backExported = purchaseData?.design?.back?.downloadURL || null;
 
+    const isFront = purchaseData.currentSide === "front";
+
     // If we are past the config step, not in template, and not a tryout...
     const isPostDesign =
         currentStep > configStepIndex && purchaseData.configurator !== "template" && !purchaseData.tryout;
 
     let displayedImage;
     if (isPostDesign) {
-        // We want to show the *exported* images if they exist, otherwise fallback
-        displayedImage = isFrontView ? frontExported || frontOriginal : backExported || backOriginal;
+        displayedImage = isFront ? frontExported || frontOriginal : backExported || backOriginal;
     } else {
-        // We want to show the "original" images
-        displayedImage = isFrontView ? frontOriginal : backOriginal;
+        // Otherwise show the original front/back
+        displayedImage = isFront ? frontOriginal : backOriginal;
     }
 
     // SET VIEW TO FRONMT WHEN NAVIGATING
@@ -235,10 +236,14 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     }, [purchaseData.currentSide, selectedVariant]);
 
     // Handle rotate button click
+    // Toggles between front/back in the store
     const handleRotateImage = () => {
+        // Only do something if there actually is a backImageUrl
         if (selectedVariant?.backImageUrl) {
-            setIsFrontView(!isFrontView);
-            setSelectedImage(isFrontView ? selectedVariant.backImageUrl : selectedVariant.image.originalSrc);
+            setPurchaseData((prev) => ({
+                ...prev,
+                currentSide: prev.currentSide === "front" ? "back" : "front",
+            }));
         }
     };
 
@@ -421,7 +426,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
             <div className="col-span-12 lg:col-span-5 2xl:col-span-6 relative mb-4 lg:mb-0" ref={containerRef}>
                 <div className="w-full flex items-center justify-center xl:min-h-[640px] 2xl:min-h-[840px] lg:max-h-[860px] relative">
                     <AnimatePresence mode="wait">
-                        {steps[currentStep] === "Design" ? (
+                        {steps[currentStep] === "Design" && purchaseData.configurator !== "template" ? (
                             <div
                                 key="konva"
                                 variants={fadeAnimationVariants}
@@ -575,7 +580,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                         alt="Product Step Image"
                                         className="w-full mix-blend-multiply p-4 lg:max-h-[none]"
                                         onLoad={() => setImageHeight(imageRef.current?.clientHeight)}
-                                    />
+                                    />{" "}
                                     {/* Rotate Icon Button */}
                                     {selectedVariant?.backImageUrl && (
                                         <button
