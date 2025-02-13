@@ -33,7 +33,7 @@ import HoseVorneLinks from "@/assets/icons/Hose-vorne-links.svg";
 import HoseHintenLinks from "@/assets/icons/Hose-hinten-links.svg";
 import HoseHintenRechts from "@/assets/icons/Hose-hinten-rechts.svg";
 
-import Front from "@/assets/icons/front.svg";
+import Front from "@/assets/icons/Front.svg";
 
 // Example label-to-image map
 const labelImages = {
