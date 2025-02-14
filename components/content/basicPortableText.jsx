@@ -47,8 +47,8 @@ const myPortableTextComponents = () => ({
         ),
         // Styling for the "h1" headings
         h1: ({ children }) => <H1 className="text-4xl font-bold my-4">{children}</H1>,
-        h2: ({ children }) => <H2 klasse={``}>{children}</H2>,
-        h3: ({ children }) => <H3 klasse="!mb-4 !mt-10">{children}</H3>,
+        h2: ({ children }) => <h2 className={`text-xl lg:text-2xl font-semibold mb-2 mt-6`}>{children}</h2>,
+        h3: ({ children }) => <h3 classNae="text-lg font-semibold mt-4">{children}</h3>,
         p: ({ children }) => <p className="font-body">{children}</p>,
 
         // Add more styles as needed
@@ -69,12 +69,12 @@ const myPortableTextComponents = () => ({
         number: ({ children }) => <ol className="mt-lg">{children}</ol>,
 
         // Ex. 2: rendering custom lists
-        checkmarks: ({ children }) => <ol className="m-auto text-lg">{children}</ol>,
+        checkmarks: ({ children }) => <ol className="m-auto text-lg ">{children}</ol>,
     },
     listItem: {
         // Ex. 1: customizing common list types
         bullet: ({ children }) => (
-            <li className="text-sm mb-2" style={{ listStyleType: "disc" }}>
+            <li className="text-sm font-body mb-2 mt-4" style={{ listStyleType: "disc" }}>
                 {children}
             </li>
         ),

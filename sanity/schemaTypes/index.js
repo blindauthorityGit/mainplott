@@ -2,6 +2,11 @@ import pages from '../schemas/pages/pages.js'
 import startPage from '../schemas/pages/startPage.js'
 import aboutPage from '../schemas/pages/aboutPage.js'
 import ServicePage from '../schemas/pages/servicePage.js'
+import impressumPage from '../schemas/pages/impressumPage.js'
+import widerrufPage from '../schemas/pages/widerruf.js'
+import agbPage from '../schemas/pages/agb.js'
+import datenschutzPage from '../schemas/pages/datenschutz.js'
+import kontaktPage from '../schemas/pages/kontakt.js'
 
 //COMPONENTS
 import seo from '../schemas/seo'
@@ -23,6 +28,11 @@ export const schemaTypes = [
   pages, // Pages schema
   startPage, // Start Page schema
   aboutPage,
+  impressumPage,
+  widerrufPage,
+  agbPage,
+  datenschutzPage,
+  kontaktPage,
   slider, // Slider schema
   slide, // Slide schema
   linkBox,

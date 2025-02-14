@@ -1,4 +1,4 @@
-import {MdHome, MdWeb, MdSettings} from 'react-icons/md' // Icons for the Pages and Global Components
+import {MdHome, MdWeb, MdSettings, MdGavel, MdAssignment, MdSecurity} from 'react-icons/md' // Icons for the Pages and Global Components
 import {GoHome} from 'react-icons/go' // Icon for individual pages like Start Page
 
 export default (S) =>
@@ -36,6 +36,33 @@ export default (S) =>
               S.documentTypeListItem('servicePage')
                 .title('Service Pages') // Add Service Pages to Pages list
                 .icon(MdWeb),
+              S.listItem()
+                .title('Kontakt')
+                .id('kontaktItem')
+                .icon(MdGavel)
+                .child(S.document().schemaType('kontaktPage').documentId('singleton-kontakt')),
+              S.listItem()
+                .title('Impressum')
+                .id('impressumItem')
+                .icon(MdGavel)
+                .child(S.document().schemaType('impressumPage').documentId('singleton-impressum')),
+              S.listItem()
+                .title('AGB')
+                .id('agbItem')
+                .icon(MdAssignment)
+                .child(S.document().schemaType('agbPage').documentId('singleton-agb')),
+              S.listItem()
+                .title('Widerruf')
+                .id('widerrufItem')
+                .icon(MdAssignment)
+                .child(S.document().schemaType('widerrufPage').documentId('singleton-widerruf')),
+              S.listItem()
+                .title('Datenschutz')
+                .id('datenschutzItem')
+                .icon(MdSecurity)
+                .child(
+                  S.document().schemaType('datenschutzPage').documentId('datenschut-widerruf'),
+                ),
             ]),
         ),
       // Define the "Global Components" category with a unique ID
@@ -100,8 +127,15 @@ export default (S) =>
       ...S.documentTypeListItems().filter(
         (listItem) =>
           ![
+            'servicePage', // Removes Service Pages
+            'shop', // Removes Shop
             'startPage',
             'aboutPage',
+            'impressumPage',
+            'datenschutzPage',
+            'widerrufPage',
+            'kontaktPage',
+            'agbPage',
             'featuresSingleton',
             'testimonialsSingleton',
             'faqsSingleton',

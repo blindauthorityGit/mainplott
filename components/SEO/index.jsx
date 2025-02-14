@@ -5,11 +5,11 @@ import urlFor from "../../functions/urlFor";
 import Logo from "../../assets/logoSM.png";
 
 const Meta = ({ data }) => {
-    const fallbackDescription = "Kurse bei MainGlückskind - Wo kleine Herzen groß werden";
+    const fallbackDescription = "MAINPLOTT";
 
     return (
         <Head>
-            <title>{data.mainSEO.title}</title>
+            <title>{data.mainSEO.title ? data.mainSEO.title : "MAINPLOTT"}</title>
             <meta name="viewport" content="width=device-width, initial-scale=1" />
             <meta charSet="utf-8" />
             <meta
@@ -19,7 +19,7 @@ const Meta = ({ data }) => {
             {data.mainSEO.keywords ? (
                 <meta name="keywords" content={data.mainSEO.keywords.map((e) => e)} />
             ) : (
-                <meta name="keywords" content="MainGlücksKind" />
+                <meta name="keywords" content="Mainplott" />
             )}
 
             {/* Open Graph / Facebook */}

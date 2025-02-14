@@ -6,6 +6,7 @@ import LinkBoxSection from "../../sections/linkBoxes";
 import LogoLeiste from "../../sections/logoLeiste";
 import { MainContainer } from "../../layout/container";
 import Spacer from "../../layout/spacer";
+import Meta from "/components/SEO/";
 
 // SANITY
 import client from "../../client";
@@ -16,12 +17,15 @@ export default function Partner({ data, globalData }) {
     }, [data, globalData]);
 
     return (
-        <MainContainer>
-            <HeaderText data={data && data}></HeaderText>
-            <LinkBoxSection klasse="lg:!col-span-4" data={data?.linkBoxes}></LinkBoxSection>
-            <Spacer></Spacer>
-            <LogoLeiste data={globalData?.settings?.logos}></LogoLeiste>
-        </MainContainer>
+        <>
+            <Meta data={data.seo}></Meta>
+            <MainContainer>
+                <HeaderText data={data && data}></HeaderText>
+                <LinkBoxSection klasse="lg:!col-span-4" data={data?.linkBoxes}></LinkBoxSection>
+                <Spacer></Spacer>
+                <LogoLeiste data={globalData?.settings?.logos}></LogoLeiste>
+            </MainContainer>
+        </>
     );
 }
 

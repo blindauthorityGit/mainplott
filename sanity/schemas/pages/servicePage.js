@@ -20,6 +20,11 @@ export default {
       validation: (Rule) => Rule.required(),
     },
     {
+      name: 'seo',
+      title: 'SEO',
+      type: 'seo',
+    },
+    {
       name: 'topline',
       title: 'Topline',
       type: 'string',

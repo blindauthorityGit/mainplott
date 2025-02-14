@@ -4,6 +4,7 @@ import { CoverImage } from "@/components/images"; // Custom CoverImage component
 import urlFor from "@/functions/urlFor"; // Sanity image helper, optional
 import { H2, P } from "@/components/typography"; // Custom typography components
 import client from "../../client"; // Sanity client for data fetching
+import { BasicPortableText } from "@/components/content";
 
 /**
  * Contact Page
@@ -13,6 +14,7 @@ import client from "../../client"; // Sanity client for data fetching
  */
 
 const ContactPage = ({ data }) => {
+    console.log(data);
     return (
         <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 py-12 px-6 lg:px-12 font-body">
             {/* Left Column: Contact Details */}
@@ -20,14 +22,7 @@ const ContactPage = ({ data }) => {
                 <H2 klasse="text-primaryColor mb-4">Kontakt</H2>
 
                 <div className="space-y-4">
-                    <P klasse="text-gray-700">
-                        Wir freuen uns, von Ihnen zu hören! Egal ob Fragen, Anregungen oder Wünsche – unser Team steht
-                        Ihnen gerne zur Verfügung.
-                    </P>
-                    <P klasse="text-gray-700">
-                        Sie können uns jederzeit per E-Mail, Telefon, WhatsApp oder über unser Kontaktformular
-                        erreichen. Wir bemühen uns, Ihnen so schnell wie möglich zu antworten.
-                    </P>
+                    <BasicPortableText value={data.content}></BasicPortableText>
                 </div>
 
                 {/* Contact Info */}
@@ -46,8 +41,8 @@ const ContactPage = ({ data }) => {
                     {/* Email */}
                     <div className="flex items-center space-x-3">
                         <FiMail className="text-primaryColor text-xl" />
-                        <a href="mailto:info@mainplott.de" className="text-lg text-blackColor hover:underline">
-                            info@mainplott.de
+                        <a href={`mailto:${data.email}`} className="text-lg text-blackColor hover:underline">
+                            {data.email}
                         </a>
                     </div>
 
@@ -55,20 +50,23 @@ const ContactPage = ({ data }) => {
                     <div className="flex items-center space-x-3">
                         <FiMessageSquare className="text-primaryColor text-xl" />
                         <a
-                            href="https://wa.me/491783380649"
+                            href={`https://wa.me/${data.whatsapp.replace(/[^0-9]/g, "")}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-lg text-blackColor hover:underline"
                         >
-                            WhatsApp: +49 178 / 3380649
+                            WhatsApp: {data.whatsapp}
                         </a>
                     </div>
 
                     {/* Mobile */}
                     <div className="flex items-center space-x-3">
                         <FiSmartphone className="text-primaryColor text-xl" />
-                        <a href="tel:+491743177690" className="text-lg text-blackColor hover:underline">
-                            Mobil: +49 174 / 3177690
+                        <a
+                            href={`tel:+${data.phone.replace(/[^0-9]/g, "")}`}
+                            className="text-lg text-blackColor hover:underline"
+                        >
+                            Mobil: {data.phone}
                         </a>
                     </div>
                 </div>
@@ -76,10 +74,10 @@ const ContactPage = ({ data }) => {
 
             {/* Right Column: Optional Cover Image */}
             <div className="mt-6 lg:mt-0 flex items-center justify-center">
-                {data?.heroImage ? (
+                {data?.image ? (
                     <div className="w-full h-64 lg:h-[30rem] relative rounded-md overflow-hidden shadow-lg">
                         <CoverImage
-                            src={urlFor(data.heroImage).url()}
+                            src={urlFor(data.image).url()}
                             alt="Kontakt Cover"
                             klasse="w-full h-full object-cover"
                         />
@@ -100,7 +98,7 @@ export default ContactPage;
 // Server-side data fetching function
 export async function getServerSideProps() {
     // Example: fetch data from a "contactPage" or "aboutPage" document
-    const query = `*[_type == "aboutPage"][0]`;
+    const query = `*[_type == "kontaktPage"][0]`;
     // Adjust your query as needed.
     // If you have a different doc type or field for the hero image, update accordingly.
 
