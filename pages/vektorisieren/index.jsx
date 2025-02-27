@@ -9,6 +9,7 @@ import { BasicPortableText } from "@/components/content";
 import Meta from "/components/SEO/";
 
 export default function Vektorisieren({ data }) {
+    console.log(data);
     // We now store the actual file object (for upload)
     const [file, setFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
@@ -67,108 +68,112 @@ export default function Vektorisieren({ data }) {
     };
 
     return (
-        <MainContainer>
-            <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-                className="grid grid-cols-12 px-4 lg:px-0 font-body pt-12"
-            >
-                {/* Header Section */}
-                <div className="mb-12 col-span-6">
-                    <BasicPortableText value={data.content}></BasicPortableText>
-                </div>
+        <>
+            {" "}
+            <Meta data={data.seo}></Meta>
+            <MainContainer>
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                    className="grid grid-cols-12 px-4 lg:px-0 font-body pt-12"
+                >
+                    {/* Header Section */}
+                    <div className="mb-12 col-span-6">
+                        <BasicPortableText value={data.content}></BasicPortableText>
+                    </div>
 
-                {/* Form Section */}
-                <div className="col-span-6">
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-xl mx-auto">
-                        {/* File Upload */}
-                        <div className="flex flex-col">
-                            <label className="font-semibold mb-2 text-textColor">Ihre Grafik hochladen</label>
-                            <div className="border-dashed border-2 border-primaryColor p-6 rounded-md text-center">
-                                {!previewUrl ? (
-                                    <label className="cursor-pointer">
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            className="hidden"
-                                            onChange={handleFileChange}
+                    {/* Form Section */}
+                    <div className="col-span-6">
+                        <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-xl mx-auto">
+                            {/* File Upload */}
+                            <div className="flex flex-col">
+                                <label className="font-semibold mb-2 text-textColor">Ihre Grafik hochladen</label>
+                                <div className="border-dashed border-2 border-primaryColor p-6 rounded-md text-center">
+                                    {!previewUrl ? (
+                                        <label className="cursor-pointer">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                onChange={handleFileChange}
+                                            />
+                                            <span className="text-primaryColor">Datei auswählen</span>
+                                        </label>
+                                    ) : (
+                                        <img
+                                            src={previewUrl}
+                                            alt="Preview"
+                                            className="max-w-full h-auto mx-auto rounded-md shadow-md"
                                         />
-                                        <span className="text-primaryColor">Datei auswählen</span>
-                                    </label>
-                                ) : (
-                                    <img
-                                        src={previewUrl}
-                                        alt="Preview"
-                                        className="max-w-full h-auto mx-auto rounded-md shadow-md"
-                                    />
-                                )}
+                                    )}
+                                </div>
                             </div>
-                        </div>
 
-                        {/* Name */}
-                        <TextField
-                            label="Name"
-                            name="name"
-                            variant="outlined"
-                            value={formData.name}
-                            onChange={handleInputChange}
-                            fullWidth
-                            required
-                        />
+                            {/* Name */}
+                            <TextField
+                                label="Name"
+                                name="name"
+                                variant="outlined"
+                                value={formData.name}
+                                onChange={handleInputChange}
+                                fullWidth
+                                required
+                            />
 
-                        {/* Email */}
-                        <TextField
-                            label="E-Mail-Adresse"
-                            name="email"
-                            variant="outlined"
-                            type="email"
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            fullWidth
-                            required
-                        />
+                            {/* Email */}
+                            <TextField
+                                label="E-Mail-Adresse"
+                                name="email"
+                                variant="outlined"
+                                type="email"
+                                value={formData.email}
+                                onChange={handleInputChange}
+                                fullWidth
+                                required
+                            />
 
-                        {/* Phone */}
-                        <TextField
-                            label="Telefonnummer"
-                            name="phone"
-                            variant="outlined"
-                            type="tel"
-                            value={formData.phone}
-                            onChange={handleInputChange}
-                            fullWidth
-                            required
-                        />
+                            {/* Phone */}
+                            <TextField
+                                label="Telefonnummer"
+                                name="phone"
+                                variant="outlined"
+                                type="tel"
+                                value={formData.phone}
+                                onChange={handleInputChange}
+                                fullWidth
+                                required
+                            />
 
-                        {/* Message */}
-                        <TextField
-                            label="Ihre Nachricht oder Anforderungen"
-                            name="message"
-                            variant="outlined"
-                            multiline
-                            rows={4}
-                            value={formData.message}
-                            onChange={handleInputChange}
-                            fullWidth
-                            required
-                        />
+                            {/* Message */}
+                            <TextField
+                                label="Ihre Nachricht oder Anforderungen"
+                                name="message"
+                                variant="outlined"
+                                multiline
+                                rows={4}
+                                value={formData.message}
+                                onChange={handleInputChange}
+                                fullWidth
+                                required
+                            />
 
-                        {/* Submit Button */}
-                        <Button
-                            type="submit"
-                            variant="contained"
-                            className="bg-primaryColor text-white px-4 py-2 rounded"
-                            disabled={submitting}
-                        >
-                            {submitting ? "Bitte warten..." : "Absenden"}
-                        </Button>
+                            {/* Submit Button */}
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                className="bg-primaryColor text-white px-4 py-2 rounded"
+                                disabled={submitting}
+                            >
+                                {submitting ? "Bitte warten..." : "Absenden"}
+                            </Button>
 
-                        {responseMsg && <P klasse="text-center">{responseMsg}</P>}
-                    </form>
-                </div>
-            </motion.div>
-        </MainContainer>
+                            {responseMsg && <P klasse="text-center">{responseMsg}</P>}
+                        </form>
+                    </div>
+                </motion.div>
+            </MainContainer>
+        </>
     );
 }
 
