@@ -6,14 +6,14 @@ import LinkBoxSection from "../../sections/linkBoxes";
 import LogoLeiste from "../../sections/logoLeiste";
 import { MainContainer } from "../../layout/container";
 import Spacer from "../../layout/spacer";
-import Meta from "/components/SEO/";
+import Meta from "@/components/SEO/";
 
 // SANITY
 import client from "../../client";
 
 export default function Partner({ data, globalData }) {
     useEffect(() => {
-        console.log(data, globalData.settings.logos);
+        console.log(data, data.seo);
     }, [data, globalData]);
 
     return (

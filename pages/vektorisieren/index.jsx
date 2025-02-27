@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 
 import client from "../../client"; // Sanity client for data fetching
 import { BasicPortableText } from "@/components/content";
-import Meta from "/components/SEO/";
+import Meta from "@/components/SEO/";
 
 export default function Vektorisieren({ data }) {
     console.log(data);
