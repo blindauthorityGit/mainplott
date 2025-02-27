@@ -18,7 +18,7 @@ export default function Partner({ data, globalData }) {
 
     return (
         <>
-            <Meta data={data.seo}></Meta>
+            <Meta data={data?.seo}></Meta>
             <MainContainer>
                 <HeaderText data={data && data}></HeaderText>
                 <LinkBoxSection klasse="lg:!col-span-4" data={data?.linkBoxes}></LinkBoxSection>
