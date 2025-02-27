@@ -49,19 +49,25 @@ export const getStaticProps = async (context) => {
     const slug = context.params.slug;
     console.log(slug);
 
-    const res = await client.fetch(`*[_type == "servicePage" && slug.current == "${slug}"] 
-    `);
-    const data = await res[0];
+    const res = await client.fetch(`*[_type == "servicePage" && slug.current == "${slug}"]`);
+    const data = res[0] || null; // Set to null if not found
+
+    if (!data) {
+        // Option 2: Return a 404 page if no data is found.
+        return { notFound: true };
+    }
 
     const queryGlobal = `{  
-    "settings": *[_type == "settingsSingleton"][0]}
-  `; // Adjust your query as needed
+      "settings": *[_type == "settingsSingleton"][0]
+    }`;
     const globalData = await client.fetch(queryGlobal);
+    console.log(globalData, data);
+
     return {
         props: {
             data,
             globalData,
         },
-        revalidate: 1, // 10 seconds
+        revalidate: 1,
     };
 };
