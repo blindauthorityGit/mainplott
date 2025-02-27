@@ -11,7 +11,7 @@ import Meta from "@/components/SEO/";
 // SANITY
 import client from "../../client";
 
-export default function Partner({ data, globalData }) {
+export default function Service({ data, globalData }) {
     useEffect(() => {
         console.log(data, data.seo);
     }, [data, globalData]);
@@ -40,8 +40,7 @@ export const getStaticPaths = async () => {
     });
     return {
         paths,
-        fallback: true,
-        // fallback: process.env.NEXT_DEV === "true" ? false : true,
+        fallback: "blocking", // fallback: process.env.NEXT_DEV === "true" ? false : true,
     };
 };
 
