@@ -4,7 +4,11 @@ import { H2, P } from "@/components/typography";
 import { Button, TextField } from "@mui/material";
 import { motion } from "framer-motion";
 
-export default function Vektorisieren() {
+import client from "../../client"; // Sanity client for data fetching
+import { BasicPortableText } from "@/components/content";
+import Meta from "/components/SEO/";
+
+export default function Vektorisieren({ data }) {
     // We now store the actual file object (for upload)
     const [file, setFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
@@ -72,12 +76,7 @@ export default function Vektorisieren() {
             >
                 {/* Header Section */}
                 <div className="mb-12 col-span-6">
-                    <H2 klasse="text-primaryColor">Vektorisieren von Grafiken</H2>
-                    <P klasse="mt-4 text-lg text-textColor">
-                        Optimieren Sie Ihre Grafiken für perfekten Druck! Unser Vektorisierungsservice wandelt Ihre
-                        Dateien in druckfertige Formate um. Laden Sie einfach Ihre Datei hoch und teilen Sie uns Ihre
-                        Anforderungen mit.
-                    </P>
+                    <BasicPortableText value={data.content}></BasicPortableText>
                 </div>
 
                 {/* Form Section */}
@@ -171,4 +170,20 @@ export default function Vektorisieren() {
             </motion.div>
         </MainContainer>
     );
+}
+
+export async function getServerSideProps() {
+    // Example: fetch data from a "contactPage" or "aboutPage" document
+    const query = `*[_type == "vektorPage"][0]`;
+    // Adjust your query as needed.
+    // If you have a different doc type or field for the hero image, update accordingly.
+
+    const data = await client.fetch(query);
+
+    // Return the fetched data as props
+    return {
+        props: {
+            data,
+        },
+    };
 }

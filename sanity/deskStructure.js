@@ -1,4 +1,12 @@
-import {MdHome, MdWeb, MdSettings, MdGavel, MdAssignment, MdSecurity} from 'react-icons/md' // Icons for the Pages and Global Components
+import {
+  MdHome,
+  MdWeb,
+  MdSettings,
+  MdGavel,
+  MdAssignment,
+  MdSecurity,
+  MdAutoFixHigh,
+} from 'react-icons/md' // Icons for the Pages and Global Components
 import {GoHome} from 'react-icons/go' // Icon for individual pages like Start Page
 
 export default (S) =>
@@ -41,6 +49,11 @@ export default (S) =>
                 .id('kontaktItem')
                 .icon(MdGavel)
                 .child(S.document().schemaType('kontaktPage').documentId('singleton-kontakt')),
+              S.listItem()
+                .title('Vektorisierung')
+                .id('vektorItem')
+                .icon(MdAutoFixHigh)
+                .child(S.document().schemaType('vektorPage').documentId('singleton-vektor')),
               S.listItem()
                 .title('Impressum')
                 .id('impressumItem')
@@ -140,6 +153,7 @@ export default (S) =>
             'testimonialsSingleton',
             'faqsSingleton',
             'settingsSingleton',
+            'vektorPage',
           ].includes(listItem.getId()), // Exclude the singleton items from the default document list
       ),
     ])

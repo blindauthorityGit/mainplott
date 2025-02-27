@@ -7,6 +7,7 @@ import widerrufPage from '../schemas/pages/widerruf.js'
 import agbPage from '../schemas/pages/agb.js'
 import datenschutzPage from '../schemas/pages/datenschutz.js'
 import kontaktPage from '../schemas/pages/kontakt.js'
+import vektorPage from '../schemas/pages/vektorPage.js'
 
 //COMPONENTS
 import seo from '../schemas/seo'
@@ -47,5 +48,6 @@ export const schemaTypes = [
   settingsSingleton,
   ServicePage,
   shop,
+  vektorPage,
   // You can add other schemas like aboutPage, contactPage here as needed
 ]
