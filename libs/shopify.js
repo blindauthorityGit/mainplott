@@ -23,7 +23,6 @@ async function callShopify(query) {
     try {
         const response = await fetch(fetchUrl, fetchOptions);
         const data = await response.json();
-        console.log("Shopify API Response:", data); // Log full response
         if (data.errors) {
             console.error("Shopify API Errors:", data.errors);
         }
