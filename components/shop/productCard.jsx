@@ -24,6 +24,15 @@ function ProductCard({ product }) {
     const formattedVariants = formatVariants(product.node.variants);
     const user = useUserStore((state) => state.user);
 
+    // Determine if product belongs to one of the special collections
+    const specialCollectionKeywords = ["kinder", "hochzeit", "geburt", "weihnachten", "geschenkidee"];
+    const collections = product.node.collections?.edges || [];
+    const isSpecialCollection = collections.some((edge) =>
+        specialCollectionKeywords.some((keyword) => edge.node.handle.includes(keyword))
+    );
+
+    console.log(isSpecialCollection);
+
     return (
         <motion.div
             className="lg:h-120 lg:w-64 w-full h-full rounded-[20px] mx-auto border border-gray-200 overflow-hidden bg-white relative"
@@ -64,34 +73,39 @@ function ProductCard({ product }) {
                     <div className="font-body leading-tight text text-base text-textColor lg:text-xl font-semibold ">
                         {title}
                     </div>
-                    <div className="text-xs mb-4 lg:mb-2 lg:text-sm text-textColor  mt-2 line-clamp-2 font-body">
+                    <div className="text-xs mb-4 lg:mb-2 lg:text-sm text-textColor mt-2 line-clamp-2 font-body">
                         {description}
                     </div>
                 </div>
                 <div>
                     <div className="flex flex-wrap gap-x-2 gap-y-2 items-center lg:mt-2">
-                        {Object.keys(formattedVariants)[0] &&
-                            formattedVariants[Object.keys(formattedVariants)[0]]?.colors
-                                .slice(0, 4)
-                                .map(({ color }, index) => (
-                                    <div
-                                        key={`color-${index}`}
-                                        className="w-4 h-4 lg:w-5 lg:h-5 block rounded-full border-2 border-grey-500"
-                                        style={{ background: getColorHex(color) }}
-                                    />
-                                ))}
-
-                        {formattedVariants[Object.keys(formattedVariants)[0]]?.colors.length > 4 && (
+                        {isSpecialCollection ? (
                             <span className="text-xs text-textColor font-body">
-                                + {formattedVariants[Object.keys(formattedVariants)[0]]?.colors.length - 4} weitere
-                                Farben
+                                in {product.node.variants.edges.length} Variationen
                             </span>
+                        ) : (
+                            <>
+                                {Object.keys(formattedVariants)[0] &&
+                                    formattedVariants[Object.keys(formattedVariants)[0]]?.colors
+                                        .slice(0, 4)
+                                        .map(({ color }, index) => (
+                                            <div
+                                                key={`color-${index}`}
+                                                className="w-4 h-4 lg:w-5 lg:h-5 block rounded-full border-2 border-grey-500"
+                                                style={{ background: getColorHex(color) }}
+                                            />
+                                        ))}
+                                {formattedVariants[Object.keys(formattedVariants)[0]]?.colors.length > 4 && (
+                                    <span className="text-xs text-textColor font-body">
+                                        + {formattedVariants[Object.keys(formattedVariants)[0]]?.colors.length - 4}{" "}
+                                        weitere Farben
+                                    </span>
+                                )}
+                            </>
                         )}
-                    </div>{" "}
+                    </div>
                     <div className="text-base lg:text-lg font-body text-gray-600 font-primary font-semibold mb-2 mt-4">
-                        {/* ab EUR 29,- */}
                         {calculateLowestPrice(product.node.variants.edges)}
-
                         {user?.userType == "firmenkunde" ? (
                             <p className="text-xs font-body font-thin">ohne MwSt.</p>
                         ) : null}
