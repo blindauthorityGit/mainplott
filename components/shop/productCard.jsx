@@ -76,7 +76,7 @@ function ProductCard({ product }) {
                                 .map(({ color }, index) => (
                                     <div
                                         key={`color-${index}`}
-                                        className="w-4 h-4 lg:w-5 lg:h-5 block rounded-full border-2 border-white"
+                                        className="w-4 h-4 lg:w-5 lg:h-5 block rounded-full border-2 border-grey-500"
                                         style={{ background: getColorHex(color) }}
                                     />
                                 ))}

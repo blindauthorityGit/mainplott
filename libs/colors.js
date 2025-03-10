@@ -81,6 +81,20 @@ const colorDictionary = {
     Turquoise: "#40E0D0",
     "Heather Grey": "#BEBBBB",
     "Steel Grey": "#71797E",
+    sand: "#E9D9B9",
+    creame: "#F1ECDF",
+    khaki: "#727161",
+    pink: "#F3C7F7",
+    "soft-olive": "#9FA189",
+    "sports gray": "#7C7474",
+    "lime-green": "#8FE150",
+    "lime green": "#8FE150",
+    "black/sandstone": "#E4D4D4",
+    "smoky-green/sandstone": "#4A9480",
+    "carmine-red/sandstone": "#CF4646",
+    "royal/sandstone": "#3E8FED",
+    "milky-blue": "#72A8BA",
+    sandstone: "#F6DCBD",
 
     // weitere Farben hinzufügen
 };
