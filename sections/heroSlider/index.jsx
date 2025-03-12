@@ -31,14 +31,15 @@ const HeroSwiper = ({ data }) => {
     };
 
     return (
-        <div className="w-full h-full relative bg-accentColor items-center lg:h-[40%] lg:rounded-[20px] overflow-hidden">
+        <div className="w-full h-full relative bg-accentColor items-center lg:h-[40%] lg:rounded-[20px] overflow-hidden ">
             <Swiper
                 modules={[Pagination, Navigation]}
                 slidesPerView={1}
                 loop
                 // pagination={{ clickable: true, dynamicBullets: true }}
                 onSwiper={setSwiper} // Save swiper instance
-                className="h-full w-full"
+                className="h-full w-full "
+                wrapperClass="swiper-wrapper flex items-center"
             >
                 {/* Custom Navigation Buttons */}
                 <div className="absolute z-10 -left-2 lg:left-8 scale-50 lg:scale-100 bottom-2 top-[30%] lg:top-[46%]">
@@ -60,7 +61,7 @@ const HeroSwiper = ({ data }) => {
 
                 {/* Slides */}
                 {data?.map((e, i) => (
-                    <SwiperSlide key={`swipo${i}`} className="w-full h-full flex overflow-visible">
+                    <SwiperSlide key={`swipo${i}`} className="w-full h-full flex items-center overflow-visible">
                         <Slide
                             headline={e.headline}
                             text={e.text}

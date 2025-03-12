@@ -79,12 +79,12 @@ export default function Vektorisieren({ data }) {
                     className="grid grid-cols-12 px-4 lg:px-0 font-body pt-12"
                 >
                     {/* Header Section */}
-                    <div className="mb-12 col-span-6">
+                    <div className="mb-12 col-span-12 lg:col-span-6">
                         <BasicPortableText value={data.content}></BasicPortableText>
                     </div>
 
                     {/* Form Section */}
-                    <div className="col-span-6">
+                    <div className="col-span-12 lg:col-span-6 mb-12 lg:mb-0">
                         <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-xl mx-auto">
                             {/* File Upload */}
                             <div className="flex flex-col">

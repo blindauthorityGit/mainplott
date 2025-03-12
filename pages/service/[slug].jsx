@@ -21,7 +21,7 @@ export default function Service({ data, globalData }) {
             <Meta data={data?.seo}></Meta>
             <MainContainer>
                 <HeaderText data={data && data}></HeaderText>
-                <LinkBoxSection klasse="lg:!col-span-4" data={data?.linkBoxes}></LinkBoxSection>
+                <LinkBoxSection klasse="lg:!col-span-4 pt-6 lg:pt-0" data={data?.linkBoxes}></LinkBoxSection>
                 <Spacer></Spacer>
                 <LogoLeiste data={globalData?.settings?.logos}></LogoLeiste>
             </MainContainer>

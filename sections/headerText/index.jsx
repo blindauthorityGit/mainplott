@@ -19,14 +19,14 @@ import urlFor from "../../functions/urlFor";
 const HeaderText = ({ data }) => {
     return (
         <>
-            <div className="grid grid-cols-12 px-4 lg:px-24 gap-3 lg:gap-6 lg:mt-10 lg:mb-16 items-center">
+            <div className="grid grid-cols-12 pt-8 lg:pt-0 px-4 lg:px-24 gap-3 lg:gap-6 lg:mt-10 lg:mb-16 items-center">
                 <motion.div
                     className={`col-span-12  text-center`}
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true }}
                 >
-                    <P klasse="text-primaryColor font-bold ">{data?.topline}</P>
+                    <P klasse="text-primaryColor font-bold mb-4 lg:mb-0">{data?.topline}</P>
                     <H1>{data?.headline}</H1>
                     <div className="lg:w-2/4 mx-auto lg:mt-12">
                         <BasicPortableText value={data?.text}></BasicPortableText>
