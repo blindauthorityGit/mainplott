@@ -41,7 +41,7 @@ const HeroSwiper = ({ data }) => {
                 className="h-full w-full"
             >
                 {/* Custom Navigation Buttons */}
-                <div className="absolute z-10 lg:left-8 scale-50 lg:scale-100 bottom-2 top-[50%] lg:top-[46%]">
+                <div className="absolute z-10 -left-2 lg:left-8 scale-50 lg:scale-100 bottom-2 top-[30%] lg:top-[46%]">
                     <GeneralNavButton
                         width="38"
                         height="38"
@@ -49,7 +49,7 @@ const HeroSwiper = ({ data }) => {
                         onClick={goToPrevSlide} // Attach function
                     />
                 </div>
-                <div className="absolute z-10 lg:right-8 right-0 bottom-2   scale-50 lg:scale-100 top-[50%] lg:top-[46%]">
+                <div className="absolute z-10 lg:right-8 -right-2 bottom-2   scale-50 lg:scale-100 top-[30%] lg:top-[46%]">
                     <GeneralNavButton
                         width="38"
                         height="38"

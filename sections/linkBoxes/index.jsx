@@ -14,7 +14,7 @@ const LinkBoxesSection = ({ data, klasse }) => {
     const icons = [FaTshirt, AiFillPrinter, FaGift, MdOutlineDesignServices];
 
     return (
-        <div className={`grid grid-cols-12 px-4 lg:px-24 gap-2 lg:gap-6 mt-4 lg:mt-10 `}>
+        <div className={`grid grid-cols-12  lg:px-24 gap-2 lg:gap-6 mt-4 lg:mt-10 `}>
             {data?.map((e, i) => {
                 return (
                     <LinkBox

@@ -3,7 +3,22 @@ import Image from "next/image";
 import BeatLoader from "react-spinners/BeatLoader";
 
 const CoverImage = (
-    { src, mobileSrc, alt, height, klasse, onClick, priority, width, position, className, style, aspectRatio },
+    {
+        src,
+        mobileSrc,
+        alt,
+        height,
+        klasse,
+        onClick,
+        priority,
+        width,
+        position,
+        className,
+        style,
+        aspectRatio,
+        mobileFit = "cover", // Defaults to "cover" if not provided
+        desktopFit = "cover", // Defaults to "cover" if not provided
+    },
     ref
 ) => {
     const [isLoading, setLoading] = useState(true);
@@ -52,7 +67,7 @@ const CoverImage = (
                     priority={priority}
                     className={`block lg:hidden ${klasse}`}
                     onClick={onClick}
-                    style={{ aspectRatio: aspectRatio, objectFit: "cover" }}
+                    style={{ aspectRatio: aspectRatio, objectFit: mobileFit }}
                     onLoad={handleLoad}
                 />
             )}
@@ -68,7 +83,7 @@ const CoverImage = (
                     quality={80}
                     className={`hidden lg:block ${klasse}`}
                     onClick={onClick}
-                    style={{ aspectRatio: aspectRatio, objectFit: "cover" }}
+                    style={{ aspectRatio: aspectRatio, objectFit: desktopFit }}
                     onLoad={handleLoad}
                 />
             )}

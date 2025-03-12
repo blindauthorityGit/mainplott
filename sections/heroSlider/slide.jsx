@@ -40,6 +40,7 @@ const Slide = ({ image, mobileImage, headline, text, buttonText, buttonLink }) =
                 <CoverImage
                     src={urlFor(image).url()}
                     mobileSrc={urlFor(mobileImage).url()}
+                    mobileFit="contain"
                     alt="Cover Background"
                     klasse={"absolute "}
                     className="aspect-[2.8/3] lg:aspect-[3/3.25] lg:overflow-visible lg:mt-20 w-[60%] lg:w-full relative lg:static mx-auto"
