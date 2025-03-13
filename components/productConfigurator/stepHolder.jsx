@@ -435,119 +435,113 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                 exit="exit"
                                 transition={{ duration: 0.3, ease: "easeInOut" }}
                                 style={{
-                                    display: isMobile && purchaseData.configurator == "template" ? "none" : "block",
+                                    display: isMobile && purchaseData.configurator === "template" ? "none" : "block",
                                 }}
                             >
                                 {isMobile ? (
-                                    <>
-                                        <MobileKonva
-                                            key={purchaseData.currentSide} // <-- Add this key so it remounts when side changes
-                                            onExportReady={(fn) => (exportCanvasRef.current = fn)}
-                                            ref={konvaLayerRef}
-                                            uploadedGraphicFile={
-                                                purchaseData.sides[purchaseData.currentSide].uploadedGraphicFile
+                                    <MobileKonva
+                                        key={purchaseData.currentSide}
+                                        onExportReady={(fn) => (exportCanvasRef.current = fn)}
+                                        ref={konvaLayerRef}
+                                        uploadedGraphicFile={
+                                            purchaseData.sides[purchaseData.currentSide].uploadedGraphicFile
+                                        }
+                                        uploadedGraphicURL={
+                                            purchaseData.sides[purchaseData.currentSide].uploadedGraphic?.downloadURL
+                                        }
+                                        isPDF={purchaseData.sides[purchaseData.currentSide].isPDF}
+                                        pdfPreview={purchaseData.sides[purchaseData.currentSide].preview}
+                                        productImage={selectedImage}
+                                        boundaries={
+                                            {
+                                                /* ... */
                                             }
-                                            uploadedGraphicURL={
-                                                purchaseData.sides[purchaseData.currentSide].uploadedGraphic
-                                                    ?.downloadURL
-                                            }
-                                            isPDF={purchaseData.sides[purchaseData.currentSide].isPDF}
-                                            pdfPreview={purchaseData.sides[purchaseData.currentSide].preview}
-                                            productImage={selectedImage}
-                                            boundaries={
-                                                {
-                                                    /* ... */
-                                                }
-                                            }
-                                            position={{
-                                                x: purchaseData.sides[purchaseData.currentSide].xPosition,
-                                                y: purchaseData.sides[purchaseData.currentSide].yPosition,
-                                                rotation: purchaseData.sides[purchaseData.currentSide].rotation || 0,
-                                            }}
-                                            setPosition={(newPos, newRotation) =>
-                                                setPurchaseData({
-                                                    ...purchaseData,
-                                                    sides: {
-                                                        ...purchaseData.sides,
-                                                        [purchaseData.currentSide]: {
-                                                            ...purchaseData.sides[purchaseData.currentSide],
-                                                            xPosition: newPos.x,
-                                                            yPosition: newPos.y,
-                                                            rotation: newRotation, // Save the new rotation value here
-                                                        },
+                                        }
+                                        position={{
+                                            x: purchaseData.sides[purchaseData.currentSide].xPosition,
+                                            y: purchaseData.sides[purchaseData.currentSide].yPosition,
+                                            rotation: purchaseData.sides[purchaseData.currentSide].rotation || 0,
+                                        }}
+                                        setPosition={(newPos, newRotation) =>
+                                            setPurchaseData({
+                                                ...purchaseData,
+                                                sides: {
+                                                    ...purchaseData.sides,
+                                                    [purchaseData.currentSide]: {
+                                                        ...purchaseData.sides[purchaseData.currentSide],
+                                                        xPosition: newPos.x,
+                                                        yPosition: newPos.y,
+                                                        rotation: newRotation,
                                                     },
-                                                })
-                                            }
-                                            scale={purchaseData.sides[purchaseData.currentSide].scale}
-                                            setScale={(newScale) =>
-                                                setPurchaseData({
-                                                    ...purchaseData,
-                                                    sides: {
-                                                        ...purchaseData.sides,
-                                                        [purchaseData.currentSide]: {
-                                                            ...purchaseData.sides[purchaseData.currentSide],
-                                                            scale: newScale,
-                                                        },
+                                                },
+                                            })
+                                        }
+                                        scale={purchaseData.sides[purchaseData.currentSide].scale}
+                                        setScale={(newScale) =>
+                                            setPurchaseData({
+                                                ...purchaseData,
+                                                sides: {
+                                                    ...purchaseData.sides,
+                                                    [purchaseData.currentSide]: {
+                                                        ...purchaseData.sides[purchaseData.currentSide],
+                                                        scale: newScale,
                                                     },
-                                                })
-                                            }
-                                        />
-                                    </>
+                                                },
+                                            })
+                                        }
+                                    />
                                 ) : (
-                                    <>
-                                        <KonvaLayer
-                                            key={purchaseData.currentSide} // <-- Add this key so it remounts when side changes
-                                            onExportReady={(fn) => (exportCanvasRef.current = fn)}
-                                            ref={konvaLayerRef}
-                                            uploadedGraphicFile={
-                                                purchaseData.sides[purchaseData.currentSide].uploadedGraphicFile
+                                    <KonvaLayer
+                                        key={purchaseData.currentSide}
+                                        onExportReady={(fn) => (exportCanvasRef.current = fn)}
+                                        ref={konvaLayerRef}
+                                        uploadedGraphicFile={
+                                            purchaseData.sides[purchaseData.currentSide].uploadedGraphicFile
+                                        }
+                                        uploadedGraphicURL={
+                                            purchaseData.sides[purchaseData.currentSide].uploadedGraphic?.downloadURL
+                                        }
+                                        isPDF={purchaseData.sides[purchaseData.currentSide].isPDF}
+                                        pdfPreview={purchaseData.sides[purchaseData.currentSide].preview}
+                                        productImage={selectedImage}
+                                        boundaries={
+                                            {
+                                                /* ... */
                                             }
-                                            uploadedGraphicURL={
-                                                purchaseData.sides[purchaseData.currentSide].uploadedGraphic
-                                                    ?.downloadURL
-                                            }
-                                            isPDF={purchaseData.sides[purchaseData.currentSide].isPDF}
-                                            pdfPreview={purchaseData.sides[purchaseData.currentSide].preview}
-                                            productImage={selectedImage}
-                                            boundaries={
-                                                {
-                                                    /* ... */
-                                                }
-                                            }
-                                            position={{
-                                                x: purchaseData.sides[purchaseData.currentSide].xPosition,
-                                                y: purchaseData.sides[purchaseData.currentSide].yPosition,
-                                                rotation: purchaseData.sides[purchaseData.currentSide].rotation || 0,
-                                            }}
-                                            setPosition={(newPos, newRotation) =>
-                                                setPurchaseData({
-                                                    ...purchaseData,
-                                                    sides: {
-                                                        ...purchaseData.sides,
-                                                        [purchaseData.currentSide]: {
-                                                            ...purchaseData.sides[purchaseData.currentSide],
-                                                            xPosition: newPos.x,
-                                                            yPosition: newPos.y,
-                                                            rotation: newRotation, // Save the new rotation value here
-                                                        },
+                                        }
+                                        position={{
+                                            x: purchaseData.sides[purchaseData.currentSide].xPosition,
+                                            y: purchaseData.sides[purchaseData.currentSide].yPosition,
+                                            rotation: purchaseData.sides[purchaseData.currentSide].rotation || 0,
+                                        }}
+                                        setPosition={(newPos, newRotation) =>
+                                            setPurchaseData({
+                                                ...purchaseData,
+                                                sides: {
+                                                    ...purchaseData.sides,
+                                                    [purchaseData.currentSide]: {
+                                                        ...purchaseData.sides[purchaseData.currentSide],
+                                                        xPosition: newPos.x,
+                                                        yPosition: newPos.y,
+                                                        rotation: newRotation,
                                                     },
-                                                })
-                                            }
-                                            scale={purchaseData.sides[purchaseData.currentSide].scale}
-                                            setScale={(newScale) =>
-                                                setPurchaseData({
-                                                    ...purchaseData,
-                                                    sides: {
-                                                        ...purchaseData.sides,
-                                                        [purchaseData.currentSide]: {
-                                                            ...purchaseData.sides[purchaseData.currentSide],
-                                                            scale: newScale,
-                                                        },
+                                                },
+                                            })
+                                        }
+                                        scale={purchaseData.sides[purchaseData.currentSide].scale}
+                                        setScale={(newScale) =>
+                                            setPurchaseData({
+                                                ...purchaseData,
+                                                sides: {
+                                                    ...purchaseData.sides,
+                                                    [purchaseData.currentSide]: {
+                                                        ...purchaseData.sides[purchaseData.currentSide],
+                                                        scale: newScale,
                                                     },
-                                                })
-                                            }
-                                        />
-                                    </>
+                                                },
+                                            })
+                                        }
+                                    />
                                 )}
                             </div>
                         ) : (
@@ -565,8 +559,6 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                         maxHeight: isMobile ? "auto" : "860px",
                                         width: isMobile ? "" : imageSize.width ? `${imageSize.width}px` : "auto",
                                         height: isMobile ? "" : imageSize.height ? `auto` : "auto",
-                                        // height: imageHeight ? `${imageHeight}px` : "auto", // Use imageHeight dynamically
-
                                         objectFit: "contain",
                                     }}
                                     variants={fadeAnimationVariants}
@@ -580,20 +572,22 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                         alt="Product Step Image"
                                         className="w-full mix-blend-multiply p-4 lg:max-h-[none]"
                                         onLoad={() => setImageHeight(imageRef.current?.clientHeight)}
-                                    />{" "}
-                                    {/* Rotate Icon Button */}
-                                    {selectedVariant?.backImageUrl && (
-                                        <button
-                                            onClick={handleRotateImage}
-                                            className="absolute top-4 right-4 bg-white p-2 text-textColor rounded-full shadow-md"
-                                        >
-                                            <BiRefresh size={24} />
-                                        </button>
-                                    )}
+                                    />
                                 </motion.div>
                             )
                         )}
                     </AnimatePresence>
+                    {/* Refresh button moved outside of the motion.div */}
+                    {selectedVariant?.backImageUrl && (
+                        <motion.button
+                            onClick={handleRotateImage}
+                            whileHover={{ scale: 1.1, rotate: 10 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="absolute top-2 right-2 lg:right-16 bg-white p-2 text-textColor rounded-full shadow-md"
+                        >
+                            <BiRefresh size={28} />
+                        </motion.button>
+                    )}
                 </div>
             </div>
 

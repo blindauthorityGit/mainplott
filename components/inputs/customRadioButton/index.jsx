@@ -15,6 +15,7 @@ import TShirtRueckevolleBreite from "@/assets/icons/TShirt-Ruecken-volle-Breite.
 
 import Hoodierechtsoben from "@/assets/icons/Hoodie-rechts-oben.svg";
 import Hoodielinkssoben from "@/assets/icons/Hoodie-links-oben.svg";
+import HoodiemitteOben from "@/assets/icons/Hoodie-Brust-mitte-oben.svg";
 
 import HoodieRueckenrechtsoben from "@/assets/icons/Hoodie-Ruecken-rechts-oben.svg";
 import HoodieRueckenlinkssoben from "@/assets/icons/Hoodie-Ruecken-links-oben.svg";
@@ -23,6 +24,7 @@ import HoodieRueckenmitte from "@/assets/icons/Hoodie-Ruecken-mitte.svg";
 
 import Jackerechtsoben from "@/assets/icons/Jacke-Brust-rechts-oben.svg";
 import Jackelinkssoben from "@/assets/icons/Jacke-Brust-links-oben.svg";
+import Jackemitte from "@/assets/icons/Jacke-Brust-mitte.svg";
 
 import JackeRueckenrechtsoben from "@/assets/icons/Jacke-Ruecken-rechts-oben.svg";
 import JackeRueckenlinkssoben from "@/assets/icons/Jacke-Ruecken-links-oben.svg";
@@ -86,6 +88,7 @@ function getGraphicForProductType(product, label) {
     const HoodiePositions = {
         "Brust rechts oben": Hoodierechtsoben,
         "Brust links oben": Hoodielinkssoben,
+        "Brust mitte oben": HoodiemitteOben,
         "Rücken rechts oben": HoodieRueckenrechtsoben,
         "Rücken links oben": HoodieRueckenlinkssoben,
         "Rücken oben mitte": HoodieRueckenmitteoben,
@@ -95,6 +98,7 @@ function getGraphicForProductType(product, label) {
     const JackePositions = {
         "Brust rechts oben": Jackerechtsoben,
         "Brust links oben": Jackelinkssoben,
+        "Brust Mitte": Jackemitte,
         "Rücken rechts oben": JackeRueckenrechtsoben,
         "Rücken links oben": JackeRueckenlinkssoben,
         "Rücken oben mitte": JackeRueckenmitteoben,

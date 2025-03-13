@@ -97,6 +97,9 @@ const colorDictionary = {
     sandstone: "#F6DCBD",
     titan: "#7B7171",
     "bright-red": "#FF4D3B",
+    "steel grey": "#5b5b5b",
+    "Steel grey": "#5b5b5b",
+    "candy-pink": "#e2c3d0",
 
     // weitere Farben hinzufügen
 };
