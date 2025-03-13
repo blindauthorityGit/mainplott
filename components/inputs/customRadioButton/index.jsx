@@ -11,6 +11,7 @@ import TShirtRueckenrechtsoben from "@/assets/icons/TShirt-Ruecken-rechts-oben.s
 import TShirtRueckenmitteoben from "@/assets/icons/TShirt-Ruecken-Mitte-oben.svg";
 import TShirtRueckenlinkssoben from "@/assets/icons/TShirt-Ruecken-links-oben.svg";
 import TShirtRueckenmitte from "@/assets/icons/TShirt-Ruecken-Mitte.svg";
+import TShirtRueckevolleBreite from "@/assets/icons/TShirt-Ruecken-volle-Breite.svg";
 
 import Hoodierechtsoben from "@/assets/icons/Hoodie-rechts-oben.svg";
 import Hoodielinkssoben from "@/assets/icons/Hoodie-links-oben.svg";
@@ -56,6 +57,7 @@ function getGraphicForProductType(product, label) {
         "Rücken rechts oben": TShirtRueckenrechtsoben,
         "Rücken links oben": TShirtRueckenlinkssoben,
         "Rücken oben mitte": TShirtRueckenmitteoben,
+        "Rücken volle Breite": TShirtRueckevolleBreite,
         "Rücken Mitte": TShirtRueckenmitte,
     };
 

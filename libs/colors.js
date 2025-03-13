@@ -95,6 +95,8 @@ const colorDictionary = {
     "royal/sandstone": "#3E8FED",
     "milky-blue": "#72A8BA",
     sandstone: "#F6DCBD",
+    titan: "#7B7171",
+    "bright-red": "#FF4D3B",
 
     // weitere Farben hinzufügen
 };

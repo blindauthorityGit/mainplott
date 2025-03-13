@@ -71,19 +71,21 @@ export default function Product({ product, sizes, relatedProducts, category, glo
                     <SimpleConfigurator product={product?.productByHandle}></SimpleConfigurator>
                 )}
                 {product?.productByHandle?.detailbeschreibung?.value ? (
-                    <div className="flex mt-4 lg:mt-20 flex-wrap lg:flex-nowrap mb-16 lg:mb-4">
-                        <div className="lg:pl-24 lg:w-2/4  font-body text-sm lg:text-base !text-textColor p-4 lg:p-2 ">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 lg:mt-20 mb-16 lg:mb-4">
+                        <div className="lg:pl-24  font-body text-sm lg:text-base text-textColor p-4 lg:p-2 lg:pr-24">
                             <RichTextRenderer
                                 richText={JSON.parse(product?.productByHandle?.detailbeschreibung.value)}
-                            ></RichTextRenderer>
+                            />
                         </div>
                         {galleryImages.length > 0 && (
-                            <SimpleGallery
-                                images={galleryImages}
-                                selectedImage={selectedImage}
-                                onSelectImage={setSelectedImage}
-                            />
-                        )}{" "}
+                            <div className="p-4 lg:p-2">
+                                <SimpleGallery
+                                    images={galleryImages}
+                                    selectedImage={selectedImage}
+                                    onSelectImage={setSelectedImage}
+                                />
+                            </div>
+                        )}
                     </div>
                 ) : (
                     "null"
