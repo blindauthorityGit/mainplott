@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { BiRefresh } from "react-icons/bi";
 
-export default function RotateButton({ handleRotateImage }) {
+export default function RotateButton({ handleRotateImage, currentStep }) {
     const [rotated, setRotated] = useState(false);
 
     const handleClick = () => {
@@ -16,6 +16,7 @@ export default function RotateButton({ handleRotateImage }) {
             animate={{ rotate: rotated ? 180 : 0 }}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
+            style={{ display: currentStep == 3 ? "none" : "" }}
             className="absolute top-2 right-2 lg:right-16 bg-white p-2 text-textColor rounded-full shadow-md"
         >
             <BiRefresh size={28} />

@@ -295,6 +295,19 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
 
     const positions = getPositions();
     console.log("FIIIXED", positions);
+    // At the top of your component, ensure purchaseData.sides exists
+    useEffect(() => {
+        if (!purchaseData.sides) {
+            setPurchaseData((prev) => ({ ...prev, sides: { front: {} } }));
+        }
+    }, []);
+
+    // In ConfigureDesign, right before the useEffect that sets the default position:
+    const effectivePositions = positions || {
+        front: { default: [{ name: "front", position: { x: 0.5, y: 0.5 } }] },
+    };
+    // If the current side isn’t defined in positions, default to "front"
+    const effectiveSide = effectivePositions[currentSide] ? currentSide : "front";
 
     useEffect(() => {
         if (!purchaseData.sides[currentSide]?.position && positions[currentSide]?.default) {

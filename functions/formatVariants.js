@@ -8,6 +8,8 @@ export default function formatVariants(variants) {
         const colorOption = node.selectedOptions.find((option) => option.name === "Farbe")?.value;
         const imageUrl = node.image?.originalSrc;
         const backImageUrl = node.backImageUrl || null; // Include the back image URL if available
+        const configImageUrl = node.configImageUrl || (node.configImage && node.configImage.value) || null;
+
         const variantId = node.id; // Capture the variant ID
         const price = node.priceV2?.amount || null; // Capture the price amount
 
@@ -28,6 +30,8 @@ export default function formatVariants(variants) {
             color: colorOption,
             image: imageUrl,
             backImage: backImageUrl || colorBackImages[colorOption] || null, // Use the stored back image if not defined
+            configImage: configImageUrl, // new field: config image URL if available
+
             id: variantId, // Include the variant ID
             price,
         });

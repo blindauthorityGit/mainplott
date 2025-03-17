@@ -96,10 +96,18 @@ const colorDictionary = {
     "milky-blue": "#72A8BA",
     sandstone: "#F6DCBD",
     titan: "#7B7171",
+    Titan: "#7B7171",
     "bright-red": "#FF4D3B",
     "steel grey": "#5b5b5b",
     "Steel grey": "#5b5b5b",
     "candy-pink": "#e2c3d0",
+    rot: "#a32828",
+    dunkelblau: "#1d1645",
+    dunkelgrün: "#01351c",
+    hellblau: "#257399",
+    Grau: "#4f525d",
+    Blau: "#2e2866",
+    apfelgrün: "#9baf26",
 
     // weitere Farben hinzufügen
 };

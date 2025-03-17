@@ -234,9 +234,13 @@ export async function getProductByHandle(handle) {
                           originalSrc
                           altText
                       }
-                      metafield(namespace: "custom", key: "back_image") {
-                          value
-                      }
+                     backImage: metafield(namespace: "custom", key: "back_image") {
+              value
+            }
+            configImage: metafield(namespace: "custom", key: "config_image") {
+              value
+            }
+              
                   }
               }
           }
@@ -248,28 +252,41 @@ export async function getProductByHandle(handle) {
     const product = response.data.productByHandle;
 
     // Create sizes array
-    const sizes = product.variants.edges
-        .map((variant) => variant.node.selectedOptions.find((option) => option.name === "Größe")?.value)
-        .filter((size) => size);
+    const sizes =
+        product.variants?.edges
+            .map((variant) => variant.node.selectedOptions?.find((option) => option.name === "Größe")?.value)
+            .filter((size) => size) || [];
 
     // Extract Metaobject IDs for colors from color-pattern metafield
     const colorPatternIds = product.metafield
         ? JSON.parse(product.metafield.value).map((id) => id.split("/").pop())
         : [];
 
+    // Process customImages if available (from the product level)
+    const customImages = product.customImages?.references?.edges
+        ? product.customImages.references.edges.map((edge) => ({
+              id: edge.node.id,
+              url: edge.node.image?.url,
+              altText: edge.node.image?.altText,
+          }))
+        : [];
+
     // Fetch back image URLs for all variants and embed them in the product
     const variantsWithBackImages = await Promise.all(
-        product.variants.edges.map(async (variant) => {
-            if (variant.node.metafield && variant.node.metafield.value) {
-                const backImageUrl = await getBackImageUrl(variant.node.metafield.value);
-                return {
-                    ...variant.node,
-                    backImageUrl,
-                };
+        (product.variants?.edges || []).map(async (variant) => {
+            const node = variant.node;
+            let backImageUrl = null;
+            if (node.backImage && node.backImage.value) {
+                backImageUrl = await getBackImageUrl(node.backImage.value);
+            }
+            let configImageUrl = null;
+            if (node.configImage && node.configImage.value) {
+                configImageUrl = await getBackImageUrl(node.configImage.value);
             }
             return {
-                ...variant.node,
-                backImageUrl: null,
+                ...node,
+                backImageUrl,
+                configImageUrl,
             };
         })
     );
@@ -413,6 +430,8 @@ export async function getProductByHandle(handle) {
         sizes,
         colorPatternIds,
         product,
+        customImages, // From the product level metafield
+
         parsedVeredelungData,
         profiDatenCheckData,
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import ContentWrapper from "../components/contentWrapper";
 import CustomCheckBox from "@/components/inputs/customCheckBox";
 import GeneralCheckBox from "@/components/inputs/generalCheckbox";
@@ -30,6 +30,9 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     const formattedVariants = formatVariants(product.variants);
     console.log("product.variants", formattedVariants, product);
 
+    // Use a ref flag to ensure initialization only happens once per product
+    const didInitializeRef = useRef(false);
+
     // Initialize price based on current purchaseData
     useEffect(() => {
         if (purchaseData.selectedSize && purchaseData.selectedColor) {
@@ -45,25 +48,32 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
 
     useEffect(() => {
         const initializeSelection = () => {
-            const firstSize = Object.keys(formattedVariants)?.[0];
+            const sizeKeys = Object.keys(formattedVariants);
+            if (sizeKeys.length === 0) {
+                // No size options available – skip initialization.
+                if (!purchaseData.selectedSize) setSelectedSize(null);
+                if (!purchaseData.selectedColor) setSelectedColor(null);
+            }
+
+            const firstSize = sizeKeys[0];
+            // Get the first color data for the first size (if any)
             const firstColorData = formattedVariants[firstSize]?.colors?.[0] || {};
-            const { color: firstColor, image, backImage, id: id, price: initialPrice } = firstColorData;
+            const { color: firstColor, image, backImage, id, price: initialPrice } = firstColorData;
 
-            // console.log(firstID);
-
+            // Only initialize if there isn't already a size or color selected.
             if (!purchaseData.selectedSize || !purchaseData.selectedColor) {
                 const initialSize = purchaseData.selectedSize || firstSize;
                 const initialColor = purchaseData.selectedColor || firstColor;
                 console.log(initialSize, initialColor);
                 setSelectedSize(initialSize);
                 setSelectedColor(initialColor);
-                setPrice(initialPrice); // Set the initial price
+                setPrice(initialPrice);
 
                 // Set the first image and active variant
                 setSelectedImage(formattedVariants[initialSize]?.colors?.[0]?.image);
                 setActiveVariant(initialSize, initialColor);
 
-                // Initialize purchaseData with proper variants
+                // Update the purchaseData
                 setPurchaseData({
                     ...purchaseData,
                     selectedSize: initialSize,
@@ -78,7 +88,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                             color: initialColor,
                             quantity: purchaseData.variants?.[initialSize]?.quantity || 1,
                             id: id,
-                            price: initialPrice, // Store the initial price
+                            price: initialPrice,
                         },
                     },
                 });
@@ -104,15 +114,20 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
 
         // Find the corresponding color data from formatted variants
         const activeColorData = sizeData.colors.find((c) => c.color === color);
+        console.log(activeColorData);
         if (activeColorData) {
-            const { backImage, image, id, price: variantPrice } = activeColorData;
+            const { backImage, image, id, price: variantPrice, configImage, configImageUrl } = activeColorData;
 
             // Create a simplified "variant node" object
             const activeVariantNode = {
                 id: id,
                 image: { originalSrc: image },
                 backImageUrl: backImage, // Use our computed backImage
+                configImage: configImage || null,
+                configImageUrl: configImageUrl || null, // Use the config image URL if available
             };
+
+            console.log(activeVariantNode);
 
             // Update Zustand store with the variant data
             setSelectedVariant(activeVariantNode);

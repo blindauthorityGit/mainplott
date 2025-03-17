@@ -411,6 +411,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     }, [revealMobileSteps]);
 
     console.log("STEEEEPS", steps[currentStep]);
+    console.log("selected Variant", selectedVariant);
     return (
         <div className="grid grid-cols-12  lg:gap-4 h-full">
             {/* If exporting, show overlay */}
@@ -452,7 +453,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                         }
                                         isPDF={purchaseData.sides[purchaseData.currentSide].isPDF}
                                         pdfPreview={purchaseData.sides[purchaseData.currentSide].preview}
-                                        productImage={selectedImage}
+                                        productImage={selectedVariant?.configImage || selectedImage}
                                         boundaries={
                                             {
                                                 /* ... */
@@ -504,7 +505,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                         }
                                         isPDF={purchaseData.sides[purchaseData.currentSide].isPDF}
                                         pdfPreview={purchaseData.sides[purchaseData.currentSide].preview}
-                                        productImage={selectedImage}
+                                        productImage={selectedVariant?.configImage || selectedImage}
                                         boundaries={
                                             {
                                                 /* ... */
@@ -589,7 +590,11 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                             >
                                 <BiRefresh size={28} />
                             </motion.button> */}
-                            <RotateButton handleRotateImage={handleRotateImage}></RotateButton>
+
+                            <RotateButton
+                                currentStep={currentStep}
+                                handleRotateImage={handleRotateImage}
+                            ></RotateButton>
                         </>
                     )}
                 </div>

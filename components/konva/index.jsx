@@ -57,6 +57,8 @@ const KonvaLayer = forwardRef(
         const [isEditAreaHovered, setIsEditAreaHovered] = useState(false);
         const fadeOutTimeoutRef = useRef(null);
         const hoveredRef = useRef(false);
+
+        console.log("ProductImage", productImage);
         useEffect(() => {
             hoveredRef.current = isEditAreaHovered;
         }, [isEditAreaHovered]);
