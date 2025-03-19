@@ -264,6 +264,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                         pos.includes("Brust") ||
                         pos.includes("Oberschenkel vorne") ||
                         pos.includes("Vorne") ||
+                        pos.includes("Kugelschreiber") ||
                         pos.includes("Front")
                 )
                 .map((name) => ({
@@ -464,7 +465,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 </Button>
             ) : purchaseData.configurator === "template" ? (
                 <>
-                    <div className="flex flex-wrap lg:flex-nowrap lg:mb-4">
+                    <div className="flex flex-wrap  lg:mb-4">
                         {positions[currentSide].default.map((option, index) => (
                             <CustomRadioButton
                                 key={`radio${index}`}

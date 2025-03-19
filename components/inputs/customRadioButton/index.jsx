@@ -36,6 +36,11 @@ import HoseVorneLinks from "@/assets/icons/Hose-vorne-links.svg";
 import HoseHintenLinks from "@/assets/icons/Hose-hinten-links.svg";
 import HoseHintenRechts from "@/assets/icons/Hose-hinten-rechts.svg";
 
+import PenLinks from "@/assets/icons/pen-left.svg";
+import PenMitte from "@/assets/icons/pen-center.svg";
+import PenRechts from "@/assets/icons/pen-right.svg";
+import PenVoll from "@/assets/icons/pen-full.svg";
+
 import Front from "@/assets/icons/Front.svg";
 
 // Example label-to-image map
@@ -112,6 +117,13 @@ function getGraphicForProductType(product, label) {
         "Oberschenkel hinten rechts": HoseHintenRechts,
     };
 
+    const PenPositions = {
+        "Kugelschreiber links": PenLinks,
+        "Kugelschreiber mitte": PenMitte,
+        "Kugelschreiber rechts": PenRechts,
+        "Kugelschreiber voll": PenVoll,
+    };
+
     const ItemPositions = {
         Front: Front,
     };
@@ -134,6 +146,8 @@ function getGraphicForProductType(product, label) {
         return HosePositions[label] || "/images/default.png";
     } else if (tags.includes("werbematerial")) {
         return ItemPositions[label] || "/images/default.png";
+    } else if (tags.includes("Kugelschreiber")) {
+        return PenPositions[label] || "/images/default.png";
     }
 
     return TShirtPositions[label] || "/images/default.png";
@@ -159,7 +173,7 @@ const CustomRadioButton = ({ id, name, label, icon, value, checked, onChange, pr
         <div
             className={`
         flex flex-col items-center justify-center p-4 cursor-pointer 
-        border rounded-md transition-shadow hover:shadow-md w-2/4 lg:w-auto
+        border rounded-md transition-shadow hover:shadow-md w-2/4 
         ${cardBorder}
       `}
             onClick={handleCardClick}

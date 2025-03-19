@@ -59,6 +59,7 @@ const KonvaLayer = forwardRef(
         const hoveredRef = useRef(false);
 
         console.log("ProductImage", productImage);
+
         useEffect(() => {
             hoveredRef.current = isEditAreaHovered;
         }, [isEditAreaHovered]);
@@ -143,11 +144,13 @@ const KonvaLayer = forwardRef(
                 // Multiply the parsed relative values by container dimensions.
                 const width = konfig.width * containerWidth;
                 const height = konfig.height * containerHeight;
+                console.log(konfig.x);
                 // Center the bounding box. (Alternatively, you can calculate x and y differently if needed.)
-                const x = (containerWidth - width) / 2;
+                const x = konfig?.x ? konfig.x * containerWidth : (containerWidth - width) / 2;
+
                 const y = (containerHeight - height) / 2;
                 boundingRect = { x, y, width, height };
-
+                console.log(width, containerWidth);
                 setPurchaseData((prev) => ({
                     ...prev,
                     boundingRect: { x, y, width, height },
