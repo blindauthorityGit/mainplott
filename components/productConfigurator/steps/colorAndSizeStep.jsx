@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import ContentWrapper from "../components/contentWrapper";
 import CustomCheckBox from "@/components/inputs/customCheckBox";
+import CustomDropDown from "@/components/inputs/customDropDown";
 import GeneralCheckBox from "@/components/inputs/generalCheckbox";
 import useIsMobile from "@/hooks/isMobile";
 import MobileColorSelector from "../mobile/colorChoose";
 
 // STORE
-import useStore from "@/store/store"; // Your Zustand store
-import formatVariants from "@/functions/formatVariants"; // Function for formatting variants
+import useStore from "@/store/store";
+import formatVariants from "@/functions/formatVariants";
 import { getColorHex } from "@/libs/colors";
 import useUserStore from "@/store/userStore";
-import { calculateNetPrice } from "@/functions/calculateNetPrice"; // Import your net price function
+import { calculateNetPrice } from "@/functions/calculateNetPrice";
 
 import { P, H3 } from "@/components/typography";
 
@@ -25,6 +26,10 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     const isMobile = useIsMobile();
 
     const user = useUserStore((state) => state.user);
+
+    // Define secondaryOptionName from product data.
+    const optionNames = product.variants?.edges[0]?.node.selectedOptions.map((opt) => opt.name) || [];
+    const secondaryOptionName = optionNames.includes("Farbe") ? "Farbe" : optionNames[1] || "";
 
     // Format variants for easier access
     const formattedVariants = formatVariants(product.variants);
@@ -122,9 +127,9 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
             const activeVariantNode = {
                 id: id,
                 image: { originalSrc: image },
-                backImageUrl: backImage, // Use our computed backImage
+                backImageUrl: backImage,
                 configImage: configImage || null,
-                configImageUrl: configImageUrl || null, // Use the config image URL if available
+                configImageUrl: configImageUrl || null,
             };
 
             console.log(activeVariantNode);
@@ -132,7 +137,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
             // Update Zustand store with the variant data
             setSelectedVariant(activeVariantNode);
             setSelectedImage(image);
-            setPrice(variantPrice); // Update the price
+            setPrice(variantPrice);
 
             setPurchaseData((prevData) => ({
                 ...prevData,
@@ -146,46 +151,40 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     const handleSizeChange = (newSize) => {
         setSelectedSize(newSize);
 
-        // 1) Attempt to see if the current selectedColor is valid for this newSize
         const currentColorIsValid = formattedVariants[newSize]?.colors?.some((c) => c.color === selectedColor);
 
         let finalColor, finalImage, finalBackImage, finalId, finalPrice;
 
         if (currentColorIsValid && selectedColor) {
-            // If the user’s current color is valid, do nothing special, keep it
             const matchingColorData = formattedVariants[newSize].colors.find((c) => c.color === selectedColor);
             finalColor = matchingColorData.color;
             finalImage = matchingColorData.image;
             finalBackImage = matchingColorData.backImage;
             finalId = matchingColorData.id;
-            finalPrice = matchingColorData.price; // Get the price
+            finalPrice = matchingColorData.price;
         } else {
-            // If it’s invalid (or no color was selected), pick the first color
             const firstColorData = formattedVariants[newSize]?.colors?.[0] || {};
             finalColor = firstColorData.color || "";
             finalImage = firstColorData.image || "";
             finalBackImage = firstColorData.backImage || "";
             finalId = firstColorData.id || "";
-            finalPrice = firstColorData.price || ""; // Get the price
+            finalPrice = firstColorData.price || "";
         }
 
         setSelectedColor(finalColor);
         setSelectedImage(finalImage);
-        setPrice(finalPrice); // Update the price
+        setPrice(finalPrice);
 
-        // 2) Update purchaseData.variants
         const updatedVariants = {
             [newSize]: {
                 size: newSize,
                 color: finalColor,
-                // If there's already a quantity set for this size, keep it. Otherwise default to 1
                 quantity: purchaseData.variants[newSize]?.quantity || 1,
                 id: finalId,
-                price: finalPrice, // Update the price
+                price: finalPrice,
             },
         };
 
-        // 3) Update purchaseData
         setPurchaseData({
             ...purchaseData,
             selectedSize: newSize,
@@ -195,7 +194,6 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
             variants: updatedVariants,
         });
 
-        // 4) Update the active variant in the store
         setActiveVariant(newSize, finalColor);
     };
 
@@ -203,33 +201,30 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
     const handleColorChange = (color) => {
         setSelectedColor(color);
 
-        // Find the image and ID for the selected size and color
         const selectedColorData = formattedVariants[selectedSize]?.colors.find((c) => c.color === color) || {};
         const { image, backImage, id: variantId, price: variantPrice } = selectedColorData;
         console.log(backImage);
 
-        // Update only the color and ID for the currently selected size
         const updatedVariants = {
-            ...purchaseData.variants, // Preserve existing size entries
+            ...purchaseData.variants,
             [selectedSize]: {
-                ...purchaseData.variants[selectedSize], // Preserve existing data for the current size
-                color: color, // Update the color
-                id: variantId, // Update the variant ID
-                price: variantPrice, // Update the price
+                ...purchaseData.variants[selectedSize],
+                color: color,
+                id: variantId,
+                price: variantPrice,
             },
         };
 
         setPurchaseData({
             ...purchaseData,
             selectedColor: color,
-            backImage: backImage, // Update the back image URL
-            selectedVariantId: variantId, // Update the selectedVariantId in purchaseData
-            variants: updatedVariants, // Update the entire variants object
+            backImage: backImage,
+            selectedVariantId: variantId,
+            variants: updatedVariants,
         });
 
         setSelectedImage(image);
-        setPrice(variantPrice); // Update the price
-
+        setPrice(variantPrice);
         console.log("COLORE CHANGE", selectedSize, color, backImage);
         setActiveVariant(selectedSize, color, backImage);
     };
@@ -256,28 +251,34 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                 />
             )}
             <ContentWrapper data={product}>
-                <div className="flex space-x-3 items-center gap-8 lg:mt-16">
-                    <div className="left font-body text-textColor font-semibold">Größe</div>
-                    <div className="right flex flex-wrap gap-x-3 gap-y-2">
-                        {Object.keys(formattedVariants).map((size, i) => (
-                            <CustomCheckBox
-                                key={`size-${i}`}
-                                label={size}
-                                isChecked={selectedSize === size}
-                                onClick={() => handleSizeChange(size)}
-                                activeClass="border-2 border-textColor text-white"
-                                nonActiveClass="opacity-60 text-black "
-                                offsetColor="bg-primaryColor-200"
-                            />
-                        ))}
+                {Object.keys(formattedVariants).length > 1 && (
+                    <div className="flex space-x-3 items-center gap-8 lg:mt-16">
+                        <div className="left font-body text-textColor font-semibold">Größe</div>
+                        <div className="right flex flex-wrap gap-x-3 gap-y-2">
+                            {Object.keys(formattedVariants).map((size, i) => (
+                                <CustomCheckBox
+                                    key={`size-${i}`}
+                                    label={size}
+                                    isChecked={selectedSize === size}
+                                    onClick={() => handleSizeChange(size)}
+                                    activeClass="border-2 border-textColor text-white"
+                                    nonActiveClass="opacity-60 text-black"
+                                    offsetColor="bg-primaryColor-200"
+                                />
+                            ))}
+                        </div>
                     </div>
-                </div>
-                {!isMobile && selectedSize && (
-                    <div className="flex space-x-3 mt-4 items-center gap-8 lg:mb-16">
+                )}
+
+                {!isMobile && selectedSize && secondaryOptionName == "Farbe" && (
+                    <div
+                        className={`flex space-x-3 mt-4 items-center gap-8 lg:mb-16 ${
+                            Object.keys(formattedVariants).length > 1 ? "" : "lg:mt-16"
+                        }`}
+                    >
                         <div className="left font-body font-semibold">Farbe</div>
                         <div className="right flex flex-wrap -mx-1 -my-1 ">
                             {formattedVariants[selectedSize]?.colors?.map(({ color }, index) => (
-                                // console.log(getColorHex(color)),
                                 <div key={`color-${index}`} className="px-1 py-1">
                                     <CustomCheckBox
                                         key={`color-${index}`}
@@ -288,11 +289,25 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                                         nonActiveClass=" text-black"
                                         style={{ background: getColorHex(color) }}
                                         label={color}
-                                        showTooltip={true} // Enable the tooltip
+                                        showTooltip={true}
                                         showLabel={false}
-                                    />{" "}
+                                    />
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Conditionally render dropdown when secondary option is not "Farbe" */}
+                {!isMobile && selectedSize && secondaryOptionName && secondaryOptionName !== "Farbe" && (
+                    <div className="flex space-x-3 mt-4 items-center gap-8 lg:mb-16">
+                        <div className="left font-body font-semibold">{secondaryOptionName}</div>
+                        <div className="right">
+                            <CustomDropDown
+                                options={formattedVariants[selectedSize]?.colors.map((item) => item.color)}
+                                value={selectedColor}
+                                onChange={handleColorChange}
+                            />
                         </div>
                     </div>
                 )}
@@ -300,15 +315,9 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                 <div>
                     <div className="flex justify-end items-end mt-8">
                         <H3 klasse="!mb-2">EUR {calculateNetPrice(Number(price)).toFixed(2) || "0.00"}</H3>
-                        {/* <P klasse="!text-xs mb-2 pl-2">EUR 210/Stk.</P> */}
                     </div>
-                    {/* <P>{`${price / }`}</P> */}
-
-                    {/* <P klasse="!text-xs text-successColor">
-                            {discountApplied && `Rabatt von ${appliedDiscountPercentage.toFixed(2)}% angewendet!`}
-                        </P> */}
                 </div>
-                {user?.userType == "firmenkunde" ? (
+                {user?.userType === "firmenkunde" ? (
                     <GeneralCheckBox
                         label="Diesen Artikel ohne Personalisierung zum Probieren bestellen"
                         isChecked={isChecked}
