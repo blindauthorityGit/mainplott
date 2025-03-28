@@ -111,7 +111,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
     const handleNextStep = async () => {
         // If we are at the Design step, export both sides first
-        console.log(steps[currentStep]);
+        console.log("pörtschi", purchaseData);
         if (steps[currentStep] === "Design" && purchaseData.configurator !== "template") {
             setIsExporting(true);
             await exportAllSides({

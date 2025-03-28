@@ -24,10 +24,8 @@ export default function Sidebar({
     function countProductsForMainCat(mainCatValue, allProds) {
         // For "streetwear", the relevant Shopify tag is "category_streetwear"
         const catTag = "category_" + mainCatValue.toLowerCase();
-        console.log("CATTAG", catTag, mainCatValue);
         return allProds.filter((p) => {
             const tagsLower = p.node.tags.map((t) => t.toLowerCase());
-            console.log(tagsLower.includes(catTag));
             return tagsLower.includes(catTag);
         }).length;
     }

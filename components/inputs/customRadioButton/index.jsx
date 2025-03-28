@@ -41,6 +41,11 @@ import PenMitte from "@/assets/icons/pen-center.svg";
 import PenRechts from "@/assets/icons/pen-right.svg";
 import PenVoll from "@/assets/icons/pen-full.svg";
 
+import ZollStockLinks from "@/assets/icons/Zollstock_links.svg";
+import ZollStockMitte from "@/assets/icons/zollstock_mitte.svg";
+import ZollStockRechts from "@/assets/icons/zollstock_rechts.svg";
+import ZollStockVoll from "@/assets/icons/zollstock_voll.svg";
+
 import Front from "@/assets/icons/Front.svg";
 
 // Example label-to-image map
@@ -54,7 +59,7 @@ const labelImages = {
 // 1) Helper function
 function getGraphicForProductType(product, label) {
     const tags = product?.productByHandle?.tags || product?.tags || [];
-    console.log(tags);
+    console.log(tags, tags.includes("Zollstock"));
 
     const TShirtPositions = {
         "Brust rechts oben": TShirtrechtsoben,
@@ -124,6 +129,13 @@ function getGraphicForProductType(product, label) {
         "Kugelschreiber voll": PenVoll,
     };
 
+    const ZollStockPositions = {
+        "Zollstock links": ZollStockLinks,
+        "Zollstock mitte": ZollStockMitte,
+        "Zollstock rechts": ZollStockRechts,
+        "Zollstock voll": ZollStockVoll,
+    };
+
     const ItemPositions = {
         Front: Front,
     };
@@ -148,6 +160,9 @@ function getGraphicForProductType(product, label) {
         return ItemPositions[label] || "/images/default.png";
     } else if (tags.includes("Kugelschreiber")) {
         return PenPositions[label] || "/images/default.png";
+    } else if (tags.includes("Zollstock")) {
+        console.log("I AM ZOLLSTOCK");
+        return ZollStockPositions[label] || "/images/default.png";
     }
 
     return TShirtPositions[label] || "/images/default.png";

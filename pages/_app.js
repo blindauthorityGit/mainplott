@@ -70,7 +70,7 @@ export default function App({ Component, pageProps }) {
                 <ReactLenis ref={lenisRef} autoRaf={true} root options={{ lerp: 0.12 }}>
                     <Menu /> {/* The Menu component */}
                     <CartSidebar />
-                    {/* <TawkChat /> */}
+                    <TawkChat />
                     <Component {...pageProps} /> <Spinner></Spinner> <Modal></Modal> <Footer></Footer>
                     <CookieConsentBanner />
                 </ReactLenis>

@@ -3,21 +3,26 @@ import useStore from "@/store/store";
 import ContentWrapper from "../components/contentWrapper";
 import { motion } from "framer-motion";
 import ChoiceCard from "@/components/choiceCard"; // Card component for options
-import { FiEdit, FiGrid } from "react-icons/fi"; // Example icons
+import { FiEdit, FiGrid, FiPenTool } from "react-icons/fi";
 import { P } from "@/components/typography";
 
-export default function ChooseWay() {
+export default function ChooseWay({ product }) {
     const { purchaseData, setPurchaseData } = useStore(); // Zustand global state
     const [selectedOption, setSelectedOption] = useState(purchaseData.configurator ? "configurator" : "template");
 
     // Update Zustand when an option is selected
     const handleSelection = (option) => {
+        console.log(option, "HEYAAAAAAAAAAAAA");
         setSelectedOption(option);
-        setPurchaseData({ ...purchaseData, configurator: option === "configurator" });
+        setPurchaseData((prev) => ({
+            ...prev,
+            configurator: option === "configurator",
+            isLayout: option === "layout",
+        }));
     };
 
     const stepData = {
-        title: "DESIGN PLATZIEREN",
+        title: "IHR DESIGN ",
     };
 
     return (
@@ -28,7 +33,7 @@ export default function ChooseWay() {
                     <ChoiceCard
                         icon={FiGrid}
                         heading="Platzierung nach Vorlage"
-                        description="Wähle vordefinierte Positionen für dein Design aus."
+                        description="Wählen Sie vordefinierte Positionen für ihr Design aus"
                         isActive={selectedOption === "template"}
                         configuratorValue={"template"}
                         onClick={() => handleSelection("template")}
@@ -37,13 +42,27 @@ export default function ChooseWay() {
                     <ChoiceCard
                         icon={FiEdit}
                         heading="Freie Platzierung"
-                        description="Nutze den Konfigurator, um dein Design frei zu platzieren."
+                        description="Nutzen Sie den Konfigurator, um ihr Design frei zu platzieren"
                         isActive={selectedOption === "configurator"}
                         configuratorValue={"config"}
                         onClick={() => handleSelection("configurator")}
                         klasse="w-1/2 sm:w-auto text-center"
                     />
                 </div>
+                {/* <div className="w-full text-center my-4">oder</div> */}
+                {product?.layout?.value && (
+                    <div className="flex flex-wrap gap-4 justify-center mt-4">
+                        <ChoiceCard
+                            icon={FiPenTool}
+                            heading="Layout erstellen lassen"
+                            description="Wir erstellen ihr Layout nach ihren Vorgaben"
+                            isActive={selectedOption === "layout"}
+                            configuratorValue={"layout"}
+                            onClick={() => handleSelection("layout")}
+                            klasse="w-full sm:w-auto text-center"
+                        />
+                    </div>
+                )}
 
                 {/* Description */}
                 {/* <motion.div

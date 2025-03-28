@@ -1,10 +1,10 @@
+// NumberInputField.js
 import React from "react";
 
 const NumberInputField = ({ label, value, onIncrement, onDecrement, onChange }) => {
     return (
         <>
             <div className="flex items-center gap-4 mb-1 text-sm">
-                {/* Label */}
                 <span className="flex-1 font-bold">{label}</span>
 
                 {/* Decrement Button */}
@@ -20,7 +20,6 @@ const NumberInputField = ({ label, value, onIncrement, onDecrement, onChange }) 
                     type="number"
                     value={value}
                     onChange={onChange}
-                    min="0"
                     className="w-16 h-8 text-center border rounded text-lg text-sm"
                 />
 
@@ -33,7 +32,6 @@ const NumberInputField = ({ label, value, onIncrement, onDecrement, onChange }) 
                 </button>
             </div>
 
-            {/* Divider */}
             <hr className="bg-textColor mb-1 text-textColor border-textColor w-full opacity-30" />
         </>
     );

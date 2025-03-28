@@ -10,8 +10,11 @@ export default function ChoiceCard({ icon: Icon, heading, description, configura
     const isActive = purchaseData.configurator === configuratorValue;
 
     const handleClick = () => {
-        // Update Zustand store with the selected configuration
-        setPurchaseData({ ...purchaseData, configurator: configuratorValue });
+        if (configuratorValue === "layout") {
+            setPurchaseData({ ...purchaseData, configurator: configuratorValue, isLayout: true });
+        } else {
+            setPurchaseData({ ...purchaseData, configurator: configuratorValue, isLayout: false });
+        }
     };
 
     // Animation variants for the background

@@ -1,24 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 
 import StepHolder from "./stepHolder";
 import ColorAndSizeStep from "./steps/colorAndSizeStep";
 import ChooseWay from "./steps/chooseWay";
 import UploadGraphic from "./steps/uploadGraphic";
+import LayoutStep from "./steps/layoutStep";
 import ConfigureDesign from "./steps/configureDesign";
 import DefineOptions from "./steps/defineOptions";
 import Summary from "./steps/summary";
 // STORE
 import useStore from "@/store/store"; // Your Zustand store
-
-const stepsConfig = [
-    { id: "colorAndSize", component: ColorAndSizeStep },
-    { id: "chooseWay", component: ChooseWay },
-    { id: "uploadGraphic", component: UploadGraphic },
-    { id: "configureDesign", component: ConfigureDesign },
-    { id: "defineOptions", component: DefineOptions },
-    { id: "summary", component: Summary },
-];
 
 export default function ProductConfigurator({
     product,
@@ -28,25 +20,59 @@ export default function ProductConfigurator({
     veredelungen,
     profiDatenCheck,
 }) {
+    const router = useRouter();
+    const { purchaseData, setPurchaseData, resetPurchaseData } = useStore();
     const [currentStep, setCurrentStep] = useState(0);
     const [selectedImage, setSelectedImage] = useState(null);
-    const router = useRouter();
 
     useEffect(() => {
         // Reset purchaseData on URL change
         console.log("I DID A RESET", veredelungen);
         resetPurchaseData();
-    }, [router.asPath]); // Trigger effect when URL changes
+    }, [router.asPath]);
 
-    const { setModalOpen, setPurchaseData, purchaseData, resetPurchaseData } = useStore();
+    useEffect(() => {
+        // Set product info into the store
+        setPurchaseData((prev) => ({
+            ...prev,
+            productName: product.title,
+            product: product,
+        }));
+        console.log(product.title, product);
+    }, [product, setPurchaseData]);
+
+    // Build steps configuration based on purchaseData.isLayout
+    const stepsConfig = useMemo(() => {
+        if (purchaseData.isLayout) {
+            return [
+                { id: "colorAndSize", component: ColorAndSizeStep },
+                { id: "chooseWay", component: ChooseWay },
+                { id: "layout", component: LayoutStep },
+                { id: "defineOptions", component: DefineOptions },
+                { id: "summary", component: Summary },
+            ];
+        } else {
+            return [
+                { id: "colorAndSize", component: ColorAndSizeStep },
+                { id: "chooseWay", component: ChooseWay },
+                { id: "uploadGraphic", component: UploadGraphic },
+                { id: "configureDesign", component: ConfigureDesign },
+                { id: "defineOptions", component: DefineOptions },
+                { id: "summary", component: Summary },
+            ];
+        }
+    }, [purchaseData.isLayout]);
+
+    // Build step labels accordingly
+    const steps = useMemo(() => {
+        if (purchaseData.isLayout) {
+            return ["Farbe / Größe", "Konfigurator", "Layout", "Optionen", "Zusammenfassung"];
+        } else {
+            return ["Farbe / Größe", "Konfigurator", "Upload", "Design", "Optionen", "Zusammenfassung"];
+        }
+    }, [purchaseData.isLayout]);
 
     const CurrentStepComponent = stepsConfig[currentStep].component;
-
-    const steps = ["Farbe / Größe", "Konfigurator", "Upload", "Design", "Optionen", "Zusammenfassung"];
-    useEffect(() => {
-        setPurchaseData({ ...purchaseData, productName: product.title, product: product });
-        console.log(product.title, product);
-    }, [product]);
 
     return (
         <StepHolder
@@ -63,7 +89,7 @@ export default function ProductConfigurator({
                 colorPatternIds={colorPatternIds}
                 setSelectedImage={setSelectedImage}
                 setCurrentStep={setCurrentStep}
-                setModalOpen={setModalOpen} // Pass the modal control function
+                setModalOpen={null} // Pass modal control function if needed
                 steps={steps}
                 currentStep={currentStep}
                 variants={variants}

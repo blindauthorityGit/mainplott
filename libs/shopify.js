@@ -200,6 +200,15 @@ export async function getProductByHandle(handle) {
           konfigBox: metafield(namespace: "custom", key: "konfigurator_box") {
               value
           }
+          mindestBestellMenge: metafield(namespace: "custom", key: "mindestbestellmenge") {
+              value
+          }
+          preisModell: metafield(namespace: "custom", key: "preis_modell") {
+              value
+          }
+          layout: metafield(namespace: "custom", key: "layout") {
+              value
+          }
 
        customImages: metafield(namespace: "custom", key: "custom_images") {
             references(first: 10) {

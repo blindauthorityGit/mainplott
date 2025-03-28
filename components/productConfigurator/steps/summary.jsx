@@ -1,11 +1,12 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import useStore from "@/store/store"; // Zustand store
 import { ListElement } from "@/components/list";
 import { H2, H3, P } from "@/components/typography";
 import { calculateNetPrice } from "@/functions/calculateNetPrice"; // Import your net price function
 
-export default function OrderSummary() {
+export default function OrderSummary({ product }) {
     const { purchaseData } = useStore();
+    const [allInclusive, setAllInclusive] = useState(false);
 
     const sizeOrder = ["XS", "S", "M", "L", "XL", "2XL", "3XL"];
 
@@ -21,10 +22,24 @@ export default function OrderSummary() {
         { label: "Profi Datencheck", value: purchaseData.profiDatenCheck ? "Ja" : "Nein" },
     ];
 
+    console.log(product);
+
+    // Parse the price model from Shopify
+    useEffect(() => {
+        if (product?.preisModell?.value) {
+            const preisModellArray = JSON.parse(product.preisModell.value);
+            setAllInclusive(preisModellArray.includes("Alles inklusive"));
+        } else {
+            setAllInclusive(false);
+        }
+    }, [product.preisModell]);
+
     // Extract sizes and quantities
     const sizeQuantityList = Object.entries(purchaseData.variants || {})
+        // Filter out the "Standard" size
+        .filter(([size, variant]) => size.toUpperCase() !== "STANDARD")
         .map(([size, variant]) => ({
-            label: `Größe ${size}`,
+            label: `Variante ${size}`,
             value: `${variant.quantity} Stück`,
             size, // Keep the size for sorting
         }))
@@ -79,6 +94,7 @@ export default function OrderSummary() {
                 <H3 klasse="lg:text-xl">EUR {calculateNetPrice(Number(purchaseData.totalPrice).toFixed(2))}</H3>
                 <P klasse="!text-sm">
                     {purchaseData.veredelungTotal &&
+                        !allInclusive &&
                         `Davon EUR ${calculateNetPrice(purchaseData.veredelungTotal)} für Verdelungen`}
                 </P>
                 <P klasse="!text-sm">

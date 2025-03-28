@@ -69,6 +69,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     }, []);
 
     const handleXChange = (event, newValue) => {
+        console.log("New X:", newValue, "for", currentSide);
+
         setPurchaseData({
             ...purchaseData,
             sides: {
@@ -144,6 +146,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
             currentSide: newValue === 0 ? "front" : "back",
         }));
     };
+
+    console.log("PÖRTSCHÄSE", purchaseData);
 
     const handleCopyFrontToBack = (event) => {
         const isChecked = event.target.checked;
@@ -265,6 +269,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                         pos.includes("Oberschenkel vorne") ||
                         pos.includes("Vorne") ||
                         pos.includes("Kugelschreiber") ||
+                        pos.includes("Zollstock") ||
                         pos.includes("Front")
                 )
                 .map((name) => ({
@@ -276,7 +281,11 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
             // Back positions: Rücken, Oberschenkel hinten, Hinten
             const backPositions = fixed
                 .filter(
-                    (pos) => pos.includes("Rücken") || pos.includes("Oberschenkel hinten") || pos.includes("Hinten")
+                    (pos) =>
+                        pos.includes("Rücken") ||
+                        pos.includes("Oberschenkel hinten") ||
+                        pos.includes("Zollstock") ||
+                        pos.includes("Hinten")
                 )
                 .map((name) => ({
                     name,
@@ -313,23 +322,59 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     useEffect(() => {
         if (!purchaseData.sides[currentSide]?.position && positions[currentSide]?.default) {
             const defaultOption = positions[currentSide].default[0];
-            console.log(defaultOption);
             setSelectedValue(defaultOption.name);
 
-            setPurchaseData({
-                ...purchaseData,
-                sides: {
-                    ...purchaseData.sides,
-                    [currentSide]: {
-                        ...purchaseData.sides[currentSide],
-                        position: defaultOption.name,
-                        xPosition: purchaseData.containerWidth * defaultOption.position.x,
-                        yPosition: purchaseData.containerHeight * defaultOption.position.y,
+            console.log("defaultOption", defaultOption, purchaseData.sides[currentSide]?.position);
+
+            if (purchaseData.boundingRect) {
+                // Use custom bounding box for position calculations:
+                setPurchaseData({
+                    ...purchaseData,
+                    sides: {
+                        ...purchaseData.sides,
+                        [currentSide]: {
+                            ...purchaseData.sides[currentSide],
+                            position: defaultOption.name,
+                            xPosition:
+                                purchaseData.boundingRect.x +
+                                purchaseData.boundingRect.width * defaultOption.position.x,
+                            yPosition:
+                                purchaseData.boundingRect.y +
+                                purchaseData.boundingRect.height * defaultOption.position.y,
+                        },
                     },
-                },
-            });
+                });
+            } else {
+                // Fallback to full container calculations:
+                setPurchaseData({
+                    ...purchaseData,
+                    sides: {
+                        ...purchaseData.sides,
+                        [currentSide]: {
+                            ...purchaseData.sides[currentSide],
+                            position: defaultOption.name,
+                            xPosition: purchaseData.containerWidth * defaultOption.position.x,
+                            yPosition: purchaseData.containerHeight * defaultOption.position.y,
+                        },
+                    },
+                });
+            }
         }
-    }, [currentSide, positions, purchaseData.containerWidth, purchaseData.containerHeight]);
+    }, [
+        currentSide,
+        positions,
+        purchaseData.containerWidth,
+        purchaseData.containerHeight,
+        purchaseData.boundingRect, // include this dependency
+    ]);
+
+    useEffect(() => {
+        console.log(
+            "SIDESWITCH",
+            purchaseData.sides[currentSide]?.xPosition,
+            purchaseData.sides[currentSide]?.yPosition
+        );
+    }, [currentSide]);
 
     // Handle position change
     const handleChange = (value) => {
@@ -365,27 +410,6 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     useEffect(() => {
         setActiveTab(purchaseData.currentSide === "front" ? 0 : 1);
     }, [purchaseData.currentSide]);
-
-    // useEffect(() => {
-    //     // console.log(
-    //     //     positions[currentSide].default,
-    //     //     positions[currentSide].default[0].position.x,
-    //     //     positions[currentSide].default[0].position.y
-    //     // );
-    //     if (purchaseData.configurator === "template") {
-    //         setPurchaseData({
-    //             ...purchaseData,
-    //             sides: {
-    //                 ...purchaseData.sides,
-    //                 [currentSide]: {
-    //                     ...purchaseData.sides[currentSide], // Preserve existing data for the current side
-    //                     xPosition: purchaseData.containerWidth * positions[currentSide].default[0].position.x,
-    //                     yPosition: purchaseData.containerHeight * positions[currentSide].default[0].position.y,
-    //                 },
-    //             },
-    //         });
-    //     }
-    // }, [purchaseData.configurator]);
 
     let minX = 0;
     let maxX = purchaseData.containerWidth; // fallback
@@ -480,50 +504,6 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                             />
                         ))}
                     </div>{" "}
-                    {/* <div className="mb-4 mt-8">
-                        <P klasse="!text-sm !mb-0">Größe</P>
-                        <div className="flex space-x-4">
-                            <Slider
-                                value={purchaseData.sides[currentSide].scale}
-                                min={0.3}
-                                max={3.5}
-                                step={0.01}
-                                onChange={handleScaleChange}
-                                aria-labelledby="scale-slider"
-                                sx={{
-                                    "& .MuiSlider-thumb": {
-                                        backgroundColor: "#393836",
-                                        width: 20,
-                                        height: 20,
-                                        border: "2px solid white",
-                                        "&:hover, &.Mui-focusVisible": {
-                                            boxShadow: "0px 0px 0px 8px rgba(79, 70, 229, 0.16)",
-                                        },
-                                    },
-                                    "& .MuiSlider-track": {
-                                        backgroundColor: "#e6d1d5",
-                                        height: 6,
-                                        border: "none",
-                                    },
-                                    "& .MuiSlider-rail": {
-                                        backgroundColor: "#EBE0E1",
-                                        height: 6,
-                                    },
-                                    "& .MuiSlider-valueLabel": {
-                                        backgroundColor: "#4f46e5",
-                                        color: "white",
-                                        fontSize: "0.875rem",
-                                    },
-                                }}
-                            />
-                            <button
-                                className=" bg-textColor text-white p-2 rounded-[10px]"
-                                onClick={() => resetScale({ purchaseData, setPurchaseData, currentSide })}
-                            >
-                                <FiMaximize />
-                            </button>{" "}
-                        </div>
-                    </div> */}
                 </>
             ) : (
                 <div className="hidden lg:block">
@@ -678,6 +658,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
             {purchaseData.sides[currentSide].uploadedGraphicFile && (
                 <div className="flex items-center space-x-4 flex-wrap justify-between">
                     <div className="info w-full lg:will-change-auto">
+                        {}
                         <VeredelungTable brustData={veredelungen.front} rueckenData={veredelungen.back} />
                     </div>
                     <div className="flex items-center gap-4 mt-4 font-body text-sm">

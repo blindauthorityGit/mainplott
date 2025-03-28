@@ -196,6 +196,16 @@ const KonvaLayer = forwardRef(
                 },
             }));
         }
+
+        useEffect(() => {
+            console.log("KonvaLayer: Received new position:", position);
+            if (uploadedGraphicRef.current) {
+                uploadedGraphicRef.current.x(position.x);
+                uploadedGraphicRef.current.y(position.y);
+                uploadedGraphicRef.current.getLayer().batchDraw();
+            }
+        }, [position.x, position.y]);
+
         // ---------------------------
         // Load uploaded graphic and mark as loaded
         // ---------------------------
@@ -211,6 +221,8 @@ const KonvaLayer = forwardRef(
                 let placement;
                 // If the product has a konfigBox, use the new logic:
                 if (purchaseData.product.konfigBox && purchaseData.product.konfigBox.value) {
+                    console.log("I USE THE FIXED PLACEMENT");
+
                     placement = getFixedImagePlacement({
                         imageNaturalWidth: loadedImg.width,
                         imageNaturalHeight: loadedImg.height,
@@ -218,14 +230,17 @@ const KonvaLayer = forwardRef(
                         boundingRect,
                         centerImage: true,
                     });
+                    console.log(placement);
                 } else {
                     // Otherwise, fall back to your original helper.
+                    console.log("I USE THE DEFAULT PLACEMENT");
                     placement = getImagePlacement({
                         containerWidth,
                         containerHeight,
                         imageNaturalWidth: loadedImg.width,
                         imageNaturalHeight: loadedImg.height,
                     });
+                    console.log(placement);
                 }
 
                 // Apply the placement values to your graphic:

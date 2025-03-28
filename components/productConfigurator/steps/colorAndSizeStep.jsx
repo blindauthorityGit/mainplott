@@ -86,6 +86,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                     backImage,
                     productName: product.title,
                     product,
+                    formattedVariants,
                     variants: {
                         ...purchaseData.variants,
                         [initialSize]: {
@@ -313,8 +314,14 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                 )}
 
                 <div>
-                    <div className="flex justify-end items-end mt-8">
-                        <H3 klasse="!mb-2">EUR {calculateNetPrice(Number(price)).toFixed(2) || "0.00"}</H3>
+                    <div className="flex justify-end items-end space-x-6 mt-8">
+                        {product?.mindestBestellMenge?.value ? (
+                            <P>Mindestbestellmenge {product.mindestBestellMenge.value} Stk.</P>
+                        ) : null}
+                        <H3 klasse="!mb-2 lg:!mb-0">
+                            EUR {calculateNetPrice(Number(price)).toFixed(2) || "0.00"}{" "}
+                            {product?.mindestBestellMenge?.value ? "/Stk." : null}
+                        </H3>
                     </div>
                 </div>
                 {user?.userType === "firmenkunde" ? (
