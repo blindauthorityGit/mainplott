@@ -1,36 +1,46 @@
 import "@/styles/globals.css";
 import { useState, useRef, useEffect } from "react";
 import Head from "next/head";
-import Menu from "../components/menu"; // Import your Menu component
-import Footer from "../sections/footer"; // Import your Menu component
-import { MenuProvider } from "../context/menuContext"; // Import the Menu Provider
+import Router from "next/router"; // Import Router directly
+import Menu from "../components/menu";
+import Footer from "../sections/footer";
+import { MenuProvider } from "../context/menuContext";
 import CartSidebar from "@/components/cart";
 import useStore from "@/store/store";
-
 import { Modal } from "../components/modal";
 import Spinner from "../components/spinner";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/config/firebase";
 import useUserStore from "@/store/userStore";
-import { getUserData } from "@/config/firebase"; // Deine Funktion, um User-Daten aus Firestore zu laden
-
-//LIVECHAT
+import { getUserData } from "@/config/firebase";
 import TawkChat from "@/components/tawkto";
-
-//LIBS
 import { ReactLenis, useLenis } from "../libs/lenis";
-
-//COOKIE
 import CookieConsentBanner from "@/components/cookie";
 
 export default function App({ Component, pageProps }) {
+    // This effect will scroll to the top on every route change.
+    useEffect(() => {
+        const handleRouteChange = () => {
+            // If you use Lenis and need to scroll using its API, you could do:
+            // lenisRef.current.scrollTo(0, 0);
+            window.scrollTo(0, 0);
+        };
+
+        // Log to ensure the effect is mounting
+        console.log("Adding routeChangeComplete event listener");
+
+        Router.events.on("routeChangeComplete", handleRouteChange);
+        return () => {
+            Router.events.off("routeChangeComplete", handleRouteChange);
+        };
+    }, []);
+
     const lenis = useLenis(({ scroll }) => {
-        // called every scroll
+        // Called on every scroll if needed
     });
-
     const setUser = useUserStore((state) => state.setUser);
-
     const initializeCart = useStore((state) => state.initializeCart);
+
     useEffect(() => {
         initializeCart();
     }, [initializeCart]);
@@ -38,24 +48,19 @@ export default function App({ Component, pageProps }) {
     const lenisRef = useRef();
 
     useEffect(() => {
-        // Überwache den Authentifizierungsstatus
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Benutzer ist angemeldet
                 const userData = await getUserData(user.uid, process.env.NEXT_PUBLIC_DEV === "true");
                 setUser({
                     uid: user.uid,
                     email: user.email,
-                    userType: userData?.userType || "privatkunde", // Fallback zu "privatkunde"
+                    userType: userData?.userType || "privatkunde",
                     ...userData,
                 });
             } else {
-                // Benutzer ist nicht angemeldet
                 setUser(null);
             }
         });
-
-        // Clean up subscription on unmount
         return () => unsubscribe();
     }, [setUser]);
 
@@ -63,15 +68,17 @@ export default function App({ Component, pageProps }) {
         <>
             <Head>
                 <link rel="icon" href="/favicon.ico" />
-                {/* Other global head tags can also go here */}
+                {/* Other global head tags */}
             </Head>
             <MenuProvider>
-                {" "}
                 <ReactLenis ref={lenisRef} autoRaf={true} root options={{ lerp: 0.12 }}>
-                    <Menu /> {/* The Menu component */}
+                    <Menu />
                     <CartSidebar />
                     <TawkChat />
-                    <Component {...pageProps} /> <Spinner></Spinner> <Modal></Modal> <Footer></Footer>
+                    <Component {...pageProps} />
+                    <Spinner />
+                    <Modal />
+                    <Footer />
                     <CookieConsentBanner />
                 </ReactLenis>
             </MenuProvider>
