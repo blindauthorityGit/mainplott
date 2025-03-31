@@ -19,6 +19,7 @@ export default function ProductConfigurator({
     variants,
     veredelungen,
     profiDatenCheck,
+    layoutService,
 }) {
     const router = useRouter();
     const { purchaseData, setPurchaseData, resetPurchaseData } = useStore();
@@ -74,6 +75,8 @@ export default function ProductConfigurator({
 
     const CurrentStepComponent = stepsConfig[currentStep].component;
 
+    console.log("LAYOUIT STUFF", layoutService);
+
     return (
         <StepHolder
             steps={steps}
@@ -95,6 +98,7 @@ export default function ProductConfigurator({
                 variants={variants}
                 veredelungen={veredelungen}
                 profiDatenCheck={profiDatenCheck}
+                layoutService={layoutService}
             />
         </StepHolder>
     );

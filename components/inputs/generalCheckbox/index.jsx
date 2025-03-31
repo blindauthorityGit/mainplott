@@ -26,7 +26,7 @@ const GeneralCheckBox = ({
     return (
         <div
             onClick={handleToggle}
-            className="flex items-center cursor-pointer font-body space-x-3 my-6 lg:my-0"
+            className="flex items-center  cursor-pointer font-body space-x-3 my-6 lg:my-0"
             style={{ ...style }}
         >
             {/* Checkbox Container */}

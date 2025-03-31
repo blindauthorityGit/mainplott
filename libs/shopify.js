@@ -1,7 +1,7 @@
 import shopify from "@shopify/shopify-api";
 
-const domain = process.env.SHOPIFY_STORE_DOMAIN;
-const token = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
+const domain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN;
+const token = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN;
 
 // console.log(domain, token);
 
@@ -434,6 +434,32 @@ export async function getProductByHandle(handle) {
 
     console.log("profiDatenCheck", profiDatenCheck.data.products.edges);
 
+    // *** NEW: Fetch LayoutService product ***
+    const layoutServiceQuery = `{
+    products(first: 1, query: "layoutservice") {
+      edges {
+        node {
+          id
+          title
+          handle
+          variants(first: 1) {
+            edges {
+              node {
+                id
+                price {
+                  amount
+                  currencyCode
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }`;
+    const layoutServiceResponse = await callShopify(layoutServiceQuery);
+    const layoutServiceData = layoutServiceResponse.data.products.edges;
+
     return {
         ...response.data,
         sizes,
@@ -443,6 +469,7 @@ export async function getProductByHandle(handle) {
 
         parsedVeredelungData,
         profiDatenCheckData,
+        layoutServiceData, // Added layoutService data here
 
         // veredelungProducts, // Include in the final response
     };

@@ -20,6 +20,7 @@ export default function OrderSummary({ product }) {
         },
         // { label: "Veredelungen", value: purchaseData.veredelungen || "Keine" },
         { label: "Profi Datencheck", value: purchaseData.profiDatenCheck ? "Ja" : "Nein" },
+        { label: "Layout Service", value: purchaseData.layoutServiceSelected ? "Ja" : "Nein" },
     ];
 
     console.log(product);

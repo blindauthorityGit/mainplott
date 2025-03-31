@@ -3,22 +3,28 @@ import { useDropzone } from "react-dropzone";
 import ContentWrapper from "../components/contentWrapper";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiUpload } from "react-icons/fi";
-import { TextField, Button } from "@mui/material";
+import { TextField } from "@mui/material";
 import { H3, P } from "@/components/typography";
 import useStore from "@/store/store";
 import LoadingSpinner from "@/components/spinner";
 import { uploadLayoutFile } from "@/config/firebase"; // New upload function
+import GeneralCheckBox from "@/components/inputs/generalCheckbox";
 
-export default function LayoutStep({ product, setCurrentStep, currentStep }) {
+export default function LayoutStep({ product, setCurrentStep, currentStep, layoutService }) {
     const { purchaseData, setPurchaseData, setShowSpinner } = useStore();
-    const [uploadedFile, setUploadedFile] = useState(null);
-    const [instructions, setInstructions] = useState("");
+
+    // Initialize state from global purchaseData if available
+    const initialInstructions = purchaseData.layout?.instructions || "";
+    const initialUploadedFile = purchaseData.layout?.uploadedFile || null;
+    const initialLayoutServiceChecked = purchaseData.layoutServiceSelected || false;
+
+    const [uploadedFile, setUploadedFile] = useState(initialUploadedFile);
+    const [instructions, setInstructions] = useState(initialInstructions);
     const [uploadError, setUploadError] = useState(null);
     const [uploading, setUploading] = useState(false);
+    const [isLayoutChecked, setIsLayoutChecked] = useState(initialLayoutServiceChecked);
 
-    // Maximum file size in bytes (10 MB)
-    const maxFileSize = 10 * 1024 * 1024;
-    // Allowed file formats
+    const maxFileSize = 10 * 1024 * 1024; // 10 MB
     const validFormats = ["image/jpeg", "image/png", "application/pdf"];
 
     // Handle file drop via react-dropzone
@@ -27,36 +33,29 @@ export default function LayoutStep({ product, setCurrentStep, currentStep }) {
             setUploadError(null);
             if (acceptedFiles.length > 0) {
                 const file = acceptedFiles[0];
-                // Validate file type
                 if (!validFormats.includes(file.type)) {
                     setUploadError("Ungültiges Dateiformat. Bitte laden Sie eine JPG, PNG oder PDF Datei hoch.");
                     return;
                 }
-                // Validate file size
                 if (file.size > maxFileSize) {
                     setUploadError("Die Datei ist zu groß. Maximal 10 MB erlaubt.");
                     return;
                 }
-                // File is valid: set local state and start uploading
+                // File is valid: update local state and start uploading
                 setUploadedFile(file);
                 setUploading(true);
-                setShowSpinner(true); // Show spinner when uploading starts
+                setShowSpinner(true);
 
                 try {
-                    // Get userId from purchaseData or default to "anonymous"
                     const userId = purchaseData?.userId || "anonymous";
-                    // Upload the file using the new function
                     const fileMetadata = await uploadLayoutFile(file, userId);
-                    // Update global state with the metadata returned from Firebase
+                    // Save file metadata in global state
                     setPurchaseData((prev) => ({
                         ...prev,
                         layout: { ...prev.layout, uploadedFile: fileMetadata },
                     }));
-                    setShowSpinner(false);
                 } catch (error) {
                     console.error("Fehler beim Hochladen der Datei:", error);
-                    setShowSpinner(false);
-
                     setUploadError("Fehler beim Hochladen der Datei. Bitte versuchen Sie es erneut.");
                 } finally {
                     setUploading(false);
@@ -64,7 +63,7 @@ export default function LayoutStep({ product, setCurrentStep, currentStep }) {
                 }
             }
         },
-        [purchaseData, setPurchaseData]
+        [purchaseData, setPurchaseData, setShowSpinner]
     );
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -73,7 +72,7 @@ export default function LayoutStep({ product, setCurrentStep, currentStep }) {
         accept: validFormats.join(","),
     });
 
-    // Update instructions in global state as they change
+    // Update instructions as they change and update global state immediately
     const handleInstructionChange = (e) => {
         const value = e.target.value;
         setInstructions(value);
@@ -83,18 +82,32 @@ export default function LayoutStep({ product, setCurrentStep, currentStep }) {
         }));
     };
 
-    // Proceed to the next step when user clicks "Weiter"
-    const handleNext = () => {
-        // Final update (if needed) and move to next step
-        setPurchaseData((prev) => ({
-            ...prev,
-            layout: {
-                ...prev.layout,
-                instructions,
-                // uploadedFile is already set from the upload function
-            },
-        }));
-        setCurrentStep(currentStep + 1);
+    // Handler for the Layout Service checkbox (similar to your Profi Datencheck)
+    const handleLayoutToggle = () => {
+        // Extract layout service price and id from the passed layoutService data
+        const layoutServicePrice = Number(layoutService?.[0]?.node?.variants?.edges?.[0]?.node?.price?.amount || 0);
+        const layoutServiceId = layoutService?.[0]?.node?.variants?.edges?.[0]?.node?.id || null;
+        console.log("LAYOUT PRICE", layoutServicePrice);
+        setIsLayoutChecked((prev) => {
+            const newValue = !prev;
+            const updatedVariants = { ...purchaseData.variants };
+            if (newValue) {
+                updatedVariants.layoutService = {
+                    id: layoutServiceId,
+                    price: layoutServicePrice,
+                    quantity: 1,
+                };
+            } else {
+                delete updatedVariants.layoutService;
+            }
+            setPurchaseData((prevData) => ({
+                ...prevData,
+                layoutServiceSelected: newValue, // <-- Flag used for validation in the parent
+                layoutServicePrice: newValue ? layoutServicePrice : 0,
+                variants: updatedVariants,
+            }));
+            return newValue;
+        });
     };
 
     return (
@@ -154,7 +167,17 @@ export default function LayoutStep({ product, setCurrentStep, currentStep }) {
                         onChange={handleInstructionChange}
                     />
                 </div>
-                <P klasse="mt-4 font-bold">+ EUR 20,00 pro Motiv und Farbe</P>
+
+                {/* Layout Service Checkbox */}
+                <div className="flex bg-accentColor p-4 mt-4 justify-around">
+                    <P klasse="!text-xs">
+                        Layout Service hinzufügen
+                        <span className="font-semibold">
+                            <br />+ {layoutService?.[0]?.node?.variants?.edges?.[0]?.node?.price?.amount || "0.00"} EUR
+                        </span>
+                    </P>
+                    <GeneralCheckBox label="Layout Service" isChecked={isLayoutChecked} onToggle={handleLayoutToggle} />
+                </div>
 
                 {uploadError && (
                     <div className="mt-4 text-center">
@@ -168,17 +191,6 @@ export default function LayoutStep({ product, setCurrentStep, currentStep }) {
                         <P klasse="mt-2">Datei wird hochgeladen…</P>
                     </div>
                 )}
-
-                {/* <div className="mt-6 flex justify-center">
-          <Button
-            variant="contained"
-            onClick={handleNext}
-            className="!font-semibold"
-            disabled={uploading}
-          >
-            Weiter
-          </Button>
-        </div> */}
             </ContentWrapper>
         </div>
     );

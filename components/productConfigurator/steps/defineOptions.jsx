@@ -11,7 +11,7 @@ import NumberInputField from "@/components/inputs/numberInputField";
 import calculateTotalQuantity from "@/functions/calculateTotalQuantity";
 import { calculateNetPrice } from "@/functions/calculateNetPrice";
 
-export default function DefineOptions({ product, veredelungen, profiDatenCheck }) {
+export default function DefineOptions({ product, veredelungen, profiDatenCheck, layoutService }) {
     const { purchaseData, setPurchaseData } = useStore(); // Zustand global state
 
     const [isChecked, setIsChecked] = useState(purchaseData.profiDatenCheck || false);
@@ -114,6 +114,8 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
         const profiDatenCheckPrice = isChecked
             ? Number(profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.price?.amount || 0)
             : 0;
+
+        console.log(profiDatenCheckPrice);
 
         if (allInclusive) {
             // "All-Inclusive" mode

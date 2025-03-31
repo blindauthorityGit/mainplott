@@ -311,6 +311,10 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
             return true;
         }
 
+        if (steps[currentStep] === "Layout" && !purchaseData.layoutServiceSelected) {
+            return true;
+        }
+
         if (steps[currentStep] === "Upload" && !purchaseData.sides["front"].uploadedGraphic) {
             return true;
         }

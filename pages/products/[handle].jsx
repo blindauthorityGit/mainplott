@@ -65,6 +65,7 @@ export default function Product({ product, sizes, relatedProducts, category, glo
                         product={product?.productByHandle}
                         veredelungen={product?.parsedVeredelungData}
                         profiDatenCheck={product?.profiDatenCheckData}
+                        layoutService={product?.layoutServiceData}
                         sizes={sizes}
                     ></ProductConfigurator>
                 ) : (
@@ -87,9 +88,7 @@ export default function Product({ product, sizes, relatedProducts, category, glo
                             </div>
                         )}
                     </div>
-                ) : (
-                    "null"
-                )}
+                ) : null}
                 <FAQSection faqs={globalData.faqs.faqs}></FAQSection>
                 <MoreProducts relatedProducts={relatedProducts} currentProductHandle={product} />
             </MainContainer>
