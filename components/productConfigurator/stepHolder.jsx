@@ -95,6 +95,8 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     };
 
     const handlePrevStep = () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+
         if (currentStep == steps.length - 1 && purchaseData.tryout) {
             setCurrentStep(0);
         } else {
@@ -111,6 +113,8 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
     const handleNextStep = async () => {
         // If we are at the Design step, export both sides first
+        window.scrollTo({ top: 0, behavior: "smooth" });
+
         console.log("pörtschi", purchaseData);
         if (steps[currentStep] === "Design" && purchaseData.configurator !== "template") {
             setIsExporting(true);

@@ -71,7 +71,7 @@ export default function App({ Component, pageProps }) {
                 {/* Other global head tags */}
             </Head>
             <MenuProvider>
-                <ReactLenis ref={lenisRef} autoRaf={true} root options={{ lerp: 0.12 }}>
+                <ReactLenis ref={lenisRef} autoRaf={true} root options={{ lerp: 0.08 }}>
                     <Menu />
                     <CartSidebar />
                     <TawkChat />
