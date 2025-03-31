@@ -143,47 +143,54 @@ export default function CartSidebar() {
 
                         <div className="flex-1 overflow-y-auto">
                             {cartItems.length > 0 ? (
-                                cartItems.map((item) => (
-                                    <div key={item.id} className="flex items-center mb-8">
-                                        <img
-                                            src={
-                                                item.tryout
-                                                    ? item.cartImage
-                                                    : item.design?.front?.downloadURL
-                                                    ? item.design.front.downloadURL
-                                                    : item.design?.back?.downloadURL
-                                                    ? item.design.back.downloadURL
-                                                    : item.selectedImage ||
-                                                      (item.product?.images?.edges?.length > 0
-                                                          ? item.product.images.edges[0].node.originalSrc
-                                                          : "")
-                                            }
-                                            alt={item.productName}
-                                            className="w-16 mr-4"
-                                        />
-                                        <div className="flex-1">
-                                            <H5 klasse="!mb-2">{item.productName}</H5>
-                                            {item.configurator && (
-                                                <p className="text-sm">Farbe: {item.selectedColor || "N/A"}</p>
-                                            )}
-                                            <p className="text-sm">
-                                                Menge:{" "}
-                                                {item.tryout
-                                                    ? 1
-                                                    : item.configurator
-                                                    ? Object.entries(item.variants || {}).map(([size, details]) => (
-                                                          <span key={size}>{` ${details.quantity}x (${size})`}</span>
-                                                      ))
-                                                    : item.quantity}
-                                            </p>
-                                            <p className="text-sm">
-                                                Preis: €{" "}
-                                                {item.tryout
-                                                    ? 0
-                                                    : calculateNetPrice(Number(item.totalPrice).toFixed(2))}
-                                            </p>
-                                        </div>
-                                        {/* <div className="flex items-center mt-2">
+                                cartItems.map(
+                                    (item) => (
+                                        console.log(item),
+                                        (
+                                            <div key={item.id} className="flex items-center mb-8">
+                                                <img
+                                                    src={
+                                                        item.tryout
+                                                            ? item.cartImage
+                                                            : item.design?.front?.downloadURL
+                                                            ? item.design.front.downloadURL
+                                                            : item.design?.back?.downloadURL
+                                                            ? item.design.back.downloadURL
+                                                            : item.selectedImage ||
+                                                              (item.product?.images?.edges?.length > 0
+                                                                  ? item.product.images.edges[0].node.originalSrc
+                                                                  : "")
+                                                    }
+                                                    alt={item.productName}
+                                                    className="w-16 mr-4"
+                                                />
+                                                <div className="flex-1">
+                                                    <H5 klasse="!mb-2">{item.productName}</H5>
+                                                    {item.configurator && (
+                                                        <p className="text-sm">Farbe: {item.selectedColor || "N/A"}</p>
+                                                    )}
+                                                    <p className="text-sm">
+                                                        Menge:{" "}
+                                                        {item.tryout
+                                                            ? 1
+                                                            : item.configurator
+                                                            ? Object.entries(item.variants || {}).map(
+                                                                  ([size, details]) => (
+                                                                      <span
+                                                                          key={size}
+                                                                      >{` ${details.quantity}x (${size})`}</span>
+                                                                  )
+                                                              )
+                                                            : item.quantity || 1}
+                                                    </p>
+                                                    <p className="text-sm">
+                                                        Preis: €{" "}
+                                                        {item.tryout
+                                                            ? 0
+                                                            : calculateNetPrice(Number(item.totalPrice).toFixed(2))}
+                                                    </p>
+                                                </div>
+                                                {/* <div className="flex items-center mt-2">
                                             <button
                                                 onClick={() =>
                                                     handleDecrementQuantity(item.id, item.quantity, item.unitPrice)
@@ -202,14 +209,16 @@ export default function CartSidebar() {
                                                 +
                                             </button>
                                         </div> */}
-                                        <button
-                                            onClick={() => removeCartItem(item.id)}
-                                            className="text-red-500 hover:text-red-700"
-                                        >
-                                            <FiTrash2 className="text-lg" />
-                                        </button>
-                                    </div>
-                                ))
+                                                <button
+                                                    onClick={() => removeCartItem(item.id)}
+                                                    className="text-red-500 hover:text-red-700"
+                                                >
+                                                    <FiTrash2 className="text-lg" />
+                                                </button>
+                                            </div>
+                                        )
+                                    )
+                                )
                             ) : (
                                 <P>Ihr Einkaufswagen ist leer.</P>
                             )}

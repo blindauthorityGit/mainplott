@@ -95,6 +95,41 @@ export const uploadFileToTempFolder = async (file, userId) => {
     return fileMetadata;
 };
 
+export const uploadLayoutFile = async (file, userId) => {
+    const uniqueId = uuidv4();
+    // Save files under the layoutFiles folder
+    const filePath = `layoutFiles/${userId}/${uniqueId}-${file.name}`;
+    console.log("Uploading layout file:", file);
+
+    // Create a Firebase storage reference
+    const storageRef = ref(storage, filePath);
+
+    // Upload the file
+    await uploadBytes(storageRef, file);
+
+    // Get the download URL
+    const downloadURL = await getDownloadURL(storageRef);
+    console.log("Download URL:", downloadURL);
+
+    // Prepare file metadata
+    const fileMetadata = {
+        userId,
+        fileId: uniqueId,
+        filePath,
+        downloadURL, // Include the download URL
+        uploadTime: new Date().toISOString(),
+        status: "temporary",
+    };
+
+    // Save metadata in Firestore under "layoutFiles" collection
+    await setDoc(doc(db, "layoutFiles", uniqueId), fileMetadata);
+
+    // Optionally store in localStorage for session restoration
+    localStorage.setItem("uploadedLayoutGraphic", JSON.stringify(fileMetadata));
+    console.log(fileMetadata);
+    return fileMetadata;
+};
+
 // Function to upload generated preview image to Firebase Storage
 export const uploadPreviewToStorage = async (previewFileBuffer, fileName) => {
     try {

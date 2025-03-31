@@ -87,6 +87,7 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
                 updatedVariants.profiDatenCheck = {
                     id: profiDatenCheckId,
                     price: profiDatenCheckPrice,
+                    quantity: 1,
                 };
             } else {
                 delete updatedVariants.profiDatenCheck;
@@ -187,6 +188,7 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck }
 
     useEffect(() => {
         if (totalQuantity > 0) {
+            console.log("MEDIAN PRICE", totalPrice, totalQuantity);
             const medianPrice = parseFloat((totalPrice / totalQuantity).toFixed(2));
             setMedianPricePerPiece(medianPrice);
         } else {
