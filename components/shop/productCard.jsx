@@ -108,7 +108,9 @@ function ProductCard({ product }) {
                         {calculateLowestPrice(product.node.variants.edges)}
                         {user?.userType == "firmenkunde" ? (
                             <p className="text-xs font-body font-thin">ohne MwSt.</p>
-                        ) : null}
+                        ) : (
+                            <p className="text-xs font-body font-thin">inkl. MwSt.</p>
+                        )}
                     </div>
                 </div>
             </div>

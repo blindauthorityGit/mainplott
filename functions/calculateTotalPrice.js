@@ -1,131 +1,121 @@
-// export function calculateTotalPrice(purchaseVariants, product) {
-//     const variants = product.variants.edges; // Get the variants from the product object
-//     console.log(variants);
-//     // Create a mapping of price for each size and color
-//     const priceMap = {};
-//     variants.forEach(({ node }) => {
-//         const size = node.selectedOptions.find((opt) => opt.name === "Größe")?.value; // Replace "Größe" with your size field
-//         const color = node.selectedOptions.find((opt) => opt.name === "Farbe")?.value; // Replace "Farbe" with your color field
-//         const price = parseFloat(node.priceV2.amount);
-//         console.log(size, color, price);
-//         if (size) {
-//             if (!priceMap[size]) priceMap[size] = {};
-//             priceMap[size][color || "default"] = price;
-//         }
-//     });
-
-//     // Calculate total price from purchaseVariants
-//     let totalPrice = 0;
-//     Object.values(purchaseVariants).forEach(({ size, color, quantity }) => {
-//         console.log(size, color, quantity);
-//         const sizePrices = priceMap[size];
-//         if (sizePrices) {
-//             const price = sizePrices[color] || sizePrices["default"] || 0; // Use the specific color or fallback to "default"
-//             totalPrice += price * quantity;
-//         }
-//     });
-//     console.log(totalPrice);
-//     return totalPrice;
-// }
+import { isB2BUser, getUserPiecePrice, getUserTotalPrice } from "./priceHelpers";
+// or wherever your B2B/B2C helpers live
 
 export const calculateTotalPrice = (
     variants,
     product,
     discountData,
     setDiscountApplied,
-    veredelungen = {}, // Default to an empty object
+    veredelungen = {},
     purchaseData
 ) => {
+    // 1) net base total
+    let netBaseTotal = 0;
     let totalQuantity = 0;
-    let totalPrice = 0;
-    let pricePerPiece = 0; // Base product price per piece
-    let appliedDiscountPercentage = 0; // Track applied discount percentage
 
-    // Calculate total price and total quantity for the base product
+    // For sub-variant mode vs. normal mode
+    const useSubVariantMapping = product.tags && product.tags.includes("Kugelschreiber");
+
     Object.values(variants).forEach((variant) => {
-        const variantPrice = product.variants.edges.find(
-            (v) =>
-                v.node.selectedOptions.some((opt) => opt.name === "Größe" && opt.value === variant.size) &&
-                v.node.selectedOptions.some((opt) => opt.name === "Farbe" && opt.value === variant.color)
-        )?.node.priceV2.amount;
-
-        if (variantPrice) {
-            totalPrice += variant.quantity * parseFloat(variantPrice);
-            totalQuantity += variant.quantity;
+        // Attempt to find the correct product variant
+        let matchingEdge;
+        if (useSubVariantMapping) {
+            // e.g. "Kugelschreiber" => must match both size + color if your store has size=Standard
+            matchingEdge = product.variants.edges.find((edge) => {
+                const opts = edge.node.selectedOptions;
+                const matchesSize = opts.some((o) => o.name === "Größe" && o.value === variant.size);
+                const matchesColor = opts.some((o) => o.name === "Farbe" && o.value === variant.color);
+                return matchesSize && matchesColor;
+            });
+        } else {
+            // e.g. textile => only match size (ignore color if user never picked it)
+            matchingEdge = product.variants.edges.find((edge) => {
+                const opts = edge.node.selectedOptions;
+                // If your store uses a 'Größe' option, match that:
+                return opts.some((o) => o.name === "Größe" && o.value === variant.size);
+            });
         }
+
+        const netVariantPrice = matchingEdge ? parseFloat(matchingEdge.node.priceV2.amount) : 0;
+
+        netBaseTotal += (variant.quantity || 0) * netVariantPrice;
+        totalQuantity += variant.quantity || 0;
     });
 
-    // Calculate base product price per piece (before Veredelung adjustments)
+    // 2) net base price per piece
+    let netBasePricePerPiece = 0;
     if (totalQuantity > 0) {
-        pricePerPiece = totalPrice / totalQuantity;
+        netBasePricePerPiece = netBaseTotal / totalQuantity;
     }
 
-    // Apply discounts for the base product if discount data is provided
+    // 3) discount logic (NET)
+    let appliedDiscountPercentage = 0;
     if (discountData) {
-        const applicableDiscount = discountData.find(
+        const found = discountData.find(
             (tier) =>
-                totalQuantity >= tier.minQuantity && (tier.maxQuantity === null || totalQuantity <= tier.maxQuantity)
+                totalQuantity >= tier.minQuantity && (tier.maxQuantity == null || totalQuantity <= tier.maxQuantity)
         );
-
-        if (applicableDiscount) {
-            appliedDiscountPercentage = applicableDiscount.discountPercentage; // Set applied discount percentage
-            const discountPercentage = applicableDiscount.discountPercentage / 100;
-
-            // Update the price per piece and total price after applying the discount
-            pricePerPiece = pricePerPiece * (1 - discountPercentage);
-            totalPrice = totalPrice * (1 - discountPercentage);
-
+        if (found) {
+            appliedDiscountPercentage = found.discountPercentage;
+            const discountFactor = 1 - found.discountPercentage / 100;
+            netBaseTotal *= discountFactor;
+            netBasePricePerPiece *= discountFactor;
             setDiscountApplied(true);
+        } else {
+            setDiscountApplied(false);
         }
     } else {
         setDiscountApplied(false);
     }
 
-    // Add Veredelung prices and calculate price per piece for each side
-    const veredelungSides = ["front", "back"]; // Keys to check in the `veredelungen` object
-    let veredelungTotal = 0;
-    const veredelungPerPiece = {}; // Store price per piece for each side
-
-    veredelungSides.forEach((side) => {
-        if (purchaseData.sides[side]?.uploadedGraphic || purchaseData.sides[side]?.uploadedGraphicFile) {
-            const veredelungData = veredelungen[side]; // Access Veredelung data directly by key
-
-            if (veredelungData) {
-                const { price, preisReduktion } = veredelungData;
-
-                // Add base Veredelung price
-                let sideTotal = totalQuantity * parseFloat(price);
-                let sidePricePerPiece = parseFloat(price); // Default price per piece
-
-                // Check for discounts on Veredelung
-                const applicableDiscount = preisReduktion.discounts.find(
-                    (tier) =>
-                        totalQuantity >= tier.minQuantity &&
-                        (tier.maxQuantity === null || totalQuantity <= tier.maxQuantity)
-                );
-                console.log("DA DSIKAUNT", applicableDiscount);
-
-                if (applicableDiscount) {
-                    const discountPercentage = applicableDiscount.discountPercentage / 100;
-                    sidePricePerPiece = parseFloat(price) * (1 - discountPercentage); // Discounted price per piece
-                    sideTotal = totalQuantity * sidePricePerPiece;
+    // 4) add veredelung
+    let netVeredelungTotal = 0;
+    const veredelungPerPiece = {};
+    const sides = ["front", "back"];
+    if (totalQuantity > 0) {
+        sides.forEach((side) => {
+            if (purchaseData.sides[side]?.uploadedGraphic || purchaseData.sides[side]?.uploadedGraphicFile) {
+                const vData = veredelungen[side];
+                if (vData) {
+                    let netSidePricePerPiece = parseFloat(vData.price) || 0;
+                    // discount on veredelung?
+                    const match = vData.preisReduktion.discounts.find(
+                        (tier) =>
+                            totalQuantity >= tier.minQuantity &&
+                            (tier.maxQuantity == null || totalQuantity <= tier.maxQuantity)
+                    );
+                    if (match) {
+                        netSidePricePerPiece *= 1 - match.discountPercentage / 100;
+                    }
+                    netVeredelungTotal += netSidePricePerPiece * totalQuantity;
+                    veredelungPerPiece[side] = netSidePricePerPiece.toFixed(2); // net
                 }
-
-                veredelungTotal += sideTotal;
-                veredelungPerPiece[side] = sidePricePerPiece.toFixed(2); // Save price per piece for the side
             }
-        }
+        });
+    }
+
+    // net final
+    const finalNetTotal = netBaseTotal + netVeredelungTotal;
+    let netPricePerPiece = 0;
+    if (totalQuantity > 0) {
+        netPricePerPiece = finalNetTotal / totalQuantity;
+    }
+
+    // 5) convert net => user-based
+    const userPiecePrice = getUserPiecePrice(netPricePerPiece);
+    const userTotal = parseFloat((userPiecePrice * totalQuantity).toFixed(2));
+
+    // optional: convert veredelungPerPiece => user-based
+    const userVeredelungPerPiece = {};
+    Object.entries(veredelungPerPiece).forEach(([side, netVal]) => {
+        userVeredelungPerPiece[side] = getUserPiecePrice(parseFloat(netVal)).toFixed(2);
     });
 
-    // Combine base product price and Veredelung price
-    const finalPrice = totalPrice + veredelungTotal;
-    console.log("PREIS", finalPrice.toFixed(2));
-
     return {
-        totalPrice: finalPrice.toFixed(2),
-        pricePerPiece: pricePerPiece.toFixed(2), // Return base product price per piece
+        totalPrice: userTotal.toFixed(2),
+        pricePerPiece: userPiecePrice.toFixed(2),
         appliedDiscountPercentage,
-        veredelungTotal: veredelungTotal.toFixed(2),
-        veredelungPerPiece, // Include per-piece price for each Veredelung side
+        veredelungTotal: (userTotal - (userPiecePrice * totalQuantity - netBaseTotal)).toFixed(2),
+        veredelungPerPiece: userVeredelungPerPiece,
     };
 };

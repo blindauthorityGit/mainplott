@@ -13,6 +13,8 @@ export default function Shop({ allProducts, globalData }) {
     const router = useRouter();
     const { cat, tags } = router.query;
 
+    console.log(allProducts, globalData);
+
     const initialCats = cat ? cat.split("+").filter(Boolean) : ["all"];
     const initialTags = tags ? tags.split("+").filter(Boolean) : [];
 
@@ -142,7 +144,10 @@ export default function Shop({ allProducts, globalData }) {
         updateURL(selectedCats, newTags);
     };
 
-    // Filtering logic
+    // Put this near the top of your file (or inside the component):
+    const EXCLUDED_FROM_ALL = ["hochzeit", "geburt", "weihnachten", "kinder", "geschenkidee"];
+
+    // Then in your filter...
     const filteredProducts = allProducts.filter((product) => {
         const productCollections = product.node.collections.edges.map((e) => e.node.handle.toLowerCase());
         const productTags = product.node.tags.map((t) => t.toLowerCase());
@@ -152,26 +157,28 @@ export default function Shop({ allProducts, globalData }) {
         const chosenTags = selectedTags.map((t) => t.toLowerCase());
 
         // 1) Category filter
-        let catPass = true;
-        if (!chosenCats.includes("all")) {
+        let catPass;
+        if (chosenCats.includes("all")) {
+            // We want to show everything EXCEPT the excluded categories
+            // so pass if the product’s collections do NOT include any excluded handle
+            catPass = !productCollections.some((c) => EXCLUDED_FROM_ALL.includes(c));
+        } else {
+            // same as before: pass if the product’s collections match any chosen
             catPass = productCollections.some((c) => chosenCats.includes(c));
         }
 
-        // 2) Tag filter (OR logic across all chosen tags)
+        // 2) Tag filter
         let tagPass = true;
         if (chosenTags.length > 0) {
             tagPass = chosenTags.some((t) => productTags.includes(t));
         }
 
         // 3) Search filter
-        // "Winterjacke" should match if it appears in the title or in any tag.
         let searchPass = true;
         if (searchTerm.trim() !== "") {
             const st = searchTerm.toLowerCase();
             const inTitle = productTitle.includes(st);
             const inTags = productTags.some((tag) => tag.includes(st));
-
-            // Only pass if found in title or tags
             if (!inTitle && !inTags) {
                 searchPass = false;
             }

@@ -132,7 +132,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                     "image/jp2", // JPEG 2000 (JPF)
                     "image/tiff", // TIFF
                 ];
-                const maxFileSize = 10 * 1024 * 1024; // 10MB
+                const maxFileSize = 25 * 1024 * 1024; // 25MB
 
                 // Check file type
                 if (!validFormats.includes(file.type)) {
@@ -144,7 +144,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
 
                 // Check file size
                 if (file.size > maxFileSize) {
-                    setUploadError("Die Datei ist zu groß. Die maximale Dateigröße beträgt 10MB.");
+                    setUploadError("Die Datei ist zu groß. Die maximale Dateigröße beträgt 25MB.");
                     return;
                 }
                 console.log(file);
@@ -414,7 +414,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                     <P klasse="!text-sm mt-4 mb-4">
                         Akzeptierte Formate: JPG, PNG, PDF
                         <br />
-                        max 10 MB
+                        max 25 MB
                     </P>
                 </>
             </ContentWrapper>

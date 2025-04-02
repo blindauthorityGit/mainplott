@@ -5,24 +5,24 @@ import urlFor from "@/functions/urlFor";
 
 export default function Sidebar({
     categories, // e.g. [ { name: "Textilveredelung", subcategories: [ { name: "Streetwear", value: "streetwear", subSubcategories: [...] }, ... ] }, ... ]
-    selectedCats, // array of "main cat" slugs currently selected
-    selectedTags, // array of "sub-tag" slugs currently selected
+    selectedCats, // array of main-cat slugs currently selected (e.g. ["streetwear"])
+    selectedTags, // array of sub-tag slugs currently selected (e.g. ["t-shirt"])
     onSelectCategory, // function handleSelectCategory(catSlug)
     onSelectTag, // function handleSelectTag(mainCatSlug, subTagSlug)
     onResetFilters,
     allProducts, // the Shopify products array
 }) {
-    // We'll treat `category.subcategories[].value` as the “main cat” slug (e.g. "streetwear", "workwear")
-    // and `subCategory.subSubcategories[].value` as the “sub-tag” (e.g. "hoodie", "t-shirt").
+    const [openCategories, setOpenCategories] = useState([]); // toggles top-level sections
+    const [openSubCategories, setOpenSubCategories] = useState([]); // toggles sub-category expansions
 
-    const [openCategories, setOpenCategories] = useState([]);
-    const [openSubCategories, setOpenSubCategories] = useState([]);
+    // Simple helpers to see if a mainCat or subTag is currently selected
+    const isCatSelected = (slug) => selectedCats.includes(slug);
+    const isTagSelected = (slug) => selectedTags.includes(slug);
 
     /**
-     * Count how many products have *just* this "main cat" (category_something)
+     * Count how many products match “category_{mainCatValue}”
      */
     function countProductsForMainCat(mainCatValue, allProds) {
-        // For "streetwear", the relevant Shopify tag is "category_streetwear"
         const catTag = "category_" + mainCatValue.toLowerCase();
         return allProds.filter((p) => {
             const tagsLower = p.node.tags.map((t) => t.toLowerCase());
@@ -31,8 +31,7 @@ export default function Sidebar({
     }
 
     /**
-     * Count how many products have *both* "category_mainCatValue" AND "subTagValue"
-     * e.g. "category_streetwear" + "hoodie"
+     * Count how many products match “category_{mainCatValue}” AND “{subTagValue}”
      */
     function countProductsForSubTag(mainCatValue, subTagValue, allProds) {
         const catTag = "category_" + mainCatValue.toLowerCase();
@@ -50,7 +49,7 @@ export default function Sidebar({
         const allCatNames = categories.map((c) => c.name);
         setOpenCategories(allCatNames);
 
-        let allSubCatNames = [];
+        const allSubCatNames = [];
         categories.forEach((cat) => {
             cat.subcategories.forEach((sub) => {
                 allSubCatNames.push(sub.name);
@@ -58,10 +57,6 @@ export default function Sidebar({
         });
         setOpenSubCategories(allSubCatNames);
     }, [categories]);
-
-    // Helpers to see if a main cat or sub-tag is currently selected:
-    const isCatSelected = (slug) => selectedCats.includes(slug);
-    const isTagSelected = (slug) => selectedTags.includes(slug);
 
     return (
         <div className="bg-white rounded-2xl hidden lg:block p-8 w-full col-span-12 lg:col-span-3 max-w-xs font-body">
@@ -76,11 +71,9 @@ export default function Sidebar({
                 </button>
 
                 {categories.map((topLevelCat) => {
-                    // e.g. topLevelCat.name = "Textilveredelung" or "Geschenkmanufaktur"
-                    // It's mostly a "group label" in your UI
                     return (
                         <div key={topLevelCat.name} className="mb-4">
-                            {/* Toggle open/close for the entire group */}
+                            {/* Toggle open/close for the entire top-level group */}
                             <div
                                 className="flex items-center justify-between cursor-pointer"
                                 onClick={() =>
@@ -109,52 +102,47 @@ export default function Sidebar({
                                         transition={{ duration: 0.3, ease: "easeInOut" }}
                                         className="pl-4 mt-2"
                                     >
-                                        {/* Now map the subcategories, each is a "main cat" for the product */}
                                         {topLevelCat.subcategories.map((subCategory) => {
                                             const hasSubSub =
                                                 Array.isArray(subCategory.subSubcategories) &&
                                                 subCategory.subSubcategories.length > 0;
-                                            // The *slug* that identifies the main cat in your filter
+
                                             const mainCatSlug = subCategory.value; // e.g. "streetwear"
                                             const displayName = subCategory.name; // e.g. "Streetwear"
 
-                                            // The user is considered "checked" if that main cat is in selectedCats
                                             const checkedSubCat = isCatSelected(mainCatSlug);
+                                            const mainCount = countProductsForMainCat(mainCatSlug, allProducts);
 
-                                            // For counting:
-                                            // if "hasSubSub", we show how many products match "category_streetwear".
-                                            // if there's no subSub, treat it as "category_text" + subCatValue => or we do a subTag approach.
-                                            // (You can adapt logic as needed.)
-                                            let mainCount = 0;
-                                            if (hasSubSub) {
-                                                mainCount = countProductsForMainCat(mainCatSlug, allProducts);
-                                            } else {
-                                                // If you decide a subCategory with no subSub is just a single-level cat
-                                                // then do the same:
-                                                mainCount = countProductsForMainCat(mainCatSlug, allProducts);
-                                                // Or if you intend it to be a sub-tag, do:
-                                                // mainCount = countProductsForSubTag(parentSomething, subCategory.value, allProducts)
-                                            }
-
+                                            // We'll let the arrow toggle expansion, but the checkbox sets the filter
                                             return (
-                                                <div key={mainCatSlug}>
-                                                    {/* The subCategory row */}
-                                                    <div
-                                                        className="flex items-center space-x-4 cursor-pointer mb-2"
-                                                        onClick={() => {
-                                                            if (hasSubSub) {
-                                                                // Just toggle sub-sub open
-                                                                setOpenSubCategories((prev) =>
-                                                                    prev.includes(displayName)
-                                                                        ? prev.filter((c) => c !== displayName)
-                                                                        : [...prev, displayName]
-                                                                );
-                                                            } else {
-                                                                // No subSub => treat as direct main cat (or direct subTag)
-                                                                onSelectCategory(mainCatSlug);
-                                                            }
-                                                        }}
-                                                    >
+                                                <div key={mainCatSlug} className="mb-2">
+                                                    <div className="flex items-center space-x-2">
+                                                        {/* Expand/collapse icon if subSub is present */}
+                                                        {hasSubSub ? (
+                                                            <div
+                                                                className="cursor-pointer flex items-center"
+                                                                onClick={(e) => {
+                                                                    // only expand/collapse
+                                                                    e.stopPropagation();
+                                                                    setOpenSubCategories((prev) =>
+                                                                        prev.includes(displayName)
+                                                                            ? prev.filter((n) => n !== displayName)
+                                                                            : [...prev, displayName]
+                                                                    );
+                                                                }}
+                                                            >
+                                                                {openSubCategories.includes(displayName) ? (
+                                                                    <FiChevronUp size={16} />
+                                                                ) : (
+                                                                    <FiChevronDown size={16} />
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            // If there's no subSub, show blank space or icon placeholder
+                                                            <div style={{ width: "16px" }} />
+                                                        )}
+
+                                                        {/* Icon if any */}
                                                         {subCategory.icon && (
                                                             <img
                                                                 src={urlFor(subCategory.icon)}
@@ -162,39 +150,47 @@ export default function Sidebar({
                                                                 alt={displayName}
                                                             />
                                                         )}
-                                                        <p className="font-semibold text-sm text-textColor">
+
+                                                        <p
+                                                            className="font-semibold text-sm text-textColor cursor-pointer"
+                                                            onClick={(e) => {
+                                                                // also toggle expansion if hasSubSub
+                                                                e.stopPropagation();
+                                                                if (hasSubSub) {
+                                                                    setOpenSubCategories((prev) =>
+                                                                        prev.includes(displayName)
+                                                                            ? prev.filter((n) => n !== displayName)
+                                                                            : [...prev, displayName]
+                                                                    );
+                                                                } else {
+                                                                    // If no subSub, we can directly toggle
+                                                                    onSelectCategory(mainCatSlug);
+                                                                }
+                                                            }}
+                                                        >
                                                             {displayName} ({mainCount})
                                                         </p>
 
-                                                        {/* If has subSub, show chevron up/down; otherwise show a checkbox */}
-                                                        {hasSubSub ? (
-                                                            openSubCategories.includes(displayName) ? (
-                                                                <FiChevronUp size={16} />
-                                                            ) : (
-                                                                <FiChevronDown size={16} />
-                                                            )
-                                                        ) : (
-                                                            // No subSub => show checkbox
-                                                            <input
-                                                                type="checkbox"
-                                                                className="ml-2"
-                                                                checked={checkedSubCat}
-                                                                onChange={(e) => {
-                                                                    e.stopPropagation();
-                                                                    onSelectCategory(mainCatSlug);
-                                                                }}
-                                                            />
-                                                        )}
+                                                        {/* SubCategory checkbox for filtering the main cat */}
+                                                        <input
+                                                            type="checkbox"
+                                                            className="cursor-pointer"
+                                                            checked={checkedSubCat}
+                                                            onChange={(e) => {
+                                                                e.stopPropagation();
+                                                                onSelectCategory(mainCatSlug);
+                                                            }}
+                                                        />
                                                     </div>
 
-                                                    {/* Sub-sub list (e.g. "T-Shirt", "Hoodie", etc.) */}
+                                                    {/* If subSubcategories exist and we are open, show them */}
                                                     {hasSubSub && openSubCategories.includes(displayName) && (
                                                         <motion.div
                                                             initial={{ height: 0, opacity: 0 }}
                                                             animate={{ height: "auto", opacity: 1 }}
                                                             exit={{ height: 0, opacity: 0 }}
                                                             transition={{ duration: 0.3, ease: "easeInOut" }}
-                                                            className="pl-4 mt-2 mb-2"
+                                                            className="pl-6 mt-2"
                                                         >
                                                             {subCategory.subSubcategories.map((subSub) => {
                                                                 const subSubSlug = subSub.value; // e.g. "hoodie"
@@ -209,17 +205,17 @@ export default function Sidebar({
                                                                 return (
                                                                     <div
                                                                         key={subSubSlug}
-                                                                        className="flex items-center mb-1 2xl:mb-2 text-textColor"
+                                                                        className="flex items-center mb-1 2xl:mb-2"
                                                                     >
                                                                         <input
                                                                             type="checkbox"
-                                                                            className="mr-2"
+                                                                            className="mr-2 cursor-pointer"
                                                                             checked={isChecked}
                                                                             onChange={() =>
                                                                                 onSelectTag(mainCatSlug, subSubSlug)
                                                                             }
                                                                         />
-                                                                        <label className="text-sm text-textColor">
+                                                                        <label className="text-sm text-textColor cursor-pointer">
                                                                             {subSubDisplay} ({tagCount})
                                                                         </label>
                                                                     </div>

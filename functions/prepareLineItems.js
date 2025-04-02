@@ -2,100 +2,103 @@ const prepareLineItems = (cartItems) => {
     const lineItems = [];
 
     cartItems.forEach((item) => {
-        const { variants, profiDatenCheckPrice, sides, personalisierungsText } = item;
+        const { variants, profiDatenCheckPrice, sides, personalisierungsText, layout } = item;
+        // layout might contain: { instructions, uploadedFile: {...} }
 
-        // Determine if we are in configurator mode.
-        // configurator is true if item.configurator is NOT "template"
-        const isConfigurator = item.configurator !== "template";
-
-        // Add standard product variants
+        // Normal product variants
         if (variants) {
             Object.keys(variants).forEach((key) => {
                 const variant = variants[key];
 
-                if (variant.id && variant.quantity > 0) {
-                    // Check if it's a veredelung and handle sides
-                    const isVeredelung = key.toLowerCase().includes("veredelung");
-                    let customAttributes = [
-                        {
-                            key: "price",
-                            // Safely parse variant.price before using toFixed
-                            value: variant.price ? parseFloat(variant.price).toFixed(2) : "0.00",
-                        },
-                    ];
+                // Exclude layoutService & profiDatenCheck from the normal variant loop
+                if (
+                    !variant.id ||
+                    !variant.quantity ||
+                    variant.quantity <= 0 ||
+                    key === "layoutService" ||
+                    key === "profiDatenCheck"
+                ) {
+                    return;
+                }
 
-                    if (isVeredelung) {
-                        // Determine the side from the key.
-                        // For example: "frontVeredelung" becomes "front"
-                        const side = key.replace(/veredelung/i, "").toLowerCase();
+                // Check if veredelung
+                const isVeredelung = key.toLowerCase().includes("veredelung");
+                let customAttributes = [
+                    {
+                        key: "price",
+                        value: variant.price ? parseFloat(variant.price).toFixed(2) : "0.00",
+                    },
+                ];
 
-                        // (Optional) If there is an uploaded graphic for this side, add its URL
-                        const uploadedGraphic = sides?.[side]?.uploadedGraphic?.downloadURL;
-                        if (uploadedGraphic) {
+                if (isVeredelung) {
+                    // Figure out if it's "front" or "back" from key
+                    const side = key.replace(/veredelung/i, "").toLowerCase();
+
+                    // If there's an uploaded graphic for this side
+                    const uploadedGraphic = sides?.[side]?.uploadedGraphic?.downloadURL;
+                    if (uploadedGraphic) {
+                        customAttributes.push({
+                            key: `uploadedGraphic_${side}`,
+                            value: uploadedGraphic,
+                        });
+                    }
+
+                    customAttributes.push({
+                        key: "title",
+                        value: `Veredelung ${side}`,
+                    });
+
+                    // If using the configurator
+                    const isConfigurator = item.configurator !== "template";
+                    customAttributes.push({
+                        key: "Platzierung",
+                        value: isConfigurator ? "Freie Platzierung" : "Fixe Position",
+                    });
+
+                    if (!isConfigurator) {
+                        // Possibly add chosen position from sides?
+                        const pos = sides?.[side]?.position;
+                        if (pos) {
                             customAttributes.push({
-                                key: `uploadedGraphic_${side}`,
-                                value: uploadedGraphic,
+                                key: "Position",
+                                value: pos,
                             });
                         }
-
-                        // Always include the title
-                        customAttributes.push({
-                            key: "title",
-                            value: `Veredelung ${side}`,
-                        });
-
-                        // === NEW: Add custom attribute for placement ===
-                        customAttributes.push({
-                            key: "Platzierung",
-                            value: isConfigurator ? "Freie Platzierung" : "Fixe Position",
-                        });
-
-                        if (!isConfigurator) {
-                            // When not using the configurator, add an attribute for the chosen position.
-                            const pos = sides?.[side]?.position;
-                            if (pos) {
-                                customAttributes.push({
-                                    key: "Position",
-                                    value: pos,
-                                });
-                            }
-                        } else {
-                            // When using the configurator, also add the design attribute (if available).
-                            const designURL = item.design?.[side]?.downloadURL;
-                            if (designURL) {
-                                customAttributes.push({
-                                    key: "Design",
-                                    value: designURL,
-                                });
-                            }
+                    } else {
+                        // Possibly add design if in configurator mode
+                        const designURL = item.design?.[side]?.downloadURL;
+                        if (designURL) {
+                            customAttributes.push({
+                                key: "Design",
+                                value: designURL,
+                            });
                         }
                     }
+                }
 
-                    // Add personalisierungsText as a custom attribute if it exists
-                    if (personalisierungsText) {
-                        customAttributes.push({
-                            key: "personalisierungsText",
-                            value: personalisierungsText,
-                        });
-                    }
+                // personalisierungsText if it exists
+                if (personalisierungsText) {
+                    customAttributes.push({
+                        key: "personalisierungsText",
+                        value: personalisierungsText,
+                    });
+                }
 
-                    // Avoid duplicates
-                    if (!lineItems.find((li) => li.variantId === variant.id)) {
-                        lineItems.push({
-                            variantId: variant.id,
-                            quantity: variant.quantity,
-                            customAttributes,
-                        });
-                    }
+                // Avoid duplicates
+                if (!lineItems.find((li) => li.variantId === variant.id)) {
+                    lineItems.push({
+                        variantId: variant.id,
+                        quantity: variant.quantity,
+                        customAttributes,
+                    });
                 }
             });
         }
 
-        // Add profiDatenCheck as a separate item
+        // 1) If profiDatenCheck is chosen
         if (item.profiDatenCheck && profiDatenCheckPrice > 0) {
             const profiDatenCheckVariant = variants.profiDatenCheck;
             if (profiDatenCheckVariant && profiDatenCheckVariant.id) {
-                // Avoid duplicates for profiDatenCheck
                 if (!lineItems.find((li) => li.variantId === profiDatenCheckVariant.id)) {
                     lineItems.push({
                         variantId: profiDatenCheckVariant.id,
@@ -104,10 +107,45 @@ const prepareLineItems = (cartItems) => {
                             { key: "title", value: "Profi Datencheck" },
                             {
                                 key: "price",
-                                // Safely parse profiDatenCheckPrice
                                 value: parseFloat(profiDatenCheckPrice).toFixed(2),
                             },
                         ],
+                    });
+                }
+            }
+        }
+
+        // 2) If layoutService is chosen
+        if (variants?.layoutService && variants.layoutService.id) {
+            const ls = variants.layoutService;
+            if (ls.quantity > 0) {
+                // check if we already added it
+                if (!lineItems.find((li) => li.variantId === ls.id)) {
+                    // Build custom attributes for layout
+                    let lsCustomAttributes = [
+                        { key: "title", value: "LayoutService" },
+                        { key: "price", value: parseFloat(ls.price).toFixed(2) },
+                    ];
+
+                    // If item.layout has instructions or an uploaded file
+                    if (layout?.instructions) {
+                        lsCustomAttributes.push({
+                            key: "layoutInstructions",
+                            value: layout.instructions,
+                        });
+                    }
+
+                    if (layout?.uploadedFile?.downloadURL) {
+                        lsCustomAttributes.push({
+                            key: "layoutFile",
+                            value: layout.uploadedFile.downloadURL,
+                        });
+                    }
+
+                    lineItems.push({
+                        variantId: ls.id,
+                        quantity: ls.quantity,
+                        customAttributes: lsCustomAttributes,
                     });
                 }
             }

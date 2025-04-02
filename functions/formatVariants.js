@@ -1,7 +1,6 @@
 export default function formatVariants(variants) {
     // Determine available option names from the first variant.
     const optionNames = variants.edges[0]?.node.selectedOptions.map((opt) => opt.name) || [];
-    console.log("Available options:", optionNames);
 
     // Choose primary and secondary option names.
     // Prefer "Größe" as primary if available, else first available;
@@ -65,6 +64,5 @@ export default function formatVariants(variants) {
         });
     });
 
-    console.log(structuredVariants);
     return structuredVariants;
 }

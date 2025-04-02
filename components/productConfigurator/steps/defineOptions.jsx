@@ -9,10 +9,12 @@ import { calculateTotalPrice } from "@/functions/calculateTotalPrice";
 import { calculateTotalPriceAllInclusive } from "@/functions/calculateTotalPriceAllInclusive";
 import NumberInputField from "@/components/inputs/numberInputField";
 import calculateTotalQuantity from "@/functions/calculateTotalQuantity";
+import formatPrice from "@/functions/formatPrice";
 import { calculateNetPrice } from "@/functions/calculateNetPrice";
+import { getColorHex } from "@/libs/colors";
 
 export default function DefineOptions({ product, veredelungen, profiDatenCheck, layoutService }) {
-    const { purchaseData, setPurchaseData } = useStore(); // Zustand global state
+    const { purchaseData, setPurchaseData } = useStore(); // Global state
 
     const [isChecked, setIsChecked] = useState(purchaseData.profiDatenCheck || false);
     const [price, setPrice] = useState(0);
@@ -26,15 +28,16 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
     const [totalQuantity, setTotalQuantity] = useState(0);
     const [medianPricePerPiece, setMedianPricePerPiece] = useState(0);
 
+    // Format the raw Shopify variants
     const formattedVariants = formatVariants(product.variants);
 
-    // Check for subvariant mode
+    // Detect sub-variant mode (e.g., "Kugelschreiber")
     const useSubVariantMapping = product.tags && product.tags.includes("Kugelschreiber");
 
-    // Pull out minOrder from product metafields
-    const minOrder = product.mindestBestellMenge?.value ? parseInt(product.mindestBestellMenge?.value || 0, 10) : 0;
+    // If we have a min order requirement
+    const minOrder = product.mindestBestellMenge?.value ? parseInt(product.mindestBestellMenge.value, 10) : 0;
 
-    // Parse the price model from Shopify
+    // Check “All-Inclusive” from metafield
     useEffect(() => {
         if (product?.preisModell?.value) {
             const preisModellArray = JSON.parse(product.preisModell.value);
@@ -45,68 +48,67 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
     }, [product.preisModell]);
 
     /**
-     * 1) Ensure the SELECTED color has a quantity of at least minOrder
-     *    in the store if it doesn’t exist yet.
-     *    (Only relevant if we’re using subVariantMapping)
+     * CLEANUP EFFECT:
+     *   If sub-variant => remove leftover "size" keys
+     *   If not sub-variant => remove leftover "color" keys
      */
     useEffect(() => {
-        if (useSubVariantMapping && purchaseData.selectedColor) {
-            const key = purchaseData.selectedColor;
-            const variantInStore = purchaseData.variants[key];
-            if (!variantInStore) {
-                // We do an initial set to minOrder
-                const variantId = formattedVariants.Standard.colors.find((v) => v.color === key)?.id;
+        setPurchaseData((prev) => {
+            const updated = { ...prev };
+            const newVariants = { ...updated.variants };
 
-                setPurchaseData((prev) => ({
-                    ...prev,
-                    variants: {
-                        ...prev.variants,
-                        [key]: {
-                            color: key,
-                            quantity: minOrder,
-                            id: variantId || null,
-                        },
-                    },
-                }));
+            if (useSubVariantMapping) {
+                // remove leftover purely “size” keys
+                Object.entries(newVariants).forEach(([k, v]) => {
+                    if (v.size && !v.color) {
+                        delete newVariants[k];
+                    }
+                });
+            } else {
+                // remove leftover purely “color” keys
+                Object.entries(newVariants).forEach(([k, v]) => {
+                    if (v.color && !v.size) {
+                        delete newVariants[k];
+                    }
+                });
             }
-        }
-    }, [useSubVariantMapping, purchaseData.selectedColor, minOrder, formattedVariants, setPurchaseData]);
+            return { ...prev, variants: newVariants };
+        });
+    }, [useSubVariantMapping, setPurchaseData]);
 
     /**
-     * 2) Toggling “Profi Datencheck” updates the store & local total
+     * Toggling “Profi Datencheck”
      */
     const handleToggle = () => {
         const profiDatenCheckPrice = Number(profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.price?.amount || 0);
         const profiDatenCheckId = profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.id || null;
-
         setIsChecked((prev) => {
             const newIsChecked = !prev;
-            // If checked, store cost in purchaseData; if not, remove it
-            const updatedVariants = { ...purchaseData.variants };
-            if (newIsChecked) {
-                updatedVariants.profiDatenCheck = {
-                    id: profiDatenCheckId,
-                    price: profiDatenCheckPrice,
-                    quantity: 1,
+            setPurchaseData((old) => {
+                const updatedVariants = { ...old.variants };
+                if (newIsChecked) {
+                    updatedVariants.profiDatenCheck = {
+                        id: profiDatenCheckId,
+                        price: profiDatenCheckPrice,
+                        quantity: 1,
+                    };
+                } else {
+                    delete updatedVariants.profiDatenCheck;
+                }
+                return {
+                    ...old,
+                    profiDatenCheck: newIsChecked,
+                    profiDatenCheckPrice: newIsChecked ? profiDatenCheckPrice : 0,
+                    variants: updatedVariants,
                 };
-            } else {
-                delete updatedVariants.profiDatenCheck;
-            }
-
-            setPurchaseData({
-                ...purchaseData,
-                profiDatenCheck: newIsChecked,
-                profiDatenCheckPrice: newIsChecked ? profiDatenCheckPrice : 0,
-                variants: updatedVariants,
             });
-
             return newIsChecked;
         });
+        console.log(purchaseData);
     };
 
     /**
-     * 3) Price Calculation Effect
-     *    Reads from purchaseData.variants & updates local states.
+     * Price Calculation Effect
      */
     useEffect(() => {
         const discountData = product.preisReduktion ? JSON.parse(product.preisReduktion.value).discounts : null;
@@ -115,15 +117,10 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
             ? Number(profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.price?.amount || 0)
             : 0;
 
-        console.log(profiDatenCheckPrice);
-
         if (allInclusive) {
-            // "All-Inclusive" mode
+            // All-inclusive mode
             const result = calculateTotalPriceAllInclusive(purchaseData.variants, product, discountData, purchaseData);
-            // E.g.: { totalPrice, pricePerPiece, appliedDiscountPercentage, totalQuantity }
-
             const finalTotal = Number(result.totalPrice) + profiDatenCheckPrice;
-
             setTotalPrice(finalTotal);
             setPrice(finalTotal);
             setPricePerPiece(result.pricePerPiece);
@@ -131,7 +128,7 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
             setVeredelungPerPiece({});
             setAppliedDiscountPercentage(result.appliedDiscountPercentage);
         } else {
-            // "Non-All-Inclusive" mode
+            // Normal mode
             const {
                 totalPrice: complexTotal,
                 pricePerPiece: complexPricePiece,
@@ -147,7 +144,6 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
                 purchaseData
             );
 
-            // Add Profi Datencheck to final
             const numericTotalPrice = parseFloat(complexTotal) || 0;
             const withDataCheck = numericTotalPrice + profiDatenCheckPrice;
 
@@ -159,29 +155,28 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
             setAppliedDiscountPercentage(appliedDiscountPercentage);
         }
 
-        // Update purchaseData with the final profiDatenCheckPrice
-        setPurchaseData((prev) => ({
-            ...prev,
+        // Store updated “profiDatenCheckPrice”
+        setPurchaseData((old) => ({
+            ...old,
             profiDatenCheckPrice,
         }));
     }, [purchaseData.variants, product, isChecked, allInclusive, veredelungen, setPurchaseData, profiDatenCheck]);
 
     /**
-     * 4) Keep the store’s “price” up to date (if needed),
-     *    but be careful not to cause loops. You may omit this if you want to store it only on checkout
+     * Keep store's price up to date
      */
     useEffect(() => {
         setPurchaseData((prev) => ({
             ...prev,
-            price: price,
+            price,
             totalPrice: price,
-            veredelungTotal: veredelungTotal,
-            veredelungPerPiece: veredelungPerPiece,
+            veredelungTotal,
+            veredelungPerPiece,
         }));
     }, [price, veredelungTotal, veredelungPerPiece, setPurchaseData]);
 
     /**
-     * 5) Track total quantity & median price
+     * Track total quantity & median price
      */
     useEffect(() => {
         const total = calculateTotalQuantity(purchaseData);
@@ -190,7 +185,6 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
 
     useEffect(() => {
         if (totalQuantity > 0) {
-            console.log("MEDIAN PRICE", totalPrice, totalQuantity);
             const medianPrice = parseFloat((totalPrice / totalQuantity).toFixed(2));
             setMedianPricePerPiece(medianPrice);
         } else {
@@ -198,171 +192,182 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
         }
     }, [totalPrice, totalQuantity]);
 
+    // --------------------------------------------------
+    // RENDER LOGIC
+    // --------------------------------------------------
+
     /**
-     * 6) Render
+     * SUB VARIANT MAPPING (“Kugelschreiber”) => keyed by color
+     * (Unchanged from your existing code)
      */
+    const renderSubVariantMapping = () => {
+        return formattedVariants.Standard.colors.map((variant) => {
+            const key = variant.color;
+            const currentVariant = purchaseData.variants[key] || {
+                color: variant.color,
+                quantity: 0,
+                id: variant.id,
+            };
+
+            return (
+                <NumberInputField
+                    key={variant.id}
+                    label={variant.color}
+                    color={getColorHex(variant.color)}
+                    value={currentVariant.quantity}
+                    inputProps={{ min: 0 }}
+                    onIncrement={() => {
+                        let newQuantity = currentVariant.quantity === 0 ? minOrder : currentVariant.quantity + 1;
+
+                        setPurchaseData((prev) => {
+                            const newVariants = { ...prev.variants };
+                            newVariants[key] = {
+                                ...currentVariant,
+                                quantity: newQuantity,
+                            };
+                            return { ...prev, variants: newVariants };
+                        });
+                    }}
+                    onDecrement={() => {
+                        let newQuantity = currentVariant.quantity > minOrder ? currentVariant.quantity - 1 : 0;
+                        setPurchaseData((prev) => {
+                            const newVariants = { ...prev.variants };
+                            if (newQuantity === 0) {
+                                delete newVariants[key];
+                            } else {
+                                newVariants[key] = {
+                                    ...currentVariant,
+                                    quantity: newQuantity,
+                                };
+                            }
+                            return { ...prev, variants: newVariants };
+                        });
+                    }}
+                    onChange={(e) => {
+                        let typed = parseInt(e.target.value, 10) || 0;
+                        let newQuantity = 0;
+                        if (typed === 0) {
+                            newQuantity = 0;
+                        } else if (typed < minOrder) {
+                            newQuantity = minOrder;
+                        } else {
+                            newQuantity = typed;
+                        }
+
+                        setPurchaseData((prev) => {
+                            const newVariants = { ...prev.variants };
+                            if (newQuantity === 0) {
+                                delete newVariants[key];
+                            } else {
+                                newVariants[key] = {
+                                    ...currentVariant,
+                                    quantity: newQuantity,
+                                };
+                            }
+                            return { ...prev, variants: newVariants };
+                        });
+                    }}
+                />
+            );
+        });
+    };
+
+    /**
+     * TEXTILE MAPPING => your “old style” approach
+     * This snippet uses the global “purchaseData.selectedColor”
+     */
+    const renderTextileMapping = () => {
+        return Object.keys(formattedVariants).map((size) => {
+            // This is the old structure you had
+            const currentVariant = purchaseData.variants?.[size] || {
+                size,
+                color: purchaseData.selectedColor || null,
+                quantity: 0,
+                // fetch the ID based on the currently selected color
+                id: formattedVariants[size]?.colors?.find((c) => c.color === purchaseData.selectedColor)?.id || null,
+            };
+
+            return (
+                <NumberInputField
+                    key={size}
+                    label={size}
+                    value={currentVariant.quantity}
+                    onIncrement={() => {
+                        // On increment, recalc the ID
+                        const updatedId =
+                            formattedVariants[size]?.colors?.find((c) => c.color === currentVariant.color)?.id || null;
+
+                        setPurchaseData({
+                            ...purchaseData,
+                            variants: {
+                                ...purchaseData.variants,
+                                [size]: {
+                                    ...currentVariant,
+                                    quantity: currentVariant.quantity + 1,
+                                    id: updatedId,
+                                    // Store pricePerPiece if you want
+                                    price: pricePerPiece,
+                                },
+                            },
+                        });
+                    }}
+                    onDecrement={() => {
+                        if (currentVariant.quantity > 0) {
+                            const updatedId =
+                                formattedVariants[size]?.colors?.find((c) => c.color === currentVariant.color)?.id ||
+                                null;
+
+                            setPurchaseData({
+                                ...purchaseData,
+                                variants: {
+                                    ...purchaseData.variants,
+                                    [size]: {
+                                        ...currentVariant,
+                                        quantity: currentVariant.quantity - 1,
+                                        id: updatedId,
+                                        price: pricePerPiece,
+                                    },
+                                },
+                            });
+                        }
+                    }}
+                    onChange={(e) => {
+                        const newQuantity = parseInt(e.target.value, 10) || 0;
+                        const updatedId =
+                            formattedVariants[size]?.colors?.find((c) => c.color === currentVariant.color)?.id || null;
+
+                        setPurchaseData({
+                            ...purchaseData,
+                            variants: {
+                                ...purchaseData.variants,
+                                [size]: {
+                                    ...currentVariant,
+                                    quantity: newQuantity,
+                                    id: updatedId,
+                                    price: pricePerPiece,
+                                },
+                            },
+                        });
+                    }}
+                />
+            );
+        });
+    };
+
+    // --------------------------------------------------
+    // Return final UI
+    // --------------------------------------------------
     return (
         <div className="lg:px-16 lg:mt-8 font-body">
             <ContentWrapper data={{ title: "Staffelung" }}>
-                {/* Quantity Inputs */}
-                {useSubVariantMapping
-                    ? formattedVariants.Standard.colors.map((variant) => {
-                          const isSelected = variant.color === purchaseData.selectedColor;
-                          // We'll just use the "variant.color" as the key:
-                          const key = variant.color;
-
-                          // If not in store, fallback to 0
-                          const currentVariant = purchaseData.variants?.[key] || {
-                              color: variant.color,
-                              quantity: 0,
-                              id: variant.id,
-                          };
-
-                          return (
-                              <NumberInputField
-                                  key={variant.id}
-                                  label={variant.color}
-                                  value={currentVariant.quantity}
-                                  // Let min=0 always. We'll rely on the total min in the calculation
-                                  inputProps={{ min: 0 }}
-                                  onIncrement={() => {
-                                      let newQuantity =
-                                          currentVariant.quantity === 0 ? minOrder : currentVariant.quantity + 1;
-
-                                      setPurchaseData((prev) => ({
-                                          ...prev,
-                                          variants: {
-                                              ...prev.variants,
-                                              [key]: {
-                                                  ...currentVariant,
-                                                  quantity: newQuantity,
-                                              },
-                                          },
-                                      }));
-                                  }}
-                                  onDecrement={() => {
-                                      let newQuantity = 0;
-                                      if (currentVariant.quantity > minOrder) {
-                                          newQuantity = currentVariant.quantity - 1;
-                                      } else {
-                                          // quantity <= minOrder => jump to 0
-                                          newQuantity = 0;
-                                      }
-                                      setPurchaseData((prev) => ({
-                                          ...prev,
-                                          variants: {
-                                              ...prev.variants,
-                                              [key]: {
-                                                  ...currentVariant,
-                                                  quantity: newQuantity,
-                                              },
-                                          },
-                                      }));
-                                  }}
-                                  onChange={(e) => {
-                                      let typed = parseInt(e.target.value, 10) || 0;
-                                      let newQuantity = 0;
-                                      if (typed === 0) {
-                                          newQuantity = 0;
-                                      } else if (typed < minOrder) {
-                                          newQuantity = minOrder;
-                                      } else {
-                                          newQuantity = typed;
-                                      }
-
-                                      setPurchaseData((prev) => ({
-                                          ...prev,
-                                          variants: {
-                                              ...prev.variants,
-                                              [key]: {
-                                                  ...currentVariant,
-                                                  quantity: newQuantity,
-                                              },
-                                          },
-                                      }));
-                                  }}
-                              />
-                          );
-                      })
-                    : // Textiles or other products
-                      Object.keys(formattedVariants).map((size) => {
-                          const currentVariant = purchaseData.variants?.[size] || {
-                              size,
-                              color: purchaseData.selectedColor || null,
-                              quantity: 0,
-                              id:
-                                  formattedVariants[size]?.colors?.find((c) => c.color === purchaseData.selectedColor)
-                                      ?.id || null,
-                          };
-
-                          return (
-                              <NumberInputField
-                                  key={size}
-                                  label={size}
-                                  value={currentVariant.quantity}
-                                  inputProps={{ min: 0 }}
-                                  onIncrement={() => {
-                                      const updatedId =
-                                          formattedVariants[size]?.colors?.find((c) => c.color === currentVariant.color)
-                                              ?.id || null;
-                                      setPurchaseData((prev) => ({
-                                          ...prev,
-                                          variants: {
-                                              ...prev.variants,
-                                              [size]: {
-                                                  ...currentVariant,
-                                                  quantity: currentVariant.quantity + 1,
-                                                  id: updatedId,
-                                              },
-                                          },
-                                      }));
-                                  }}
-                                  onDecrement={() => {
-                                      if (currentVariant.quantity > 0) {
-                                          const updatedId =
-                                              formattedVariants[size]?.colors?.find(
-                                                  (c) => c.color === currentVariant.color
-                                              )?.id || null;
-                                          setPurchaseData((prev) => ({
-                                              ...prev,
-                                              variants: {
-                                                  ...prev.variants,
-                                                  [size]: {
-                                                      ...currentVariant,
-                                                      quantity: currentVariant.quantity - 1,
-                                                      id: updatedId,
-                                                  },
-                                              },
-                                          }));
-                                      }
-                                  }}
-                                  onChange={(e) => {
-                                      let newQuantity = parseInt(e.target.value, 10) || 0;
-                                      if (newQuantity < 0) newQuantity = 0;
-                                      const updatedId =
-                                          formattedVariants[size]?.colors?.find((c) => c.color === currentVariant.color)
-                                              ?.id || null;
-                                      setPurchaseData((prev) => ({
-                                          ...prev,
-                                          variants: {
-                                              ...prev.variants,
-                                              [size]: {
-                                                  ...currentVariant,
-                                                  quantity: newQuantity,
-                                                  id: updatedId,
-                                              },
-                                          },
-                                      }));
-                                  }}
-                              />
-                          );
-                      })}
+                {useSubVariantMapping ? renderSubVariantMapping() : renderTextileMapping()}
 
                 {/* Profi Datencheck Checkbox */}
                 <div className="h-8"></div>
                 <div className="flex bg-accentColor p-4">
                     <P klasse="!text-xs">
-                        Wir checken Ihre Daten nach optimaler Drucktauglichkeit
+                        Du bist dir noch unsicher: Gerne prüfen wir deine Grafik nochmals auf eine optimale
+                        Drucktauglichkeit
                         <span className="font-semibold">
                             <br />+ {profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.price?.amount} EUR
                         </span>
@@ -397,19 +402,18 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
 
                     <div>
                         <div className="flex lg:justify-end items-end">
-                            <H3 klasse="!mb-2">EUR {calculateNetPrice(price.toFixed(2))}</H3>
-                            <P klasse="!text-xs mb-2 pl-2">
-                                EUR {calculateNetPrice(medianPricePerPiece.toFixed(2))}/Stk.
-                            </P>
+                            <H3 klasse="!mb-2">EUR {formatPrice(price)}</H3>
+                            <P klasse="!text-xs mb-2 pl-2">EUR {medianPricePerPiece}/Stk.</P>
                         </div>
-                        {/* If you have front/back veredelung */}
+                        {/* If layoutService is selected, show extra text */}
+                        {purchaseData.variants.layoutService && (
+                            <P klasse="!text-xs">+ EUR {purchaseData.variants.layoutService.price} LayoutService</P>
+                        )}
                         <P klasse="!text-xs">
-                            {veredelungPerPiece.front > 0 &&
-                                `inkl. EUR ${calculateNetPrice(veredelungPerPiece.front)} Druck Brust / Stk.`}
+                            {veredelungPerPiece.front > 0 && `inkl. EUR ${veredelungPerPiece.front} Druck Brust / Stk.`}
                         </P>
                         <P klasse="!text-xs">
-                            {veredelungPerPiece.back > 0 &&
-                                `inkl. EUR ${calculateNetPrice(veredelungPerPiece.back)} Druck Rücken / Stk`}
+                            {veredelungPerPiece.back > 0 && `inkl. EUR ${veredelungPerPiece.back} Druck Rücken / Stk`}
                         </P>
                     </div>
                 </motion.div>

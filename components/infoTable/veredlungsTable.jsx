@@ -28,7 +28,7 @@ function VeredelungTable({ brustData, rueckenData }) {
             </thead>
             <tbody>
                 {/* Base Prices */}
-                <tr>
+                {/* <tr>
                     <td className="border border-gray-300 px-4 py-2">Preis</td>
                     <td className="border border-gray-300 px-4 py-2">
                         {Number(brustData.price).toFixed(2)} {brustData.currency}
@@ -36,7 +36,7 @@ function VeredelungTable({ brustData, rueckenData }) {
                     <td className="border border-gray-300 px-4 py-2">
                         {Number(rueckenData.price).toFixed(2)} {rueckenData.currency}
                     </td>
-                </tr>
+                </tr> */}
 
                 {/* Discount Prices */}
                 {tableRows.map((row, index) => (

@@ -13,6 +13,7 @@
     "@emotion/styled": "^11.13.0",
     "@mui/material": "^6.1.6",
     "@portabletext/react": "^3.1.0",
+    "@react-google-maps/api": "^2.20.6",
     "@sanity/client": "^6.22.1",
     "@sanity/image-url": "^1.0.2",
     "@shopify/shopify-api": "^11.5.0",

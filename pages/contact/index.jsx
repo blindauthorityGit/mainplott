@@ -5,6 +5,7 @@ import urlFor from "@/functions/urlFor"; // Sanity image helper, optional
 import { H2, P } from "@/components/typography"; // Custom typography components
 import client from "../../client"; // Sanity client for data fetching
 import { BasicPortableText } from "@/components/content";
+import GoogleMaps from "@/components/map";
 
 /**
  * Contact Page
@@ -73,8 +74,18 @@ const ContactPage = ({ data }) => {
             </div>
 
             {/* Right Column: Optional Cover Image */}
-            <div className="mt-6 lg:mt-0 flex items-center justify-center">
-                {data?.image ? (
+            <div className="mt-6 lg:mt-0 flex flex-col items-center justify-center">
+                <GoogleMaps></GoogleMaps>
+                <a
+                    href="https://www.google.com/maps/dir/?api=1&destination=49.9994881,8.7123764"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn bg-primaryColor mt-4 text-white px-4 py-2 rounded"
+                >
+                    Routenplaner
+                </a>
+
+                {/* {data?.image ? (
                     <div className="w-full h-64 lg:h-[30rem] relative rounded-md overflow-hidden shadow-lg">
                         <CoverImage
                             src={urlFor(data.image).url()}
@@ -87,7 +98,7 @@ const ContactPage = ({ data }) => {
                     <div className="w-full h-64 lg:h-[30rem] bg-gray-200 flex items-center justify-center text-gray-500 rounded-md">
                         <p>Kein Titelbild vorhanden</p>
                     </div>
-                )}
+                )} */}
             </div>
         </div>
     );

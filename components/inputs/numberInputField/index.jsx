@@ -1,10 +1,17 @@
 // NumberInputField.js
 import React from "react";
 
-const NumberInputField = ({ label, value, onIncrement, onDecrement, onChange }) => {
+const NumberInputField = ({ label, value, onIncrement, onDecrement, onChange, color, onColorClick }) => {
     return (
         <>
             <div className="flex items-center gap-4 mb-1 text-sm">
+                {color && (
+                    <div
+                        onClick={onColorClick}
+                        className="w-6 h-6 rounded-full border border-gray-400 cursor-pointer"
+                        style={{ backgroundColor: color }}
+                    />
+                )}
                 <span className="flex-1 font-bold">{label}</span>
 
                 {/* Decrement Button */}

@@ -32,7 +32,7 @@ export default function CartSidebar() {
     // Calculate the total price with or without discount
     useEffect(() => {
         const subtotal = cartItems.reduce((sum, item) => sum + Number(item.totalPrice), 0);
-        setTotalPrice(calculateNetPrice(subtotal.toFixed(2))); // 10% discount if applied
+        setTotalPrice(subtotal.toFixed(2)); // 10% discount if applied
     }, [cartItems, discountApplied]);
 
     // console.log(cartItems);
@@ -105,7 +105,7 @@ export default function CartSidebar() {
             const checkoutUrl = await createCart(lineItems, cartAttributesToSend, userNotes);
             if (checkoutUrl) {
                 console.log("Redirecting to Checkout:", checkoutUrl);
-                // window.location.href = checkoutUrl; // Redirect to the checkout URL
+                window.location.href = checkoutUrl; // Redirect to the checkout URL
             } else {
                 throw new Error("Checkout URL not returned by Shopify API.");
             }
@@ -184,10 +184,8 @@ export default function CartSidebar() {
                                                             : item.quantity || 1}
                                                     </p>
                                                     <p className="text-sm">
-                                                        Preis: €{" "}
-                                                        {item.tryout
-                                                            ? 0
-                                                            : calculateNetPrice(Number(item.totalPrice).toFixed(2))}
+                                                        Preis: € {item.tryout ? 0 : Number(item.totalPrice).toFixed(2)}
+                                                        {/* : calculateNetPrice(Number(item.totalPrice).toFixed(2))} */}
                                                     </p>
                                                 </div>
                                                 {/* <div className="flex items-center mt-2">

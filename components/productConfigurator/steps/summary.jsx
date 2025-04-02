@@ -92,7 +92,8 @@ export default function OrderSummary({ product }) {
             {/* Final Price */}
             <div className="mt-8">
                 <P klasse="text-lg font-semibold mb-4">Gesamtpreis:</P>
-                <H3 klasse="lg:text-xl">EUR {calculateNetPrice(Number(purchaseData.totalPrice).toFixed(2))}</H3>
+                <H3 klasse="lg:text-xl">EUR {Number(purchaseData.totalPrice).toFixed(2)}</H3>
+                {/* <H3 klasse="lg:text-xl">EUR {calculateNetPrice(Number(purchaseData.totalPrice).toFixed(2))}</H3> */}
                 <P klasse="!text-sm">
                     {purchaseData.veredelungTotal &&
                         !allInclusive &&
