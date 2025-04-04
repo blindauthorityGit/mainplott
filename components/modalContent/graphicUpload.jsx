@@ -57,8 +57,8 @@ const GraphicUploadModalContent = ({
         if (colorSpace !== "CMYK") {
             errors.colorSpace = "Bitte verwenden Sie eine Grafik im CMYK Farbraum.";
         }
-        if (size > 10485760) {
-            errors.size = "Die Datei ist größer als 10MB.";
+        if (size > 25485760) {
+            errors.size = "Die Datei ist größer als 25MB.";
         }
         if (!alpha || alpha === "unknown") {
             warnings.alpha = "Es könnte ein weißer Hintergrund entstehen.";

@@ -343,16 +343,22 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     // StepHolder.js (excerpt)
 
     const handleAddToCart = () => {
-        console.log("PÖRCHASE DATA", purchaseData);
+        console.log("PURCHASE DATA", purchaseData);
         const updatedPurchaseData = { ...purchaseData };
         const { sides, variants } = updatedPurchaseData;
 
-        const totalQuantity = Object.values(variants).reduce((sum, variant) => sum + (variant.quantity || 0), 0);
+        // 1) Copy `variants` and remove "Standard"
+        const updatedVariants = { ...variants };
+        console.log("DA UPDATED VARS", updatedVariants);
+        if (updatedVariants.Standard) {
+            console.log("ES GIBTS BUBU");
+            delete updatedVariants.Standard;
+        }
+
+        const totalQuantity = Object.values(updatedVariants).reduce((sum, variant) => sum + (variant.quantity || 0), 0);
         console.log("Total Quantity:", totalQuantity);
 
-        const updatedVariants = { ...variants };
         const sidesToProcess = ["front", "back"];
-
         sidesToProcess.forEach((sideKey) => {
             const side = sides?.[sideKey];
             console.log(`Processing ${sideKey}:`, side);
@@ -661,20 +667,26 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                     {steps[currentStep] === "Zusammenfassung" ? (
                         <StepButton
                             onClick={() => {
-                                console.log("PÖRCHASE DATA", purchaseData);
-
+                                console.log("PURCHASE DATA", purchaseData);
                                 const updatedPurchaseData = { ...purchaseData };
                                 const { sides, variants } = updatedPurchaseData;
 
-                                const totalQuantity = Object.values(variants).reduce(
+                                // 1) Copy and remove "Standard"
+                                const updatedVariants = { ...variants };
+                                if (updatedVariants.Standard) {
+                                    delete updatedVariants.Standard;
+                                    console.log("Removed 'Standard' from variants.");
+                                }
+
+                                // 2) Calculate totalQuantity from updatedVariants
+                                const totalQuantity = Object.values(updatedVariants).reduce(
                                     (sum, variant) => sum + (variant.quantity || 0),
                                     0
                                 );
                                 console.log("Total Quantity:", totalQuantity);
 
-                                const updatedVariants = { ...variants };
+                                // 3) If you have sides "front" / "back", handle veredelung
                                 const sidesToProcess = ["front", "back"];
-
                                 sidesToProcess.forEach((sideKey) => {
                                     const side = sides?.[sideKey];
                                     console.log(`Processing ${sideKey}:`, side);
@@ -729,6 +741,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     }
                                 });
 
+                                // 4) Update purchase data and proceed
                                 updatedPurchaseData.variants = updatedVariants;
                                 console.log("Final Updated Variants:", updatedVariants);
 

@@ -1,19 +1,20 @@
 import { getUserPiecePrice } from "./priceHelpers";
 
 export function calculateTotalPriceAllInclusive(variants, product, discountData, purchaseData) {
-    // 1) net base price
+    // 1) net base price for the product
     const baseNetPrice = parseFloat(product.variants.edges[0].node.priceV2.amount) || 0;
 
-    // 2) Gather keys that are NOT layoutService, profiDatenCheck, "Standard" (if you skip that)
+    // 2) Filter out "layoutService" & "profiDatenCheck" (and maybe "Standard" if sub-variant “Kugelschreiber”)
     const baseQuantityKeys = Object.keys(variants).filter((k) => {
         if (["layoutService", "profiDatenCheck"].includes(k)) return false;
         if (product.tags.includes("Kugelschreiber") && k === "Standard") return false;
         return true;
     });
 
+    // Sum up the T-shirt (or pen) quantities
     let totalQuantity = baseQuantityKeys.reduce((sum, key) => sum + (variants[key].quantity || 0), 0);
 
-    // 3) minOrder from product
+    // 3) Apply minOrder logic
     let minOrder = 0;
     if (product.mindestBestellSumme?.value) {
         minOrder = parseInt(product.mindestBestellSumme.value, 10);
@@ -21,10 +22,10 @@ export function calculateTotalPriceAllInclusive(variants, product, discountData,
         minOrder = parseInt(product.mindestBestellMenge.value, 10);
     }
 
-    // If totalQuantity is below min, we charge min
+    // If totalQuantity < min, we charge for min
     const effectiveQuantity = totalQuantity === 0 ? 0 : Math.max(totalQuantity, minOrder);
 
-    // 4) Check discount
+    // 4) Discount logic
     let appliedDiscountPercentage = 0;
     let discountMultiplier = 1;
     if (discountData) {
@@ -40,19 +41,26 @@ export function calculateTotalPriceAllInclusive(variants, product, discountData,
 
     // 5) final net price per piece
     const netPricePerPiece = baseNetPrice * discountMultiplier;
-
-    // Convert to user-based
+    // Convert that net to user-based (B2B or B2C)
     const userPiecePrice = getUserPiecePrice(netPricePerPiece);
+
+    // Multiply piece price by how many we’re charging for
     let finalTotal = userPiecePrice * effectiveQuantity;
 
-    // 6) If we have layoutService => add it directly
+    // -- If we have layoutService, add it to the total
     if (variants.layoutService) {
-        // If you want to handle net vs gross for layoutService,
-        // you can also do piecewise. But if you store it as final "20" for B2C,
-        // you might just add 20. This is your design choice.
         const layoutPrice = parseFloat(variants.layoutService.price || 0);
         const layoutQty = variants.layoutService.quantity || 1;
         finalTotal += layoutPrice * layoutQty;
+    }
+
+    // -- If we have profiDatenCheck, add it to the total
+    if (variants.profiDatenCheck) {
+        const checkPrice = parseFloat(variants.profiDatenCheck.price || 0);
+        const checkQty = variants.profiDatenCheck.quantity || 1;
+        console.log("PRO DATACHECK", checkPrice, checkQty);
+        console.log(purchaseData);
+        finalTotal += getUserPiecePrice(checkPrice) * checkQty;
     }
 
     return {

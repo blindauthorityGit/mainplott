@@ -1,5 +1,4 @@
 import { isB2BUser, getUserPiecePrice, getUserTotalPrice } from "./priceHelpers";
-// or wherever your B2B/B2C helpers live
 
 export const calculateTotalPrice = (
     variants,
@@ -13,33 +12,46 @@ export const calculateTotalPrice = (
     let netBaseTotal = 0;
     let totalQuantity = 0;
 
-    // For sub-variant mode vs. normal mode
+    // Detect sub-variant mode
     const useSubVariantMapping = product.tags && product.tags.includes("Kugelschreiber");
 
-    Object.values(variants).forEach((variant) => {
-        // Attempt to find the correct product variant
-        let matchingEdge;
-        if (useSubVariantMapping) {
-            // e.g. "Kugelschreiber" => must match both size + color if your store has size=Standard
-            matchingEdge = product.variants.edges.find((edge) => {
-                const opts = edge.node.selectedOptions;
-                const matchesSize = opts.some((o) => o.name === "Größe" && o.value === variant.size);
-                const matchesColor = opts.some((o) => o.name === "Farbe" && o.value === variant.color);
-                return matchesSize && matchesColor;
-            });
+    // Loop over each "key => variant" in purchaseData.variants
+    Object.entries(variants).forEach(([key, variant]) => {
+        // If this is the “profiDatenCheck” (or layoutService) line item, just add its price
+        if (key === "profiDatenCheck" || key === "layoutService") {
+            // e.g. variant = { price: 10, quantity: 1, id: ... }
+            const servicePrice = parseFloat(variant.price || 0);
+            const serviceQuantity = variant.quantity || 1; // usually 1
+            // Add it to netBaseTotal
+            netBaseTotal += servicePrice * serviceQuantity;
+            // DO NOT add to totalQuantity, because it’s not T-shirts
         } else {
-            // e.g. textile => only match size (ignore color if user never picked it)
-            matchingEdge = product.variants.edges.find((edge) => {
-                const opts = edge.node.selectedOptions;
-                // If your store uses a 'Größe' option, match that:
-                return opts.some((o) => o.name === "Größe" && o.value === variant.size);
-            });
+            // Otherwise, it’s a normal T-shirt variant
+            let matchingEdge;
+            if (useSubVariantMapping) {
+                // e.g. "Kugelschreiber" => match size + color
+                matchingEdge = product.variants.edges.find((edge) => {
+                    const opts = edge.node.selectedOptions;
+                    const matchesSize = opts.some((o) => o.name === "Größe" && o.value === variant.size);
+                    const matchesColor = opts.some((o) => o.name === "Farbe" && o.value === variant.color);
+                    return matchesSize && matchesColor;
+                });
+            } else {
+                // normal => match by size only
+                matchingEdge = product.variants.edges.find((edge) => {
+                    const opts = edge.node.selectedOptions;
+                    return opts.some((o) => o.name === "Größe" && o.value === variant.size);
+                });
+            }
+
+            // If found, we get its Shopify price, else 0
+            const netVariantPrice = matchingEdge ? parseFloat(matchingEdge.node.priceV2.amount) : 0;
+
+            // Multiply price * quantity
+            netBaseTotal += (variant.quantity || 0) * netVariantPrice;
+            // Because it’s a T-shirt, we add to totalQuantity
+            totalQuantity += variant.quantity || 0;
         }
-
-        const netVariantPrice = matchingEdge ? parseFloat(matchingEdge.node.priceV2.amount) : 0;
-
-        netBaseTotal += (variant.quantity || 0) * netVariantPrice;
-        totalQuantity += variant.quantity || 0;
     });
 
     // 2) net base price per piece
@@ -101,11 +113,11 @@ export const calculateTotalPrice = (
         netPricePerPiece = finalNetTotal / totalQuantity;
     }
 
-    // 5) convert net => user-based
+    // 5) convert net => user-based (B2C => add VAT, B2B => no VAT, etc.)
     const userPiecePrice = getUserPiecePrice(netPricePerPiece);
     const userTotal = parseFloat((userPiecePrice * totalQuantity).toFixed(2));
 
-    // optional: convert veredelungPerPiece => user-based
+    // convert veredelungPerPiece => user-based
     const userVeredelungPerPiece = {};
     Object.entries(veredelungPerPiece).forEach(([side, netVal]) => {
         userVeredelungPerPiece[side] = getUserPiecePrice(parseFloat(netVal)).toFixed(2);

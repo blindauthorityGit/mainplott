@@ -62,7 +62,7 @@ export default function CollapsibleVeredelungTable({ brustData, rueckenData }) {
     return (
         <div className="w-full rounded-lg border bg-white  overflow-hidden">
             <div className="flex justify-between items-center p-4 cursor-pointer" onClick={toggleCollapse}>
-                <P className="font-body text-lg font-semibold">Kostenaufstellung Veredelungen</P>
+                <P className="font-body text-lg font-semibold">Kostenaufstellung Veredelungen exkl.MwSt.</P>
                 <div className="text-xl">{isCollapsed ? <FiChevronDown /> : <FiChevronUp />}</div>
             </div>
 

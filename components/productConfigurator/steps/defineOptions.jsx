@@ -12,6 +12,7 @@ import calculateTotalQuantity from "@/functions/calculateTotalQuantity";
 import formatPrice from "@/functions/formatPrice";
 import { calculateNetPrice } from "@/functions/calculateNetPrice";
 import { getColorHex } from "@/libs/colors";
+import { isB2BUser, getUserPiecePrice, getUserTotalPrice } from "@/functions/priceHelpers";
 
 export default function DefineOptions({ product, veredelungen, profiDatenCheck, layoutService }) {
     const { purchaseData, setPurchaseData } = useStore(); // Global state
@@ -117,10 +118,12 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
             ? Number(profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.price?.amount || 0)
             : 0;
 
+        console.log("PROPRICE", profiDatenCheckPrice);
+
         if (allInclusive) {
             // All-inclusive mode
             const result = calculateTotalPriceAllInclusive(purchaseData.variants, product, discountData, purchaseData);
-            const finalTotal = Number(result.totalPrice) + profiDatenCheckPrice;
+            const finalTotal = Number(result.totalPrice);
             setTotalPrice(finalTotal);
             setPrice(finalTotal);
             setPricePerPiece(result.pricePerPiece);
@@ -145,10 +148,10 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
             );
 
             const numericTotalPrice = parseFloat(complexTotal) || 0;
-            const withDataCheck = numericTotalPrice + profiDatenCheckPrice;
+            // const withDataCheck = numericTotalPrice + profiDatenCheckPrice;
 
-            setTotalPrice(withDataCheck);
-            setPrice(withDataCheck);
+            setTotalPrice(numericTotalPrice);
+            setPrice(numericTotalPrice);
             setPricePerPiece(Number(complexPricePiece));
             setVeredelungTotal(veredelungTotal);
             setVeredelungPerPiece(veredelungPerPiece);
@@ -369,7 +372,8 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
                         Du bist dir noch unsicher: Gerne prüfen wir deine Grafik nochmals auf eine optimale
                         Drucktauglichkeit
                         <span className="font-semibold">
-                            <br />+ {profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.price?.amount} EUR
+                            <br />+{" "}
+                            {getUserPiecePrice(profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.price?.amount)} EUR
                         </span>
                     </P>
                     <GeneralCheckBox label="Profi Datencheck?" isChecked={isChecked} onToggle={handleToggle} />
@@ -407,7 +411,14 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
                         </div>
                         {/* If layoutService is selected, show extra text */}
                         {purchaseData.variants.layoutService && (
-                            <P klasse="!text-xs">+ EUR {purchaseData.variants.layoutService.price} LayoutService</P>
+                            <P klasse="!text-xs">
+                                + EUR {getUserPiecePrice(purchaseData.variants.layoutService.price)} LayoutService
+                            </P>
+                        )}
+                        {purchaseData.variants.profiDatenCheck && (
+                            <P klasse="!text-xs">
+                                + EUR {getUserPiecePrice(purchaseData.variants.profiDatenCheck.price)} Profi Datencheck
+                            </P>
                         )}
                         <P klasse="!text-xs">
                             {veredelungPerPiece.front > 0 && `inkl. EUR ${veredelungPerPiece.front} Druck Brust / Stk.`}
