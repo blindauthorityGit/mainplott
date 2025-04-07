@@ -23,7 +23,7 @@ const handleFileUpload = async ({
 }) => {
     if (newFile) {
         setUploadedFile(newFile);
-        console.log(newFile, steps);
+
         setUploading(true);
         setShowSpinner(true); // Show spinner when uploading starts
 
@@ -37,7 +37,7 @@ const handleFileUpload = async ({
                     setColorSpace(analysisResult.colorSpace);
                     setDpi(analysisResult.dpi);
                 }
-                console.log(analysisResult);
+
                 setPurchaseData((prevData) => ({
                     ...prevData,
                     sides: {
@@ -80,9 +80,9 @@ const handleFileUpload = async ({
                 );
             } else if (newFile.type === "application/pdf") {
                 // Handle multi-page PDF analysis
-                console.log("PDF file detected. Extracting and analyzing the first page...");
+
                 const pdfAnalysisResult = await analyzePdf(newFile);
-                console.log("PDF Analysis:", pdfAnalysisResult);
+
                 setPurchaseData({
                     ...purchaseData,
                     sides: {

@@ -23,7 +23,6 @@ export default async function exportAllSides({ purchaseData, setPurchaseData, se
         const dataURL = exportCanvasRef.current();
         const blob = dataURLToBlob(dataURL);
         const downloadURL = await uploadImageToStorage(blob, `${side}-${Date.now()}.png`);
-        console.log("KONFIG IMAGE", downloadURL, dataURL);
 
         // Store in purchaseData.design
         setPurchaseData((prev) => ({

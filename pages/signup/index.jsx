@@ -48,8 +48,6 @@ export default function Signup() {
     const [companyAdress, setCompanyAdress] = useState("");
     const [companyCity, setCompanyCity] = useState("");
 
-    console.log(process.env.NEXT_PUBLIC_DEV, process.env.NEXT_DEV === "true");
-
     useEffect(() => {
         if (router.query.mode === "login") {
             setMode("login");
@@ -88,7 +86,6 @@ export default function Signup() {
                     userType: "firmenkunde",
                 };
 
-                console.log(process.env.NEXT_PUBLIC_DEV, process.env.NEXT_PUBLIC_DEV === "true");
                 // Determine collection name
                 collectionName = "firmenUsers";
             }

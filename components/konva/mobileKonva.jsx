@@ -232,7 +232,7 @@ const MobileKonvaLayer = forwardRef(
         const handleExport = () => {
             handleResetZoom();
             const dataURL = exportCanvas(stageRef, transformerRef, null, 1);
-            console.log("Export dataURL:", dataURL);
+
             return dataURL;
         };
 
@@ -243,28 +243,25 @@ const MobileKonvaLayer = forwardRef(
         }, [onExportReady]);
 
         const handleGraphicUpload = async (event) => {
-            console.log("UPLOADED");
             const newFile = event.target.files[0];
 
             const image = new Image();
             image.src = URL.createObjectURL(newFile);
-            console.log(purchaseData.containerWidth, purchaseData.containerHeight);
+
             image.onload = () => {
                 const imageWidth = image.width;
                 const imageHeight = image.height;
-                console.log(purchaseData.containerWidth, purchaseData.containerHeight, imageWidth, imageHeight);
+
                 const { x, y } = getImagePlacement({
                     containerWidth: purchaseData.containerWidth,
                     containerHeight: purchaseData.containerHeight,
                     imageNaturalWidth: image.width,
                     imageNaturalHeight: image.height,
                 });
-                console.log("MEINE FUNCTION", x, y, currentSide);
+
                 // Calculate centered position
                 const centeredX = (purchaseData.containerWidth - imageWidth) / 2;
                 const centeredY = (purchaseData.containerHeight - imageHeight) / 2;
-
-                console.log("SPOSITIONE", centeredX, centeredY);
 
                 setPurchaseData({
                     ...purchaseData,
@@ -303,11 +300,8 @@ const MobileKonvaLayer = forwardRef(
         const handleCopyFrontToBack = (event) => {
             // const isChecked = event.target.checked;
             setCopyFrontToBack(true);
-            console.log(purchaseData);
 
             if (purchaseData.sides.front.uploadedGraphicFile || purchaseData.sides.front.uploadedGraphic) {
-                console.log(purchaseData);
-
                 // Retrieve stored graphic dimensions and current scale from the front side
                 const graphicWidth = purchaseData.sides.front.width || 0;
                 const graphicHeight = purchaseData.sides.front.height || 0;
@@ -571,7 +565,7 @@ const MobileKonvaLayer = forwardRef(
             // Suppose we want to toggle between front/back
             // If you want a direct approach with newValue=0 or 1, you can do so:
             const nextValue = purchaseData.currentSide === "front" ? 1 : 0;
-            console.log(purchaseData.currentSide);
+
             // Then set currentSide based on nextValue
             setPurchaseData((prevState) => ({
                 ...prevState,

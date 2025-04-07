@@ -29,8 +29,6 @@ export default function Menu() {
     const user = useUserStore((state) => state.user);
     const router = useRouter();
 
-    console.log("USER", user);
-
     useEffect(() => {
         const handleScroll = () => {
             if (window.scrollY > 400) {
@@ -49,7 +47,7 @@ export default function Menu() {
     const handleLogout = async () => {
         try {
             await signOut(auth);
-            console.log("User logged out successfully");
+
             router.push("/");
 
             // Optionally, reset the user in your Zustand store

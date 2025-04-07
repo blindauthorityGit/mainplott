@@ -45,9 +45,8 @@ export default async function handler(req, res) {
                 const previewUrl = `/public/${options.out_prefix}-1.png`;
                 const previewFilePath = `${options.out_dir}/${options.out_prefix}-1.png`;
                 const previewFileBuffer = fs.readFileSync(previewFilePath);
-                console.log(previewUrl);
+
                 const downloadURL = await uploadPreviewToStorage(previewFileBuffer, "preview.png");
-                console.log(downloadURL);
 
                 return res.status(200).json({
                     message: "PDF analyzed successfully",
@@ -64,7 +63,6 @@ export default async function handler(req, res) {
                         if (unlinkErr) {
                             console.error("Error deleting temporary file:", unlinkErr);
                         } else {
-                            console.log("Temporary file deleted successfully");
                         }
                     });
                 }

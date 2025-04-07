@@ -12,9 +12,7 @@ import Meta from "@/components/SEO/";
 import client from "../../client";
 
 export default function Service({ data, globalData }) {
-    useEffect(() => {
-        console.log(data, data.seo);
-    }, [data, globalData]);
+    useEffect(() => {}, [data, globalData]);
 
     return (
         <>
@@ -46,7 +44,6 @@ export const getStaticPaths = async () => {
 
 export const getStaticProps = async (context) => {
     const slug = context.params.slug;
-    console.log(slug);
 
     const res = await client.fetch(`*[_type == "servicePage" && slug.current == "${slug}"]`);
     const data = res[0] || null; // Set to null if not found
@@ -60,7 +57,6 @@ export const getStaticProps = async (context) => {
       "settings": *[_type == "settingsSingleton"][0]
     }`;
     const globalData = await client.fetch(queryGlobal);
-    console.log(globalData, data);
 
     return {
         props: {

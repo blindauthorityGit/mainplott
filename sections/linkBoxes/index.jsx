@@ -7,9 +7,7 @@ import { AiFillPrinter } from "react-icons/ai"; // Importing icon for printer
 import { MdOutlineDesignServices } from "react-icons/md"; // Importing icon for vector graphics
 
 const LinkBoxesSection = ({ data, klasse }) => {
-    useEffect(() => {
-        console.log(data);
-    }, [data]);
+    useEffect(() => {}, [data]);
 
     const icons = [FaTshirt, AiFillPrinter, FaGift, MdOutlineDesignServices];
 

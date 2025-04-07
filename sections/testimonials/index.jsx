@@ -7,9 +7,7 @@ import { AiFillPrinter } from "react-icons/ai"; // Importing icon for printer
 import { MdOutlineDesignServices } from "react-icons/md"; // Importing icon for vector graphics
 
 const TestimonialsSection = ({ data }) => {
-    useEffect(() => {
-        console.log(data);
-    }, [data]);
+    useEffect(() => {}, [data]);
 
     return (
         <div className="grid grid-cols-12 px-4 lg:px-24 gap-8 lg:gap-12 lg:mt-10">

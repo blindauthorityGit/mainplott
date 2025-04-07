@@ -1,5 +1,4 @@
 export default async function analyzeImageWithOpenAI(imageUrl, prompt) {
-    console.log(imageUrl, prompt);
     try {
         const response = await fetch("/api/openai", {
             method: "POST",
@@ -17,7 +16,7 @@ export default async function analyzeImageWithOpenAI(imageUrl, prompt) {
         }
 
         const data = await response.json();
-        console.log("OpenAI Response:", data.answer);
+
         return data.answer; // Return the OpenAI response
     } catch (error) {
         console.error("Error calling OpenAI API:", error);

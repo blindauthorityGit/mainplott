@@ -8,9 +8,7 @@ const BasicHero = ({ data }) => {
     const [isLastSlideLeft, setIsLastSlideLeft] = useState(true);
     const [isLastSlideRight, setIsLastSlideRight] = useState(false);
 
-    useEffect(() => {
-        console.log(data);
-    }, [data]);
+    useEffect(() => {}, [data]);
 
     return (
         <div className="w-full grid grid-cols-12 bg-accentColor items-center  h-3/4 lg:h-[40%] lg:rounded-[20px]">

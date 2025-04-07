@@ -44,7 +44,7 @@ export default function MobileMenu({ isOpen, onClose, data }) {
     const handleLogout = async () => {
         try {
             await signOut(auth);
-            console.log("User logged out successfully");
+
             // Optionally reset the user in your Zustand store
             useUserStore.setState({ user: null });
             onClose();

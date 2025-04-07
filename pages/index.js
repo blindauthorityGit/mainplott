@@ -16,10 +16,7 @@ import Meta from "/components/SEO/";
 
 export default function Home({ sanityData, globalData }) {
     // Log the fetched data using useEffect
-    useEffect(() => {
-        console.log("Sanity Data:", sanityData, "GLOBAL DATA: ", globalData);
-        console.log(globalData.features);
-    }, [sanityData, globalData]);
+    useEffect(() => {}, [sanityData, globalData]);
 
     return (
         <>

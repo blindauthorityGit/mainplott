@@ -27,7 +27,6 @@ export default function App({ Component, pageProps }) {
         };
 
         // Log to ensure the effect is mounting
-        console.log("Adding routeChangeComplete event listener");
 
         Router.events.on("routeChangeComplete", handleRouteChange);
         return () => {

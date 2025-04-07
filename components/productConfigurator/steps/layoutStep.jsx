@@ -87,7 +87,7 @@ export default function LayoutStep({ product, setCurrentStep, currentStep, layou
         // Extract layout service price and id from the passed layoutService data
         const layoutServicePrice = Number(layoutService?.[0]?.node?.variants?.edges?.[0]?.node?.price?.amount || 0);
         const layoutServiceId = layoutService?.[0]?.node?.variants?.edges?.[0]?.node?.id || null;
-        console.log("LAYOUT PRICE", layoutServicePrice);
+
         setIsLayoutChecked((prev) => {
             const newValue = !prev;
             const updatedVariants = { ...purchaseData.variants };

@@ -59,8 +59,6 @@ const labelImages = {
 // 1) Helper function
 function getGraphicForProductType(product, label) {
     const tags = product?.productByHandle?.tags || product?.tags || [];
-    console.log(tags, tags.includes("Zollstock"));
-
     const TShirtPositions = {
         "Brust rechts oben": TShirtrechtsoben,
         "Brust links oben": TShirlinkssoben,
@@ -161,7 +159,6 @@ function getGraphicForProductType(product, label) {
     } else if (tags.includes("Kugelschreiber")) {
         return PenPositions[label] || "/images/default.png";
     } else if (tags.includes("Zollstock")) {
-        console.log("I AM ZOLLSTOCK");
         return ZollStockPositions[label] || "/images/default.png";
     }
 
@@ -181,8 +178,6 @@ const CustomRadioButton = ({ id, name, label, icon, value, checked, onChange, pr
     const handleCardClick = () => {
         onChange(value);
     };
-
-    console.log(product);
 
     return (
         <div

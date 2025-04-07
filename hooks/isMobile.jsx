@@ -31,4 +31,4 @@ export default useIsMobile;
 // Usage Example:
 // import useIsMobile from 'path/to/useIsMobile';
 // const isMobile = useIsMobile();
-// console.log(isMobile); // true or false depending on the device
+//  // true or false depending on the device

@@ -55,7 +55,7 @@ const MegaMenu = ({ isVisible, data, onClose }) => {
                                         </Link>
                                     </div>
                                     <Link
-                                        href={`/${item.title}`}
+                                        href={`/${item.imageLink}`}
                                         onClick={() => {
                                             onClose();
                                         }}
@@ -76,7 +76,7 @@ const MegaMenu = ({ isVisible, data, onClose }) => {
                                                 />
 
                                                 <Link
-                                                    href={`/${point.link}`}
+                                                    href={`${point.link}`}
                                                     onClick={onClose}
                                                     className="relative group"
                                                 >

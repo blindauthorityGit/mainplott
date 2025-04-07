@@ -105,7 +105,6 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
             });
             return newIsChecked;
         });
-        console.log(purchaseData);
     };
 
     /**
@@ -117,8 +116,6 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
         const profiDatenCheckPrice = isChecked
             ? Number(profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.price?.amount || 0)
             : 0;
-
-        console.log("PROPRICE", profiDatenCheckPrice);
 
         if (allInclusive) {
             // All-inclusive mode

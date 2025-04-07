@@ -33,7 +33,6 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
 
     // Format variants for easier access
     const formattedVariants = formatVariants(product.variants);
-    console.log("product.variants", formattedVariants, product);
 
     // Use a ref flag to ensure initialization only happens once per product
     const didInitializeRef = useRef(false);
@@ -69,7 +68,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
             if (!purchaseData.selectedSize || !purchaseData.selectedColor) {
                 const initialSize = purchaseData.selectedSize || firstSize;
                 const initialColor = purchaseData.selectedColor || firstColor;
-                console.log(initialSize, initialColor);
+
                 setSelectedSize(initialSize);
                 setSelectedColor(initialColor);
                 setPrice(initialPrice);
@@ -104,13 +103,9 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
         initializeSelection();
     }, [product, formattedVariants]);
 
-    useEffect(() => {
-        console.log(purchaseData);
-    }, [purchaseData]);
+    useEffect(() => {}, [purchaseData]);
 
-    useEffect(() => {
-        console.log(selectedVariant);
-    }, [selectedVariant]);
+    useEffect(() => {}, [selectedVariant]);
 
     // Revised setActiveVariant function
     const setActiveVariant = (size, color) => {
@@ -120,7 +115,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
 
         // Find the corresponding color data from formatted variants
         const activeColorData = sizeData.colors.find((c) => c.color === color);
-        console.log(activeColorData);
+
         if (activeColorData) {
             const { backImage, image, id, price: variantPrice, configImage, configImageUrl } = activeColorData;
 
@@ -132,8 +127,6 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                 configImage: configImage || null,
                 configImageUrl: configImageUrl || null,
             };
-
-            console.log(activeVariantNode);
 
             // Update Zustand store with the variant data
             setSelectedVariant(activeVariantNode);
@@ -204,7 +197,6 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
 
         const selectedColorData = formattedVariants[selectedSize]?.colors.find((c) => c.color === color) || {};
         const { image, backImage, id: variantId, price: variantPrice } = selectedColorData;
-        console.log(backImage);
 
         const updatedVariants = {
             ...purchaseData.variants,
@@ -226,7 +218,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
 
         setSelectedImage(image);
         setPrice(variantPrice);
-        console.log("COLORE CHANGE", selectedSize, color, backImage);
+
         setActiveVariant(selectedSize, color, backImage);
     };
 

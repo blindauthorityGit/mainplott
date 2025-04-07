@@ -13,7 +13,7 @@
 //         }
 
 //         const analysisResult = await response.json();
-//         console.log(analysisResult);
+//
 //         return analysisResult;
 //     } catch (error) {
 //         console.error("Error analyzing PDF:", error);
@@ -80,7 +80,6 @@ export async function analyzePdf(file) {
         const colorSpace = ctx.getContextAttributes().alpha ? "RGBA" : "RGB"; // Check if alpha channel is present
         const alphaChannel = ctx.getContextAttributes().alpha; // Boolean indicating presence of alpha channel
 
-        console.log(fileSize, colorSpace, alphaChannel);
         return {
             previewImage: previewDownloadUrl,
             numPages: pdfDoc.numPages,

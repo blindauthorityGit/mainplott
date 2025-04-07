@@ -30,7 +30,6 @@ export async function handleFileUpload({
     currentStep,
 }) {
     if (newFile) {
-        console.log(newFile);
         setShowSpinner(true); // Show spinner when uploading starts
 
         try {
@@ -117,7 +116,6 @@ export async function handleFileUpload({
 
             // Open modal to show the uploaded details
             setModalOpen(true);
-            console.log("File uploaded successfully:", fileMetadata);
         } catch (error) {
             console.error("Error uploading new file:", error);
         } finally {

@@ -27,15 +27,13 @@ export default function CartSidebar() {
     const [totalPrice, setTotalPrice] = useState(0);
     const [userNotes, setUserNotes] = useState(""); // State for user notes
 
-    console.log("CART", cartItems);
-
     // Calculate the total price with or without discount
     useEffect(() => {
         const subtotal = cartItems.reduce((sum, item) => sum + Number(item.totalPrice), 0);
         setTotalPrice(subtotal.toFixed(2)); // 10% discount if applied
     }, [cartItems, discountApplied]);
 
-    // console.log(cartItems);
+    //
 
     // Handle coupon code verification
     const handleCouponCheck = () => {
@@ -68,15 +66,12 @@ export default function CartSidebar() {
     };
 
     const handleCheckout = async () => {
-        console.log("CHECKOUT HANDLED", userNotes);
         try {
             const lineItems = prepareLineItems(cartItems); // Prepare line items from the cart
-            console.log("Prepared Line Items:", lineItems);
-            console.log("Cart Items:", cartItems);
+            console.log(lineItems);
 
             // Extract cartAttributes from all cartItems
             const cartAttributes = cartItems.reduce((attributes, item) => {
-                console.log(item?.configImage);
                 if (item?.sides?.front?.uploadedGraphic?.downloadURL) {
                     attributes.push({
                         key: `uploadedImageFront_${item.id || attributes.length}`, // Unique key per item
@@ -98,14 +93,14 @@ export default function CartSidebar() {
                 return attributes;
             }, []); // Start with an empty array
 
-            console.log("Cart Attributes:", cartAttributes);
             const cartAttributesToSend = cartAttributes.length > 0 ? cartAttributes : [];
 
             // Call createCart API with lineItems and cartAttributes
             const checkoutUrl = await createCart(lineItems, cartAttributesToSend, userNotes);
             if (checkoutUrl) {
-                console.log("Redirecting to Checkout:", checkoutUrl);
-                window.location.href = checkoutUrl; // Redirect to the checkout URL
+                // window.location.href = checkoutUrl; // Redirect to the checkout URL
+                window.open(checkoutUrl, "_blank", "noopener,noreferrer");
+                console.log(checkoutUrl);
             } else {
                 throw new Error("Checkout URL not returned by Shopify API.");
             }
@@ -115,8 +110,6 @@ export default function CartSidebar() {
             setModalOpen(true);
         }
     };
-
-    console.log(cartItems);
 
     return (
         <AnimatePresence>
@@ -143,52 +136,45 @@ export default function CartSidebar() {
 
                         <div className="flex-1 overflow-y-auto">
                             {cartItems.length > 0 ? (
-                                cartItems.map(
-                                    (item) => (
-                                        console.log(item),
-                                        (
-                                            <div key={item.id} className="flex items-center mb-8">
-                                                <img
-                                                    src={
-                                                        item.tryout
-                                                            ? item.cartImage
-                                                            : item.design?.front?.downloadURL
-                                                            ? item.design.front.downloadURL
-                                                            : item.design?.back?.downloadURL
-                                                            ? item.design.back.downloadURL
-                                                            : item.selectedImage ||
-                                                              (item.product?.images?.edges?.length > 0
-                                                                  ? item.product.images.edges[0].node.originalSrc
-                                                                  : "")
-                                                    }
-                                                    alt={item.productName}
-                                                    className="w-16 mr-4"
-                                                />
-                                                <div className="flex-1">
-                                                    <H5 klasse="!mb-2">{item.productName}</H5>
-                                                    {item.configurator && (
-                                                        <p className="text-sm">Farbe: {item.selectedColor || "N/A"}</p>
-                                                    )}
-                                                    <p className="text-sm">
-                                                        Menge:{" "}
-                                                        {item.tryout
-                                                            ? 1
-                                                            : item.configurator
-                                                            ? Object.entries(item.variants || {}).map(
-                                                                  ([size, details]) => (
-                                                                      <span
-                                                                          key={size}
-                                                                      >{` ${details.quantity}x (${size})`}</span>
-                                                                  )
-                                                              )
-                                                            : item.quantity || 1}
-                                                    </p>
-                                                    <p className="text-sm">
-                                                        Preis: € {item.tryout ? 0 : Number(item.totalPrice).toFixed(2)}
-                                                        {/* : calculateNetPrice(Number(item.totalPrice).toFixed(2))} */}
-                                                    </p>
-                                                </div>
-                                                {/* <div className="flex items-center mt-2">
+                                cartItems.map((item) => (
+                                    <div key={item.id} className="flex items-center mb-8">
+                                        <img
+                                            src={
+                                                item.tryout
+                                                    ? item.cartImage
+                                                    : item.design?.front?.downloadURL
+                                                    ? item.design.front.downloadURL
+                                                    : item.design?.back?.downloadURL
+                                                    ? item.design.back.downloadURL
+                                                    : item.selectedImage ||
+                                                      (item.product?.images?.edges?.length > 0
+                                                          ? item.product.images.edges[0].node.originalSrc
+                                                          : "")
+                                            }
+                                            alt={item.productName}
+                                            className="w-16 mr-4"
+                                        />
+                                        <div className="flex-1">
+                                            <H5 klasse="!mb-2">{item.productName}</H5>
+                                            {item.configurator && (
+                                                <p className="text-sm">Farbe: {item.selectedColor || "N/A"}</p>
+                                            )}
+                                            <p className="text-sm">
+                                                Menge:{" "}
+                                                {item.tryout
+                                                    ? 1
+                                                    : item.configurator
+                                                    ? Object.entries(item.variants || {}).map(([size, details]) => (
+                                                          <span key={size}>{` ${details.quantity}x (${size})`}</span>
+                                                      ))
+                                                    : item.quantity || 1}
+                                            </p>
+                                            <p className="text-sm">
+                                                Preis: € {item.tryout ? 0 : Number(item.totalPrice).toFixed(2)}
+                                                {/* : calculateNetPrice(Number(item.totalPrice).toFixed(2))} */}
+                                            </p>
+                                        </div>
+                                        {/* <div className="flex items-center mt-2">
                                             <button
                                                 onClick={() =>
                                                     handleDecrementQuantity(item.id, item.quantity, item.unitPrice)
@@ -207,16 +193,14 @@ export default function CartSidebar() {
                                                 +
                                             </button>
                                         </div> */}
-                                                <button
-                                                    onClick={() => removeCartItem(item.id)}
-                                                    className="text-red-500 hover:text-red-700"
-                                                >
-                                                    <FiTrash2 className="text-lg" />
-                                                </button>
-                                            </div>
-                                        )
-                                    )
-                                )
+                                        <button
+                                            onClick={() => removeCartItem(item.id)}
+                                            className="text-red-500 hover:text-red-700"
+                                        >
+                                            <FiTrash2 className="text-lg" />
+                                        </button>
+                                    </div>
+                                ))
                             ) : (
                                 <P>Ihr Einkaufswagen ist leer.</P>
                             )}

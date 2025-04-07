@@ -5,7 +5,6 @@ import { H2, P } from "@/components/typography"; // Custom typography components
 import client from "../../client"; // Sanity client for data fetching
 import { BasicPortableText } from "@/components/content";
 export default function Impressum({ data }) {
-    console.log(data);
     return (
         <>
             <Head>

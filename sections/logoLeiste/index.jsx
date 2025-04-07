@@ -3,9 +3,7 @@ import { CoverImage, ContainImage } from "../../components/images";
 import urlFor from "../../functions/urlFor";
 
 const LogoLeiste = ({ data, klasse }) => {
-    useEffect(() => {
-        console.log(data);
-    }, [data]);
+    useEffect(() => {}, [data]);
 
     return (
         <div className={`flex flex-wrap justify-center items-center gap-4 px-4 lg:px-24 mt-4 lg:mt-10 ${klasse}`}>

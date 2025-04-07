@@ -17,8 +17,6 @@ import IntroImg from "../../assets/test/introImg.jpg";
 import urlFor from "../../functions/urlFor";
 
 const BasicText = ({ data }) => {
-    console.log(data);
-
     return (
         <>
             <div className="grid grid-cols-12 px-4 lg:px-24 gap-3 lg:gap-6 lg:mt-10 lg:mb-16 items-center">

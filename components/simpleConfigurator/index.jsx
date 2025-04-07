@@ -135,7 +135,7 @@ export default function SimpleConfigurator({ product }) {
                                     }
                                     onQuantityChange={(newQuantity) => {
                                         // Handle any additional logic you need when the quantity changes
-                                        console.log("Quantity changed:", newQuantity);
+
                                         setPurchaseData({
                                             ...purchaseData,
                                             quantity: newQuantity,

@@ -1,15 +1,10 @@
 // pages/api/shopifyCreateCustomer.js
 export default async function handler(req, res) {
-    console.log("Shopify Token:", process.env.SHOPIFY_STOREFRONT_ADMIN_API);
-
-    console.log("BIN DA");
     if (req.method !== "POST") {
         return res.status(405).json({ message: "Method not allowed" });
     }
 
     const { email, userType, businessNumber, companyName } = req.body;
-
-    console.log(email, userType, businessNumber, companyName);
 
     try {
         const response = await fetch(`https://b1d160-0f.myshopify.com/admin/api/2023-10/customers.json`, {

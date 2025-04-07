@@ -51,11 +51,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     const containerWidth = purchaseData.containerWidth || 500; // Set a default value for safety
     const containerHeight = purchaseData.containerHeight || 500;
 
-    console.log(selectedVariant);
-
-    useEffect(() => {
-        console.log(isMobileSliderOpen);
-    }, [isMobileSliderOpen]);
+    useEffect(() => {}, [isMobileSliderOpen]);
 
     // Remove or conditionally include this useEffect
     useEffect(() => {
@@ -69,8 +65,6 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     }, []);
 
     const handleXChange = (event, newValue) => {
-        console.log("New X:", newValue, "for", currentSide);
-
         setPurchaseData({
             ...purchaseData,
             sides: {
@@ -147,12 +141,9 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         }));
     };
 
-    console.log("PÖRTSCHÄSE", purchaseData);
-
     const handleCopyFrontToBack = (event) => {
         const isChecked = event.target.checked;
         setCopyFrontToBack(isChecked);
-        console.log(purchaseData);
 
         if (isChecked && purchaseData.sides.front.uploadedGraphic) {
             // Retrieve stored graphic dimensions and current scale from the front side
@@ -185,28 +176,25 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     };
 
     const handleGraphicUpload = async (event) => {
-        console.log("UPLOADED");
         const newFile = event.target.files[0];
 
         const image = new Image();
         image.src = URL.createObjectURL(newFile);
-        console.log(purchaseData.containerWidth, purchaseData.containerHeight);
+
         image.onload = () => {
             const imageWidth = image.width;
             const imageHeight = image.height;
-            console.log(purchaseData.containerWidth, purchaseData.containerHeight, imageWidth, imageHeight);
+
             const { x, y } = getImagePlacement({
                 containerWidth: purchaseData.containerWidth,
                 containerHeight: purchaseData.containerHeight,
                 imageNaturalWidth: image.width,
                 imageNaturalHeight: image.height,
             });
-            console.log("MEINE FUNCTION", x, y, currentSide);
+
             // Calculate centered position
             const centeredX = (purchaseData.containerWidth - imageWidth) / 2;
             const centeredY = (purchaseData.containerHeight - imageHeight) / 2;
-
-            console.log("SPOSITIONE", centeredX, centeredY);
 
             setPurchaseData({
                 ...purchaseData,
@@ -304,7 +292,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     };
 
     const positions = getPositions();
-    console.log("FIIIXED", positions);
+
     // At the top of your component, ensure purchaseData.sides exists
     useEffect(() => {
         if (!purchaseData.sides) {
@@ -323,8 +311,6 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         if (!purchaseData.sides[currentSide]?.position && positions[currentSide]?.default) {
             const defaultOption = positions[currentSide].default[0];
             setSelectedValue(defaultOption.name);
-
-            console.log("defaultOption", defaultOption, purchaseData.sides[currentSide]?.position);
 
             if (purchaseData.boundingRect) {
                 // Use custom bounding box for position calculations:

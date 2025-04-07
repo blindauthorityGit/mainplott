@@ -13,8 +13,6 @@ export default function Shop({ allProducts, globalData }) {
     const router = useRouter();
     const { cat, tags } = router.query;
 
-    console.log(allProducts, globalData);
-
     const initialCats = cat ? cat.split("+").filter(Boolean) : ["all"];
     const initialTags = tags ? tags.split("+").filter(Boolean) : [];
 

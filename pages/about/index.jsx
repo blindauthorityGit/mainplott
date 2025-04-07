@@ -14,9 +14,7 @@ import { getAllProductsInCollection, getAllCollectionsWithSubcollections } from 
 import useStore from "../../store/store"; // Pfad zu deinem Zustand-Store
 
 export default function About({ data }) {
-    useEffect(() => {
-        console.log(data);
-    }, [data]);
+    useEffect(() => {}, [data]);
 
     return (
         <MainContainer>

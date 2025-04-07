@@ -12,12 +12,12 @@ export function MenuProvider({ children }) {
     const [menuData, setMenuData] = useState(null);
 
     useEffect(() => {
-        console.log("TEST");
         const fetchMenu = async () => {
             try {
                 const query = `*[_type == "settingsSingleton"][0]`;
                 const data = await client.fetch(query);
-                console.log("Fetched data:", data);
+                console.log(data);
+
                 setMenuData(data);
             } catch (error) {
                 console.error("Error fetching data:", error);

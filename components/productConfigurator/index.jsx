@@ -28,7 +28,7 @@ export default function ProductConfigurator({
 
     useEffect(() => {
         // Reset purchaseData on URL change
-        console.log("I DID A RESET", veredelungen);
+
         resetPurchaseData();
     }, [router.asPath]);
 
@@ -39,7 +39,6 @@ export default function ProductConfigurator({
             productName: product.title,
             product: product,
         }));
-        console.log(product.title, product);
     }, [product, setPurchaseData]);
 
     // Build steps configuration based on purchaseData.isLayout
@@ -74,8 +73,6 @@ export default function ProductConfigurator({
     }, [purchaseData.isLayout]);
 
     const CurrentStepComponent = stepsConfig[currentStep].component;
-
-    console.log("LAYOUIT STUFF", layoutService);
 
     return (
         <StepHolder

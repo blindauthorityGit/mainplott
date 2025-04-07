@@ -9,7 +9,6 @@ const ContentWrapper = ({ data, klasse, children, showToggle }) => {
     const handleToggle = () => {
         const newConfigurator = purchaseData.configurator === "configurator" ? "template" : "configurator";
         setPurchaseData({ ...purchaseData, configurator: newConfigurator });
-        console.log(purchaseData);
     };
 
     return (

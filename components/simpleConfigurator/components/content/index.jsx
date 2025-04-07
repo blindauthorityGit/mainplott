@@ -18,7 +18,7 @@ export default function SimpleStep({ product }) {
 
     // Format variants for easier access
     const formattedVariants = formatVariants(product.variants);
-    // console.log(formattedVariants, product.variants);
+    //
     // Ensure `selectedSize` and `selectedColor` are initialized
 
     return (
@@ -48,7 +48,7 @@ export default function SimpleStep({ product }) {
                         <div className="right flex flex-wrap -mx-1 -my-1 ">
                             {formattedVariants[selectedSize]?.colors?.map(
                                 ({ color }, index) => (
-                                    console.log(getColorHex(color)),
+                                    ),
                                     (
                                         <div key={`color-${index}`} className="px-1 py-1">
                                             <CustomCheckBox

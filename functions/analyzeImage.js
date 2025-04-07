@@ -4,14 +4,11 @@ export const analyzeImage = async (file) => {
     formData.append("file", file);
 
     // Log that we're starting the function
-    console.log("Starting analyzeImage function...");
 
     // Log the file name and size to verify what we're working with
-    console.log("File to upload:", file.name, "Size:", file.size, file);
 
     try {
         // Log before sending the request
-        console.log("Sending POST request to /api/analyzeImage...");
 
         const response = await fetch("/api/analyzeImage", {
             method: "POST",
@@ -19,15 +16,12 @@ export const analyzeImage = async (file) => {
         });
 
         // Log that the request has completed and check status
-        console.log("Request completed with status:", response.status);
 
         const analysisResult = await response.json();
 
         if (response.ok) {
             // Log the analysis result if successful
-            console.log("Analysis Result:", analysisResult);
-            console.log("Color Space:", analysisResult.colorSpace);
-            console.log("DPI:", analysisResult.dpi);
+
             // Return the analysis results
             return {
                 colorSpace: analysisResult.colorSpace,

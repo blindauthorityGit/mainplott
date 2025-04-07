@@ -1,13 +1,13 @@
 import shopify from "@shopify/shopify-api";
 
-const domain = process.env.SHOPIFY_STORE_DOMAIN;
-const token = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
+const domain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN;
+const token = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN;
 
-// console.log(domain, token);
+//
 
 async function callShopify(query) {
     const fetchUrl = `https://${domain}/api/2023-01/graphql.json`;
-    // console.log(token, domain);
+    //
 
     const fetchOptions = {
         endpoint: fetchUrl,
@@ -82,7 +82,7 @@ export async function getAllProductsInCollection(collection) {
 
     const response = await callShopify(query);
     // const allProducts = response.data || [];
-    console.log(response.data.collectionByHandle);
+
     const allProducts = response.data.collectionByHandle.products.edges
         ? response.data.collectionByHandle.products.edges
         : [];
@@ -109,7 +109,7 @@ export async function getAllCollectionsWithSubcollections() {
     // }`;
 
     const response = await callShopify(query);
-    console.log("API Response:", response); // Hier prüfen wir die Struktur der Antwort
+    // Hier prüfen wir die Struktur der Antwort
 
     const allCollections = response?.data?.collections?.edges
         ? response.data.collections.edges.map((edge) => ({
@@ -370,9 +370,6 @@ export async function getProductByHandle(handle) {
     const veredelungBrustResponse = await callShopify(veredelungQueryBrust);
     const veredelungRueckenResponse = await callShopify(veredelungQueryRuecken);
 
-    console.log("BRUST", veredelungBrustResponse.data.products.edges);
-    console.log("RÜCKEN", veredelungRueckenResponse.data.products.edges);
-
     function parseVeredelungEdges(edges) {
         return edges.map((edge) => {
             const product = edge.node;
@@ -431,8 +428,6 @@ export async function getProductByHandle(handle) {
 
     const profiDatenCheck = await callShopify(profiDatenCheckQuery);
     const profiDatenCheckData = profiDatenCheck.data.products.edges;
-
-    console.log("profiDatenCheck", profiDatenCheck.data.products.edges);
 
     // *** NEW: Fetch LayoutService product ***
     const layoutServiceQuery = `{
@@ -551,8 +546,6 @@ export async function getAllProducts() {
 
 // Function to fetch back image URL based on metafield ID
 export async function getBackImageUrl(mediaImageId) {
-    console.log("Fetching back image URL with mediaImageId:", mediaImageId);
-
     const query = `{
       node(id: "${mediaImageId}") {
           ... on MediaImage {
@@ -568,7 +561,6 @@ export async function getBackImageUrl(mediaImageId) {
         const response = await callShopify(query);
         const backImageUrl = response?.data?.node?.image?.url || null;
 
-        console.log("Fetched Back Image URL:", backImageUrl);
         return backImageUrl;
     } catch (error) {
         console.error("Error fetching back image URL:", error);
@@ -605,7 +597,7 @@ export async function getProductsByCategory(categoryHandle) {
 
     try {
         const response = await callShopify(query);
-        console.log(response);
+
         const products = response?.data?.collectionByHandle?.products?.edges.map((edge) => edge.node) || [];
         return products;
     } catch (error) {
@@ -648,12 +640,9 @@ export async function fetchMetaobjects(metaobjectGids) {
 // libs/shopify.js
 
 export async function createCart(lineItems, cartAttributes, note) {
-    console.log("LINE ITEMS", lineItems);
-    console.log("cartAttributes", cartAttributes);
-
     // Prepare the note field if provided.
     const noteField = note && note.trim() !== "" ? `, note: ${JSON.stringify(note)}` : "";
-    console.log("NOTE", noteField);
+
     // Construct the query dynamically with inlined lineItems and note (if any)
     const query = `
         mutation {
@@ -701,8 +690,6 @@ export async function createCart(lineItems, cartAttributes, note) {
         }
     `;
 
-    console.log("Constructed Query:", query);
-
     try {
         const response = await callShopify(query);
 
@@ -719,7 +706,6 @@ export async function createCart(lineItems, cartAttributes, note) {
 
         const cart = response?.data?.cartCreate?.cart;
         if (cart?.checkoutUrl) {
-            console.log("CHECKOUT URL:", cart.checkoutUrl);
             return cart.checkoutUrl; // Return the checkout URL
         } else {
             throw new Error("No checkout URL returned!");

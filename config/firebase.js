@@ -55,7 +55,7 @@ export const uploadFileToStorage = async (file, path) => {
         const storageRef = ref(storage, path);
         const snapshot = await uploadBytes(storageRef, file);
         const downloadURL = await getDownloadURL(snapshot.ref);
-        console.log("File uploaded successfully:", downloadURL);
+
         return downloadURL;
     } catch (error) {
         console.error("Error uploading file:", error);
@@ -66,7 +66,6 @@ export const uploadFileToStorage = async (file, path) => {
 export const uploadFileToTempFolder = async (file, userId) => {
     const uniqueId = uuidv4();
     const filePath = `temp/${userId}/${uniqueId}-${file.name}`;
-    console.log(file);
 
     // Firebase storage reference
     const storageRef = ref(storage, filePath);
@@ -75,7 +74,7 @@ export const uploadFileToTempFolder = async (file, userId) => {
     await uploadBytes(storageRef, file);
     // Get the download URL
     const downloadURL = await getDownloadURL(storageRef);
-    console.log(downloadURL);
+
     // Save metadata in Firestore
     const fileMetadata = {
         userId,
@@ -99,7 +98,6 @@ export const uploadLayoutFile = async (file, userId) => {
     const uniqueId = uuidv4();
     // Save files under the layoutFiles folder
     const filePath = `layoutFiles/${userId}/${uniqueId}-${file.name}`;
-    console.log("Uploading layout file:", file);
 
     // Create a Firebase storage reference
     const storageRef = ref(storage, filePath);
@@ -109,7 +107,6 @@ export const uploadLayoutFile = async (file, userId) => {
 
     // Get the download URL
     const downloadURL = await getDownloadURL(storageRef);
-    console.log("Download URL:", downloadURL);
 
     // Prepare file metadata
     const fileMetadata = {
@@ -126,7 +123,7 @@ export const uploadLayoutFile = async (file, userId) => {
 
     // Optionally store in localStorage for session restoration
     localStorage.setItem("uploadedLayoutGraphic", JSON.stringify(fileMetadata));
-    console.log(fileMetadata);
+
     return fileMetadata;
 };
 
@@ -146,7 +143,6 @@ export const uploadPreviewToStorage = async (previewFileBuffer, fileName) => {
 
         // Get download URL of the uploaded file
         const downloadURL = await getDownloadURL(storageRef);
-        console.log("Preview image uploaded successfully:", downloadURL);
 
         // Metadata to be stored in Firestore
         const fileMetadata = {
@@ -190,8 +186,6 @@ export const uploadPurchaseToFirestore = async (purchaseData) => {
 
         // Add purchase data to the customer's document
         await setDoc(customerDocRef, { ...rest, createdAt: new Date().toISOString() }, { merge: true });
-
-        console.log("Purchase data uploaded successfully for customer:", customerName);
     } catch (error) {
         console.error("Error uploading purchase data:", error);
         throw error; // Re-throw the error to handle it in the caller
@@ -206,7 +200,6 @@ export const saveUserDataToFirestore = async (uid, userData, collectionName) => 
             ...userData,
             createdAt: new Date().toISOString(),
         });
-        console.log(`User data saved to collection: ${collectionName}`);
     } catch (error) {
         console.error("Error saving user data to Firestore:", error);
         throw error;

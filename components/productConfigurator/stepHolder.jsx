@@ -87,9 +87,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     }, [handle]);
 
     const handleExport = () => {
-        console.log("HANDLE EXPORT");
         if (exportCanvasRef.current) {
-            console.log(exportCanvasRef.current);
             exportCanvasRef.current();
         }
     };
@@ -115,7 +113,6 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         // If we are at the Design step, export both sides first
         window.scrollTo({ top: 0, behavior: "smooth" });
 
-        console.log("pörtschi", purchaseData);
         if (steps[currentStep] === "Design" && purchaseData.configurator !== "template") {
             setIsExporting(true);
             await exportAllSides({
@@ -206,16 +203,13 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
     // SET VIEW TO FRONMT WHEN NAVIGATING
     // useEffect(() => {
-    //     console.log(steps[currentStep]);
-    //     console.log(configStepIndex);
-    //     console.log(stageRef);
+    //
+    //
+    //
     // }, [steps, currentStep]);
 
     useEffect(() => {
-        console.log("POSITIONES:", containerRef.current.offsetWidth, containerRef.current.offsetWidth / 2);
-
         if (!purchaseData.position && containerRef.current) {
-            console.log("POSITIONES:", containerRef.current.offsetWidth, containerRef.current.offsetWidth / 2);
             setPurchaseData({
                 ...purchaseData,
                 sides: {
@@ -268,7 +262,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 let { width, height } = img;
                 const containerWidth = containerRef.current?.offsetWidth;
                 const containerHeight = containerRef.current?.offsetHeight;
-                console.log(containerRef.current);
+
                 // Set a max height limit (lower for mobile)
                 const maxHeight = isMobile ? "auto" : 860;
 
@@ -326,7 +320,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
     useEffect(() => {
         const chatIcon = document.querySelector(".tawk-min-container");
-        console.log(chatIcon);
+
         if (chatIcon) {
             // Initial behavior: hide the chat icon on mobile
             chatIcon.style.display = "none";
@@ -343,29 +337,24 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     // StepHolder.js (excerpt)
 
     const handleAddToCart = () => {
-        console.log("PURCHASE DATA", purchaseData);
         const updatedPurchaseData = { ...purchaseData };
         const { sides, variants } = updatedPurchaseData;
 
         // 1) Copy `variants` and remove "Standard"
         const updatedVariants = { ...variants };
-        console.log("DA UPDATED VARS", updatedVariants);
+
         if (updatedVariants.Standard) {
-            console.log("ES GIBTS BUBU");
             delete updatedVariants.Standard;
         }
 
         const totalQuantity = Object.values(updatedVariants).reduce((sum, variant) => sum + (variant.quantity || 0), 0);
-        console.log("Total Quantity:", totalQuantity);
 
         const sidesToProcess = ["front", "back"];
         sidesToProcess.forEach((sideKey) => {
             const side = sides?.[sideKey];
-            console.log(`Processing ${sideKey}:`, side);
 
             if (side?.uploadedGraphic || side?.uploadedGraphicFile) {
                 const veredelungDetail = veredelungen?.[sideKey];
-                console.log(`${sideKey} Veredelung Detail:`, veredelungDetail);
 
                 if (veredelungDetail) {
                     const matchedDiscount = veredelungDetail.preisReduktion.discounts.find(
@@ -373,14 +362,11 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                             totalQuantity >= discount.minQuantity &&
                             (discount.maxQuantity === null || totalQuantity <= discount.maxQuantity)
                     );
-                    console.log(`${sideKey} Matched Discount:`, matchedDiscount);
 
                     if (matchedDiscount) {
                         const variantIndex = veredelungDetail.preisReduktion.discounts.indexOf(matchedDiscount);
-                        console.log("variantIndex", variantIndex);
+
                         const selectedVariant = veredelungDetail.variants.edges[variantIndex];
-                        console.log("vDetails", veredelungDetail.variants);
-                        console.log(`${sideKey} Selected Variant:`, selectedVariant);
 
                         if (selectedVariant) {
                             updatedVariants[`${sideKey}Veredelung`] = {
@@ -393,7 +379,6 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                 }`,
                                 currency: veredelungDetail.currency,
                             };
-                            console.log(`Added ${sideKey}Veredelung:`, updatedVariants[`${sideKey}Veredelung`]);
                         } else {
                             console.error(`No matching variant found for ${sideKey}.`);
                         }
@@ -404,12 +389,10 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                     console.error(`No veredelung detail found for side: ${sideKey}`);
                 }
             } else {
-                console.log(`No graphic for side: ${sideKey}, skipping.`);
             }
         });
 
         updatedPurchaseData.variants = updatedVariants;
-        console.log("Final Updated Variants:", updatedVariants);
 
         addCartItem(updatedPurchaseData);
         openCartSidebar();
@@ -424,8 +407,6 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         };
     }, [revealMobileSteps]);
 
-    console.log("STEEEEPS", steps[currentStep]);
-    console.log("selected Variant", selectedVariant);
     return (
         <div className="grid grid-cols-12  lg:gap-4 h-full">
             {/* If exporting, show overlay */}
@@ -667,7 +648,6 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                     {steps[currentStep] === "Zusammenfassung" ? (
                         <StepButton
                             onClick={() => {
-                                console.log("PURCHASE DATA", purchaseData);
                                 const updatedPurchaseData = { ...purchaseData };
                                 const { sides, variants } = updatedPurchaseData;
 
@@ -675,7 +655,6 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                 const updatedVariants = { ...variants };
                                 if (updatedVariants.Standard) {
                                     delete updatedVariants.Standard;
-                                    console.log("Removed 'Standard' from variants.");
                                 }
 
                                 // 2) Calculate totalQuantity from updatedVariants
@@ -683,17 +662,14 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     (sum, variant) => sum + (variant.quantity || 0),
                                     0
                                 );
-                                console.log("Total Quantity:", totalQuantity);
 
                                 // 3) If you have sides "front" / "back", handle veredelung
                                 const sidesToProcess = ["front", "back"];
                                 sidesToProcess.forEach((sideKey) => {
                                     const side = sides?.[sideKey];
-                                    console.log(`Processing ${sideKey}:`, side);
 
                                     if (side?.uploadedGraphic || side?.uploadedGraphicFile) {
                                         const veredelungDetail = veredelungen?.[sideKey];
-                                        console.log(`${sideKey} Veredelung Detail:`, veredelungDetail);
 
                                         if (veredelungDetail) {
                                             const matchedDiscount = veredelungDetail.preisReduktion.discounts.find(
@@ -702,15 +678,12 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                                     (discount.maxQuantity === null ||
                                                         totalQuantity <= discount.maxQuantity)
                                             );
-                                            console.log(`${sideKey} Matched Discount:`, matchedDiscount);
 
                                             if (matchedDiscount) {
                                                 const variantIndex =
                                                     veredelungDetail.preisReduktion.discounts.indexOf(matchedDiscount);
-                                                console.log("variantIndex", variantIndex);
+
                                                 const selectedVariant = veredelungDetail.variants.edges[variantIndex];
-                                                console.log("vDetails", veredelungDetail.variants);
-                                                console.log(`${sideKey} Selected Variant:`, selectedVariant);
 
                                                 if (selectedVariant) {
                                                     updatedVariants[`${sideKey}Veredelung`] = {
@@ -737,13 +710,11 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                             console.error(`No veredelung detail found for side: ${sideKey}`);
                                         }
                                     } else {
-                                        console.log(`No graphic for side: ${sideKey}, skipping.`);
                                     }
                                 });
 
                                 // 4) Update purchase data and proceed
                                 updatedPurchaseData.variants = updatedVariants;
-                                console.log("Final Updated Variants:", updatedVariants);
 
                                 addCartItem(updatedPurchaseData);
                                 openCartSidebar();

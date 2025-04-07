@@ -14,7 +14,7 @@ export default async function handler(req, res) {
         });
 
         if (!response.ok) {
-            console.log("Shopify API Response Status:", response.status); // Debugging
+            // Debugging
             throw new Error(`Failed to fetch data from Shopify API - Status: ${response.status}`);
         }
 

@@ -60,7 +60,6 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
     // Function to handle new file upload, similar to the initial file drop
     const handleNewFileUpload = async (newFile) => {
         if (newFile) {
-            console.log(newFile);
             setUploadedFile(newFile);
             setUploading(true);
             setShowSpinner(true); // Show spinner when uploading starts
@@ -89,8 +88,6 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                     if (analysisResult) {
                         setColorSpace(analysisResult.colorSpace);
                         setDpi(analysisResult.dpi);
-                        console.log("Color Space:", analysisResult.colorSpace);
-                        console.log("DPI:", analysisResult.dpi);
                     }
                     // Set the updated modal content with the new analysis
                     setModalContent(
@@ -147,7 +144,6 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                     setUploadError("Die Datei ist zu groß. Die maximale Dateigröße beträgt 25MB.");
                     return;
                 }
-                console.log(file);
 
                 setUploadError(null); // Clear any previous errors
                 setUploadedFile(file);
@@ -171,7 +167,6 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                     //         },
                     //     },
                     // });
-                    console.log(fileMetadata);
 
                     // Determine what kind of analysis is needed based on file type
                     if (file.type === "image/jpeg" || file.type === "image/png") {
@@ -190,7 +185,6 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                         // Analyze JPEG or PNG with sharp
                         const analysisResult = await analyzeImage(file);
                         if (analysisResult) {
-                            console.log(analysisResult);
                             setColorSpace(analysisResult.colorSpace);
                             setDpi(analysisResult.dpi);
                         }
@@ -212,17 +206,14 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                         );
                     } else if (file.type === "application/pdf") {
                         // Handle multi-page PDF analysis
-                        console.log("PDF file detected. Extracting and analyzing the first page...");
+
                         const pdfAnalysisResult = await analyzePdf(file);
-                        console.log("PDF Analysis:", pdfAnalysisResult);
-                        console.log("PDF Analysis Link:", pdfAnalysisResult.previewImage);
 
                         // Call OpenAI with the PDF preview image and a prompt
                         const openAIResponse = await analyzeImageWithOpenAI(
                             pdfAnalysisResult.previewImage,
                             "What do you see?"
                         );
-                        console.log("OpenAI Analysis:", openAIResponse);
 
                         // 2) Convert that previewImage URL to a Blob/File
                         // const previewUrl = pdfAnalysisResult.previewImage; // e.g. "https://firebasestorage.googleapis.com/..."
@@ -233,7 +224,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                         //     type: "image/png",
                         //     lastModified: Date.now(),
                         // });
-                        // console.log("PDF PREVIEW FILE", previewFile);
+                        //
                         setPurchaseData({
                             ...purchaseData,
                             sides: {
@@ -267,7 +258,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
 
                     // Open modal
                     setModalOpen(true);
-                    console.log("File uploaded successfully:", fileMetadata);
+
                     setShowSpinner(false); // Hide spinner when uploading is complete
 
                     setUploading(false);

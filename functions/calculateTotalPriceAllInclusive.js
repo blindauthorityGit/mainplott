@@ -58,8 +58,7 @@ export function calculateTotalPriceAllInclusive(variants, product, discountData,
     if (variants.profiDatenCheck) {
         const checkPrice = parseFloat(variants.profiDatenCheck.price || 0);
         const checkQty = variants.profiDatenCheck.quantity || 1;
-        console.log("PRO DATACHECK", checkPrice, checkQty);
-        console.log(purchaseData);
+
         finalTotal += getUserPiecePrice(checkPrice) * checkQty;
     }
 

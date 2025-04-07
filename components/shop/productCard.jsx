@@ -31,8 +31,6 @@ function ProductCard({ product }) {
         specialCollectionKeywords.some((keyword) => edge.node.handle.includes(keyword))
     );
 
-    console.log(isSpecialCollection);
-
     return (
         <motion.div
             className="lg:h-120 lg:w-64 w-full h-full rounded-[20px] mx-auto border border-gray-200 overflow-hidden bg-white relative"

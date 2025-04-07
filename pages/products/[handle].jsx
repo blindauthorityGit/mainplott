@@ -49,12 +49,10 @@ export default function Product({ product, sizes, relatedProducts, category, glo
         }
     }, [handle, product]);
 
-    console.log("PRODUCT", product);
-
     // Extract the product title from the Shopify data
     const productTitle = product?.productByHandle?.title || "Unbekanntes Produkt";
     const seoData = transformShopifyProductToSEO(product.productByHandle);
-    console.log(seoData);
+
     return (
         <>
             <MetaShopify data={seoData} />

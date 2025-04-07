@@ -11,14 +11,14 @@ const ContentWrapper = ({ data, klasse, children, showToggle }) => {
         // Ensure the configurator switches correctly on the first click
         setPurchaseData((prevData) => {
             const newConfigurator = prevData.configurator === "configurator" ? "template" : "configurator";
-            console.log("Toggle to:", newConfigurator);
+
             return { ...prevData, configurator: newConfigurator };
         });
     };
 
     const RichTextRenderer = ({ htmlContent }) => {
         if (!htmlContent) {
-            console.error("No HTML content provided");
+            // console.error("No HTML content provided");
             return null;
         }
 

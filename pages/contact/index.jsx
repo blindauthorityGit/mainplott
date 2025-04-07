@@ -15,7 +15,6 @@ import GoogleMaps from "@/components/map";
  */
 
 const ContactPage = ({ data }) => {
-    console.log(data);
     return (
         <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 py-12 px-6 lg:px-12 font-body">
             {/* Left Column: Contact Details */}

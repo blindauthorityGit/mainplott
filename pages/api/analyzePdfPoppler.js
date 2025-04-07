@@ -58,7 +58,6 @@ export default async function handler(req, res) {
                         if (unlinkErr) {
                             console.error("Error deleting temporary file:", unlinkErr);
                         } else {
-                            console.log("Temporary file deleted successfully");
                         }
                     });
                 }

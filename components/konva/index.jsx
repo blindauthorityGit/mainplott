@@ -58,8 +58,6 @@ const KonvaLayer = forwardRef(
         const fadeOutTimeoutRef = useRef(null);
         const hoveredRef = useRef(false);
 
-        console.log("ProductImage", productImage);
-
         useEffect(() => {
             hoveredRef.current = isEditAreaHovered;
         }, [isEditAreaHovered]);
@@ -138,19 +136,18 @@ const KonvaLayer = forwardRef(
 
         if (purchaseData.product.konfigBox && purchaseData.product.konfigBox.value) {
             try {
-                console.log("konfigBox is da");
                 // Parse the JSON from konfigBox. Expected format: {"width": 1, "height": 0.128}
                 const konfig = JSON.parse(purchaseData.product.konfigBox.value);
                 // Multiply the parsed relative values by container dimensions.
                 const width = konfig.width * containerWidth;
                 const height = konfig.height * containerHeight;
-                console.log(konfig.x);
+
                 // Center the bounding box. (Alternatively, you can calculate x and y differently if needed.)
                 const x = konfig?.x ? konfig.x * containerWidth : (containerWidth - width) / 2;
 
                 const y = (containerHeight - height) / 2;
                 boundingRect = { x, y, width, height };
-                console.log(width, containerWidth);
+
                 setPurchaseData((prev) => ({
                     ...prev,
                     boundingRect: { x, y, width, height },
@@ -176,8 +173,6 @@ const KonvaLayer = forwardRef(
                 }));
             }
         } else {
-            console.log("konfigBox is NITA da");
-
             // If there's no konfigBox provided, use the default values.
             boundingRect = {
                 x: containerWidth * 0.22,
@@ -198,7 +193,6 @@ const KonvaLayer = forwardRef(
         }
 
         useEffect(() => {
-            console.log("KonvaLayer: Received new position:", position);
             if (uploadedGraphicRef.current) {
                 uploadedGraphicRef.current.x(position.x);
                 uploadedGraphicRef.current.y(position.y);
@@ -221,8 +215,6 @@ const KonvaLayer = forwardRef(
                 let placement;
                 // If the product has a konfigBox, use the new logic:
                 if (purchaseData.product.konfigBox && purchaseData.product.konfigBox.value) {
-                    console.log("I USE THE FIXED PLACEMENT");
-
                     placement = getFixedImagePlacement({
                         imageNaturalWidth: loadedImg.width,
                         imageNaturalHeight: loadedImg.height,
@@ -230,17 +222,15 @@ const KonvaLayer = forwardRef(
                         boundingRect,
                         centerImage: true,
                     });
-                    console.log(placement);
                 } else {
                     // Otherwise, fall back to your original helper.
-                    console.log("I USE THE DEFAULT PLACEMENT");
+
                     placement = getImagePlacement({
                         containerWidth,
                         containerHeight,
                         imageNaturalWidth: loadedImg.width,
                         imageNaturalHeight: loadedImg.height,
                     });
-                    console.log(placement);
                 }
 
                 // Apply the placement values to your graphic:
@@ -318,7 +308,7 @@ const KonvaLayer = forwardRef(
         const handleExport = () => {
             handleResetZoom();
             const dataURL = exportCanvas(stageRef, transformerRef, null, 1);
-            console.log("Export dataURL:", dataURL);
+
             return dataURL;
         };
 

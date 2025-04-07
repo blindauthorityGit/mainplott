@@ -9,7 +9,6 @@ import { BasicPortableText } from "@/components/content";
 import Meta from "@/components/SEO/";
 
 export default function Vektorisieren({ data }) {
-    console.log(data);
     // We now store the actual file object (for upload)
     const [file, setFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);

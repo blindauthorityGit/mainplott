@@ -12,7 +12,6 @@ export default function ChooseWay({ product }) {
 
     // Update Zustand when an option is selected
     const handleSelection = (option) => {
-        console.log(option, "HEYAAAAAAAAAAAAA");
         setSelectedOption(option);
         setPurchaseData((prev) => ({
             ...prev,
