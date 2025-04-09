@@ -318,7 +318,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                 </div>
                 {user?.userType === "firmenkunde" ? (
                     <GeneralCheckBox
-                        label="Diesen Artikel ohne Personalisierung zum Probieren bestellen"
+                        label="Weiter ohne Personalisierung"
                         isChecked={isChecked}
                         onToggle={handleToggle}
                         onClick={() => setIsChecked(!isChecked)}

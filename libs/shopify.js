@@ -320,7 +320,7 @@ export async function getProductByHandle(handle) {
           description
         }
 
-        variants(first: 3) {
+        variants(first: 4) {
           edges {
             node {
              id  

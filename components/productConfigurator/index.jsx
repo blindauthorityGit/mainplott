@@ -32,6 +32,8 @@ export default function ProductConfigurator({
         resetPurchaseData();
     }, [router.asPath]);
 
+    console.log(product);
+
     useEffect(() => {
         // Set product info into the store
         setPurchaseData((prev) => ({

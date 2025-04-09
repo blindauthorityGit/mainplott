@@ -10,6 +10,8 @@ export default function OrderSummary({ product }) {
 
     const sizeOrder = ["XS", "S", "M", "L", "XL", "2XL", "3XL"];
 
+    console.log(purchaseData);
+
     // Relevant data mapping for display
     const summaryData = [
         { label: "Produkt Name", value: purchaseData.productName },

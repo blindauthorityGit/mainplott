@@ -53,6 +53,8 @@ export default function Product({ product, sizes, relatedProducts, category, glo
     const productTitle = product?.productByHandle?.title || "Unbekanntes Produkt";
     const seoData = transformShopifyProductToSEO(product.productByHandle);
 
+    console.log(product?.parsedVeredelungData);
+
     return (
         <>
             <MetaShopify data={seoData} />
@@ -60,7 +62,10 @@ export default function Product({ product, sizes, relatedProducts, category, glo
                 <Breadcrumbs category={category} productTitle={productTitle} />
                 {product?.productByHandle?.konfigurator?.value == "true" ? (
                     <ProductConfigurator
-                        product={product?.productByHandle}
+                        product={{
+                            ...product?.productByHandle,
+                            handle: product?.productByHandle?.handle || handle, // falls handle nicht gesetzt ist, nimm router.query.handle
+                        }}
                         veredelungen={product?.parsedVeredelungData}
                         profiDatenCheck={product?.profiDatenCheckData}
                         layoutService={product?.layoutServiceData}

@@ -106,6 +106,7 @@ function getGraphicForProductType(product, label) {
     const JackePositions = {
         "Brust rechts oben": Jackerechtsoben,
         "Brust links oben": Jackelinkssoben,
+        "Brust mitte oben": Jackemitte,
         "Brust Mitte": Jackemitte,
         "Rücken rechts oben": JackeRueckenrechtsoben,
         "Rücken links oben": JackeRueckenlinkssoben,

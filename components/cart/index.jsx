@@ -10,6 +10,8 @@ import prepareLineItems from "@/functions/prepareLineItems";
 import { calculateNetPrice } from "@/functions/calculateNetPrice"; // Import your net price function
 
 import { createCart } from "@/libs/shopify";
+import getDiscountCodeFromCart from "@/functions/getDiscountCode";
+
 export default function CartSidebar() {
     const {
         purchaseData,
@@ -33,7 +35,7 @@ export default function CartSidebar() {
         setTotalPrice(subtotal.toFixed(2)); // 10% discount if applied
     }, [cartItems, discountApplied]);
 
-    //
+    console.log(cartItems);
 
     // Handle coupon code verification
     const handleCouponCheck = () => {
@@ -67,49 +69,54 @@ export default function CartSidebar() {
 
     const handleCheckout = async () => {
         try {
-            const lineItems = prepareLineItems(cartItems); // Prepare line items from the cart
+            const lineItems = prepareLineItems(cartItems);
             console.log(lineItems);
 
-            // Extract cartAttributes from all cartItems
             const cartAttributes = cartItems.reduce((attributes, item) => {
                 if (item?.sides?.front?.uploadedGraphic?.downloadURL) {
                     attributes.push({
-                        key: `uploadedImageFront_${item.id || attributes.length}`, // Unique key per item
+                        key: `uploadedImageFront_${item.id || attributes.length}`,
                         value: item.sides.front.uploadedGraphic.downloadURL,
                     });
                 }
                 if (item?.sides?.back?.uploadedGraphic?.downloadURL) {
                     attributes.push({
-                        key: `uploadedImageBack_${item.id || attributes.length}`, // Unique key per item
+                        key: `uploadedImageBack_${item.id || attributes.length}`,
                         value: item.sides.back.uploadedGraphic.downloadURL,
                     });
                 }
-                if (item?.configImage && item?.configImage) {
+                if (item?.configImage) {
                     attributes.push({
-                        key: `fullImageURL_${item.id || attributes.length}`, // Unique key per item
+                        key: `fullImageURL_${item.id || attributes.length}`,
                         value: item.configImage,
                     });
                 }
                 return attributes;
-            }, []); // Start with an empty array
+            }, []);
 
-            const cartAttributesToSend = cartAttributes.length > 0 ? cartAttributes : [];
+            const checkoutUrl = await createCart(lineItems, cartAttributes, userNotes);
+            if (!checkoutUrl) throw new Error("Checkout URL not returned by Shopify API.");
 
-            // Call createCart API with lineItems and cartAttributes
-            const checkoutUrl = await createCart(lineItems, cartAttributesToSend, userNotes);
-            if (checkoutUrl) {
-                // window.location.href = checkoutUrl; // Redirect to the checkout URL
-                window.open(checkoutUrl, "_blank", "noopener,noreferrer");
-                console.log(checkoutUrl);
-            } else {
-                throw new Error("Checkout URL not returned by Shopify API.");
-            }
+            // Rabatt berechnen
+            const totalDiscount = cartItems.reduce((sum, item) => {
+                return sum + (item.productDiscount || 0);
+            }, 0);
+
+            console.log(totalDiscount);
+
+            let finalCheckoutUrl = checkoutUrl;
+
+            console.log(finalCheckoutUrl);
+
+            // window.location.href = finalCheckoutUrl;
         } catch (error) {
             console.error("Checkout Error:", error.message);
             setModalContent("Es gab einen Fehler beim Erstellen des Warenkorbs. Bitte versuchen Sie es erneut.");
             setModalOpen(true);
         }
     };
+
+    console.log(cartItems);
 
     return (
         <AnimatePresence>

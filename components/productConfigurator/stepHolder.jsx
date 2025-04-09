@@ -575,22 +575,8 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                         )}
                     </AnimatePresence>
                     {/* Refresh button moved outside of the motion.div */}
-                    {selectedVariant?.backImageUrl && (
-                        <>
-                            {/* <motion.button
-                                onClick={handleRotateImage}
-                                whileHover={{ scale: 1.1, rotate: 10 }}
-                                whileTap={{ scale: 0.9 }}
-                                className="absolute top-2 right-2 lg:right-16 bg-white p-2 text-textColor rounded-full shadow-md"
-                            >
-                                <BiRefresh size={28} />
-                            </motion.button> */}
-
-                            <RotateButton
-                                currentStep={currentStep}
-                                handleRotateImage={handleRotateImage}
-                            ></RotateButton>
-                        </>
+                    {selectedVariant?.backImageUrl && (!isMobile || currentStep === 0 || currentStep === 3) && (
+                        <RotateButton currentStep={currentStep} handleRotateImage={handleRotateImage} />
                     )}
                 </div>
             </div>
@@ -648,6 +634,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                     {steps[currentStep] === "Zusammenfassung" ? (
                         <StepButton
                             onClick={() => {
+                                console.log(purchaseData);
                                 const updatedPurchaseData = { ...purchaseData };
                                 const { sides, variants } = updatedPurchaseData;
 
@@ -679,11 +666,19 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                                         totalQuantity <= discount.maxQuantity)
                                             );
 
+                                            console.log(matchedDiscount);
+
                                             if (matchedDiscount) {
                                                 const variantIndex =
                                                     veredelungDetail.preisReduktion.discounts.indexOf(matchedDiscount);
 
                                                 const selectedVariant = veredelungDetail.variants.edges[variantIndex];
+
+                                                console.log(
+                                                    variantIndex,
+                                                    selectedVariant,
+                                                    veredelungDetail.variants.edges
+                                                );
 
                                                 if (selectedVariant) {
                                                     updatedVariants[`${sideKey}Veredelung`] = {
@@ -715,6 +710,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
                                 // 4) Update purchase data and proceed
                                 updatedPurchaseData.variants = updatedVariants;
+                                console.log(updatedPurchaseData);
 
                                 addCartItem(updatedPurchaseData);
                                 openCartSidebar();

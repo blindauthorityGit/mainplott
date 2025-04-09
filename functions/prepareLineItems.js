@@ -1,16 +1,22 @@
 const prepareLineItems = (cartItems) => {
     const lineItems = [];
+    console.log(cartItems);
 
     cartItems.forEach((item) => {
         const { variants, profiDatenCheckPrice, sides, personalisierungsText, layout } = item;
-        // layout might contain: { instructions, uploadedFile: {...} }
+        // Assume that each cart item also contains the product object so we can check preisModell
+        const isAllInclusive =
+            item.product &&
+            item.product.preisModell &&
+            item.product.preisModell.value &&
+            item.product.preisModell.value.includes("Alles inklusive");
 
-        // Normal product variants
+        // Process normal product variants
         if (variants) {
             Object.keys(variants).forEach((key) => {
                 const variant = variants[key];
 
-                // Exclude layoutService & profiDatenCheck from the normal variant loop
+                // Exclude items missing id, quantity <= 0, and extras.
                 if (
                     !variant.id ||
                     !variant.quantity ||
@@ -21,8 +27,14 @@ const prepareLineItems = (cartItems) => {
                     return;
                 }
 
-                // Check if veredelung
+                // Check if veredelung line
                 const isVeredelung = key.toLowerCase().includes("veredelung");
+                // If product is "Alles inklusive", skip adding veredelung lines completely.
+                if (isVeredelung && isAllInclusive) {
+                    return;
+                }
+
+                // Build common customAttributes
                 let customAttributes = [
                     {
                         key: "price",
@@ -31,10 +43,10 @@ const prepareLineItems = (cartItems) => {
                 ];
 
                 if (isVeredelung) {
-                    // Figure out if it's "front" or "back" from key
+                    // Determine the side from the key (e.g., front or back)
                     const side = key.replace(/veredelung/i, "").toLowerCase();
 
-                    // If there's an uploaded graphic for this side
+                    // If there's an uploaded graphic for this side, add that info
                     const uploadedGraphic = sides?.[side]?.uploadedGraphic?.downloadURL;
                     if (uploadedGraphic) {
                         customAttributes.push({
@@ -48,7 +60,7 @@ const prepareLineItems = (cartItems) => {
                         value: `Veredelung ${side}`,
                     });
 
-                    // If using the configurator
+                    // Handle additional attributes based on configurator mode
                     const isConfigurator = item.configurator !== "template";
                     customAttributes.push({
                         key: "Platzierung",
@@ -56,7 +68,6 @@ const prepareLineItems = (cartItems) => {
                     });
 
                     if (!isConfigurator) {
-                        // Possibly add chosen position from sides?
                         const pos = sides?.[side]?.position;
                         if (pos) {
                             customAttributes.push({
@@ -65,7 +76,6 @@ const prepareLineItems = (cartItems) => {
                             });
                         }
                     } else {
-                        // Possibly add design if in configurator mode
                         const designURL = item.design?.[side]?.downloadURL;
                         if (designURL) {
                             customAttributes.push({
@@ -76,7 +86,7 @@ const prepareLineItems = (cartItems) => {
                     }
                 }
 
-                // personalisierungsText if it exists
+                // Include personalisierungsText if it exists
                 if (personalisierungsText) {
                     customAttributes.push({
                         key: "personalisierungsText",
@@ -84,7 +94,9 @@ const prepareLineItems = (cartItems) => {
                     });
                 }
 
-                // Avoid duplicates
+                // Add the variant as one line item with its full quantity.
+                // This version does not split quantities over 50.
+                // Avoid duplicate entries by checking if a line with the same variantId is already added.
                 if (!lineItems.find((li) => li.variantId === variant.id)) {
                     lineItems.push({
                         variantId: variant.id,
@@ -95,7 +107,7 @@ const prepareLineItems = (cartItems) => {
             });
         }
 
-        // 1) If profiDatenCheck is chosen
+        // Process profiDatenCheck if chosen
         if (item.profiDatenCheck && profiDatenCheckPrice > 0) {
             const profiDatenCheckVariant = variants.profiDatenCheck;
             if (profiDatenCheckVariant && profiDatenCheckVariant.id) {
@@ -115,19 +127,16 @@ const prepareLineItems = (cartItems) => {
             }
         }
 
-        // 2) If layoutService is chosen
-        if (variants?.layoutService && variants.layoutService.id) {
+        // Process layoutService if chosen – and only add it if not all-inclusive.
+        if (!isAllInclusive && variants?.layoutService && variants.layoutService.id) {
             const ls = variants.layoutService;
             if (ls.quantity > 0) {
-                // check if we already added it
                 if (!lineItems.find((li) => li.variantId === ls.id)) {
-                    // Build custom attributes for layout
                     let lsCustomAttributes = [
                         { key: "title", value: "LayoutService" },
                         { key: "price", value: parseFloat(ls.price).toFixed(2) },
                     ];
 
-                    // If item.layout has instructions or an uploaded file
                     if (layout?.instructions) {
                         lsCustomAttributes.push({
                             key: "layoutInstructions",

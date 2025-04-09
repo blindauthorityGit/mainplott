@@ -58,14 +58,30 @@ export function calculateTotalPriceAllInclusive(variants, product, discountData,
     if (variants.profiDatenCheck) {
         const checkPrice = parseFloat(variants.profiDatenCheck.price || 0);
         const checkQty = variants.profiDatenCheck.quantity || 1;
-
         finalTotal += getUserPiecePrice(checkPrice) * checkQty;
     }
 
+    // *** NEW: Calculate the product discount in user currency ***
+    // 1) The user-based price if there was NO discount => baseNetPrice converted => times effectiveQuantity
+    const userBasePiecePrice = getUserPiecePrice(baseNetPrice);
+    const userPriceBeforeDiscount = userBasePiecePrice * effectiveQuantity;
+    // 2) The user-based price we actually pay => userPiecePrice * effectiveQuantity
+    const userPriceAfterDiscount = userPiecePrice * effectiveQuantity;
+    // 3) The difference is the "product discount" in user currency
+    let productDiscount = userPriceBeforeDiscount - userPriceAfterDiscount;
+    // If negative, clamp to 0
+    if (productDiscount < 0) {
+        productDiscount = 0;
+    }
+
+    // Return original fields + new "productDiscount"
     return {
         totalPrice: finalTotal.toFixed(2),
         pricePerPiece: userPiecePrice.toFixed(2),
         appliedDiscountPercentage,
         totalQuantity,
+
+        // The new field: how much we saved on the product from the quantity discount (in user currency)
+        productDiscount: productDiscount.toFixed(2),
     };
 }

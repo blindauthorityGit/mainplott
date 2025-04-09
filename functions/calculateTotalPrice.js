@@ -8,50 +8,40 @@ export const calculateTotalPrice = (
     veredelungen = {},
     purchaseData
 ) => {
-    // 1) net base total
+    // 1) net base total (for product items only)
     let netBaseTotal = 0;
     let totalQuantity = 0;
 
-    // Detect sub-variant mode
+    // For sub-variant mode vs. normal mode
     const useSubVariantMapping = product.tags && product.tags.includes("Kugelschreiber");
 
-    // Loop over each "key => variant" in purchaseData.variants
+    // We'll also track how many "product" pieces (not services) there are, ignoring veredelung, layout, etc.
     Object.entries(variants).forEach(([key, variant]) => {
-        // If this is the “profiDatenCheck” (or layoutService) line item, just add its price
+        // skip "profiDatenCheck" and "layoutService" from the base product calc
         if (key === "profiDatenCheck" || key === "layoutService") {
-            // e.g. variant = { price: 10, quantity: 1, id: ... }
-            const servicePrice = parseFloat(variant.price || 0);
-            const serviceQuantity = variant.quantity || 1; // usually 1
-            // Add it to netBaseTotal
-            netBaseTotal += servicePrice * serviceQuantity;
-            // DO NOT add to totalQuantity, because it’s not T-shirts
-        } else {
-            // Otherwise, it’s a normal T-shirt variant
-            let matchingEdge;
-            if (useSubVariantMapping) {
-                // e.g. "Kugelschreiber" => match size + color
-                matchingEdge = product.variants.edges.find((edge) => {
-                    const opts = edge.node.selectedOptions;
-                    const matchesSize = opts.some((o) => o.name === "Größe" && o.value === variant.size);
-                    const matchesColor = opts.some((o) => o.name === "Farbe" && o.value === variant.color);
-                    return matchesSize && matchesColor;
-                });
-            } else {
-                // normal => match by size only
-                matchingEdge = product.variants.edges.find((edge) => {
-                    const opts = edge.node.selectedOptions;
-                    return opts.some((o) => o.name === "Größe" && o.value === variant.size);
-                });
-            }
-
-            // If found, we get its Shopify price, else 0
-            const netVariantPrice = matchingEdge ? parseFloat(matchingEdge.node.priceV2.amount) : 0;
-
-            // Multiply price * quantity
-            netBaseTotal += (variant.quantity || 0) * netVariantPrice;
-            // Because it’s a T-shirt, we add to totalQuantity
-            totalQuantity += variant.quantity || 0;
+            return;
         }
+
+        // Normal T-shirt or pen variant
+        let matchingEdge;
+        if (useSubVariantMapping) {
+            matchingEdge = product.variants.edges.find((edge) => {
+                const opts = edge.node.selectedOptions;
+                const matchesSize = opts.some((o) => o.name === "Größe" && o.value === variant.size);
+                const matchesColor = opts.some((o) => o.name === "Farbe" && o.value === variant.color);
+                return matchesSize && matchesColor;
+            });
+        } else {
+            matchingEdge = product.variants.edges.find((edge) => {
+                const opts = edge.node.selectedOptions;
+                return opts.some((o) => o.name === "Größe" && o.value === variant.size);
+            });
+        }
+
+        const netVariantPrice = matchingEdge ? parseFloat(matchingEdge.node.priceV2.amount) : 0;
+
+        netBaseTotal += (variant.quantity || 0) * netVariantPrice;
+        totalQuantity += variant.quantity || 0;
     });
 
     // 2) net base price per piece
@@ -60,7 +50,11 @@ export const calculateTotalPrice = (
         netBasePricePerPiece = netBaseTotal / totalQuantity;
     }
 
-    // 3) discount logic (NET)
+    // -- PRODUCT DISCOUNT (From discountData) --
+    // We'll interpret "discountSum" as "how many euros discount per piece."
+    let productDiscountNet = 0; // This is how many net euros are discounted from the base items
+
+    // 3) discount logic for base items
     let appliedDiscountPercentage = 0;
     if (discountData) {
         const found = discountData.find(
@@ -68,10 +62,18 @@ export const calculateTotalPrice = (
                 totalQuantity >= tier.minQuantity && (tier.maxQuantity == null || totalQuantity <= tier.maxQuantity)
         );
         if (found) {
-            appliedDiscountPercentage = found.discountPercentage;
-            const discountFactor = 1 - found.discountPercentage / 100;
-            netBaseTotal *= discountFactor;
-            netBasePricePerPiece *= discountFactor;
+            // If your data has "discountSum": 0.7 => means 0.7 EUR discount per piece
+            if (found.discountSum) {
+                productDiscountNet = (found.discountSum || 0) * totalQuantity;
+            }
+
+            appliedDiscountPercentage = found.discountPercentage || 0;
+
+            // If you also want to actually reduce netBaseTotal by that discount,
+            // you can do so. For example:
+            netBaseTotal = netBaseTotal - productDiscountNet;
+            netBasePricePerPiece = totalQuantity > 0 ? netBaseTotal / totalQuantity : 0;
+
             setDiscountApplied(true);
         } else {
             setDiscountApplied(false);
@@ -80,7 +82,7 @@ export const calculateTotalPrice = (
         setDiscountApplied(false);
     }
 
-    // 4) add veredelung
+    // 4) veredelung (we keep the logic but ignore for "productDiscount")
     let netVeredelungTotal = 0;
     const veredelungPerPiece = {};
     const sides = ["front", "back"];
@@ -90,7 +92,7 @@ export const calculateTotalPrice = (
                 const vData = veredelungen[side];
                 if (vData) {
                     let netSidePricePerPiece = parseFloat(vData.price) || 0;
-                    // discount on veredelung?
+                    // discount on veredelung? We'll skip it for "productDiscount"
                     const match = vData.preisReduktion.discounts.find(
                         (tier) =>
                             totalQuantity >= tier.minQuantity &&
@@ -100,20 +102,20 @@ export const calculateTotalPrice = (
                         netSidePricePerPiece *= 1 - match.discountPercentage / 100;
                     }
                     netVeredelungTotal += netSidePricePerPiece * totalQuantity;
-                    veredelungPerPiece[side] = netSidePricePerPiece.toFixed(2); // net
+                    veredelungPerPiece[side] = netSidePricePerPiece.toFixed(2);
                 }
             }
         });
     }
 
-    // net final
+    // net final after product discount + veredelung
     const finalNetTotal = netBaseTotal + netVeredelungTotal;
     let netPricePerPiece = 0;
     if (totalQuantity > 0) {
         netPricePerPiece = finalNetTotal / totalQuantity;
     }
 
-    // 5) convert net => user-based (B2C => add VAT, B2B => no VAT, etc.)
+    // 5) convert net => user-based
     const userPiecePrice = getUserPiecePrice(netPricePerPiece);
     const userTotal = parseFloat((userPiecePrice * totalQuantity).toFixed(2));
 
@@ -123,11 +125,19 @@ export const calculateTotalPrice = (
         userVeredelungPerPiece[side] = getUserPiecePrice(parseFloat(netVal)).toFixed(2);
     });
 
+    // Also convert the productDiscount from net to user-based:
+    const userProductDiscount = productDiscountNet;
+
     return {
         totalPrice: userTotal.toFixed(2),
         pricePerPiece: userPiecePrice.toFixed(2),
         appliedDiscountPercentage,
+
+        // This is your normal veredelung fields
         veredelungTotal: (userTotal - (userPiecePrice * totalQuantity - netBaseTotal)).toFixed(2),
         veredelungPerPiece: userVeredelungPerPiece,
+
+        // *** NEW: "productDiscount" => the total discount from quantity tiers (in user-based currency)
+        productDiscount: Number(userProductDiscount.toFixed(2)),
     };
 };

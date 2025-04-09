@@ -117,24 +117,30 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
             ? Number(profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.price?.amount || 0)
             : 0;
 
+        let productDiscount = 0; // define outside the if/else
+
         if (allInclusive) {
-            // All-inclusive mode
             const result = calculateTotalPriceAllInclusive(purchaseData.variants, product, discountData, purchaseData);
             const finalTotal = Number(result.totalPrice);
+
+            productDiscount = result.productDiscount ?? 0; // store it here
+
             setTotalPrice(finalTotal);
             setPrice(finalTotal);
             setPricePerPiece(result.pricePerPiece);
             setVeredelungTotal("0.00");
             setVeredelungPerPiece({});
             setAppliedDiscountPercentage(result.appliedDiscountPercentage);
+
+            console.log("PRODUCT DISCOUNT (allInclusive)", productDiscount);
         } else {
-            // Normal mode
             const {
                 totalPrice: complexTotal,
                 pricePerPiece: complexPricePiece,
                 appliedDiscountPercentage,
                 veredelungTotal,
                 veredelungPerPiece,
+                productDiscount: normalDiscount,
             } = calculateTotalPrice(
                 purchaseData.variants,
                 product,
@@ -144,9 +150,11 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
                 purchaseData
             );
 
-            const numericTotalPrice = parseFloat(complexTotal) || 0;
-            // const withDataCheck = numericTotalPrice + profiDatenCheckPrice;
+            productDiscount = normalDiscount ?? 0; // store it here
 
+            console.log("PRODUCT DISCOUNT (normalMode)", productDiscount);
+
+            const numericTotalPrice = parseFloat(complexTotal) || 0;
             setTotalPrice(numericTotalPrice);
             setPrice(numericTotalPrice);
             setPricePerPiece(Number(complexPricePiece));
@@ -155,13 +163,13 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
             setAppliedDiscountPercentage(appliedDiscountPercentage);
         }
 
-        // Store updated “profiDatenCheckPrice”
+        // Now productDiscount is defined in both branches
         setPurchaseData((old) => ({
             ...old,
+            productDiscount,
             profiDatenCheckPrice,
         }));
     }, [purchaseData.variants, product, isChecked, allInclusive, veredelungen, setPurchaseData, profiDatenCheck]);
-
     /**
      * Keep store's price up to date
      */
@@ -353,6 +361,8 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
             );
         });
     };
+
+    console.log(product?.preisReduktion?.value, product);
 
     // --------------------------------------------------
     // Return final UI

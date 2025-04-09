@@ -16,9 +16,14 @@ import { getUserData } from "@/config/firebase";
 import TawkChat from "@/components/tawkto";
 import { ReactLenis, useLenis } from "../libs/lenis";
 import CookieConsentBanner from "@/components/cookie";
+import useIsMobile from "@/hooks/isMobile";
 
 export default function App({ Component, pageProps }) {
     // This effect will scroll to the top on every route change.
+    const isMobile = useIsMobile();
+
+    console.log(isMobile);
+
     useEffect(() => {
         const handleRouteChange = () => {
             // If you use Lenis and need to scroll using its API, you could do:
@@ -73,7 +78,7 @@ export default function App({ Component, pageProps }) {
                 <ReactLenis ref={lenisRef} autoRaf={true} root options={{ lerp: 0.08 }}>
                     <Menu />
                     <CartSidebar />
-                    <TawkChat />
+                    {!isMobile && <TawkChat />}
                     <Component {...pageProps} />
                     <Spinner />
                     <Modal />
