@@ -53,8 +53,6 @@ export default function Product({ product, sizes, relatedProducts, category, glo
     const productTitle = product?.productByHandle?.title || "Unbekanntes Produkt";
     const seoData = transformShopifyProductToSEO(product.productByHandle);
 
-    console.log(product?.parsedVeredelungData);
-
     return (
         <>
             <MetaShopify data={seoData} />
