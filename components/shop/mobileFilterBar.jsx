@@ -107,148 +107,161 @@ export default function MobileFilterBar({
 
                         {/* Category List */}
                         <div className="max-h-[60vh] overflow-y-auto text-textColor px-4 pb-4">
-                            {categories.map((category) => {
-                                const isCategoryOpen = openCategory === category.name;
-                                return (
-                                    <div key={category.name} className="mt-3 border-b border-gray-100 pb-2">
-                                        {/* Main Category Header */}
-                                        <div
-                                            className="flex items-center justify-between cursor-pointer py-2"
-                                            onClick={() => toggleCategory(category.name)}
-                                        >
-                                            <h4 className="text-sm font-medium">{category.name}</h4>
-                                            {isCategoryOpen ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
-                                        </div>
+                            {categories.map((category) => (
+                                <div key={category.name} className="mt-3 border-b border-gray-100 pb-2">
+                                    {/* Main Category Header */}
+                                    <div
+                                        className="flex items-center justify-between cursor-pointer py-2"
+                                        onClick={() => toggleCategory(category.name)}
+                                    >
+                                        <h4 className="text-sm font-medium">{category.name}</h4>
+                                        {openCategory === category.name ? (
+                                            <FiChevronUp size={16} />
+                                        ) : (
+                                            <FiChevronDown size={16} />
+                                        )}
+                                    </div>
 
-                                        {/* Subcategories */}
-                                        <AnimatePresence>
-                                            {isCategoryOpen && (
-                                                <motion.div
-                                                    initial={{ height: 0, opacity: 0 }}
-                                                    animate={{ height: "auto", opacity: 1 }}
-                                                    exit={{ height: 0, opacity: 0 }}
-                                                    transition={{ duration: 0.3 }}
-                                                    className="pl-2"
-                                                >
-                                                    {category.subcategories.map((subCategory) => {
-                                                        const hasSubSub =
-                                                            Array.isArray(subCategory.subSubcategories) &&
-                                                            subCategory.subSubcategories.length > 0;
-                                                        const subCatName = subCategory.name;
-                                                        const subCatOpen = openSubCategory === subCatName;
-                                                        const isCheckedSub = isCatSelected(subCatName);
+                                    <AnimatePresence>
+                                        {openCategory === category.name && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: "auto", opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                transition={{ duration: 0.3, ease: "easeInOut" }}
+                                                className="pl-2 mt-2"
+                                            >
+                                                {category.subcategories.map((subCategory) => {
+                                                    const hasSubSub =
+                                                        Array.isArray(subCategory.subSubcategories) &&
+                                                        subCategory.subSubcategories.length > 0;
+                                                    const subCatName = subCategory.name;
+                                                    const subCatOpen = openSubCategory === subCatName;
+                                                    // Use the subCat's name for selection state
+                                                    const isCheckedSub = isCatSelected(subCatName);
+                                                    const totalCount = hasSubSub
+                                                        ? countProductsForCollection(subCatName)
+                                                        : countProductsForTag(subCatName);
 
-                                                        // Count:
-                                                        const totalCount = hasSubSub
-                                                            ? countProductsForCollection(subCatName)
-                                                            : countProductsForTag(subCatName);
-
-                                                        return (
-                                                            <div key={subCatName} className="mb-2">
-                                                                {/* SubCategory row */}
+                                                    return (
+                                                        <div key={subCatName} className="mb-2">
+                                                            {/* SubCategory Row */}
+                                                            <div className="flex items-center justify-between py-1">
                                                                 <div
-                                                                    className="flex items-center justify-between py-1 cursor-pointer"
+                                                                    className="flex items-center space-x-2 cursor-pointer"
                                                                     onClick={() => {
-                                                                        if (!hasSubSub) {
-                                                                            // No subSub => treat as tag
-                                                                            onSelectTag(subCatName, subCatName);
-                                                                        } else {
-                                                                            toggleSubCategory(subCatName);
-                                                                        }
+                                                                        // Clicking the label toggles the checkbox for sub-category
+                                                                        onSelectTag(subCatName, subCatName);
                                                                     }}
                                                                 >
-                                                                    <div className="flex items-center space-x-2">
-                                                                        {subCategory.icon && (
-                                                                            <img
-                                                                                src={urlFor(subCategory.icon)}
-                                                                                className="w-4 h-4"
-                                                                                alt=""
-                                                                            />
-                                                                        )}
-                                                                        <p className="text-xs font-medium">
-                                                                            {subCatName} ({totalCount})
-                                                                        </p>
-                                                                    </div>
-                                                                    {/* If no sub-sub, show checkbox right away */}
-                                                                    {!hasSubSub && (
-                                                                        <input
-                                                                            type="checkbox"
-                                                                            checked={isCheckedSub}
-                                                                            onChange={() =>
-                                                                                onSelectTag(subCatName, subCatName)
-                                                                            }
-                                                                            onClick={(e) => e.stopPropagation()}
+                                                                    {subCategory.icon && (
+                                                                        <img
+                                                                            src={urlFor(subCategory.icon)}
+                                                                            className="w-4 h-4"
+                                                                            alt=""
                                                                         />
                                                                     )}
-                                                                    {hasSubSub &&
-                                                                        (subCatOpen ? (
-                                                                            <FiChevronUp size={14} />
-                                                                        ) : (
-                                                                            <FiChevronDown size={14} />
-                                                                        ))}
+                                                                    <p className="text-xs font-medium cursor-pointer">
+                                                                        {subCatName} ({totalCount})
+                                                                    </p>
                                                                 </div>
-
-                                                                {/* Sub-Subcategories */}
-                                                                <AnimatePresence>
-                                                                    {hasSubSub && subCatOpen && (
-                                                                        <motion.div
-                                                                            initial={{ height: 0, opacity: 0 }}
-                                                                            animate={{ height: "auto", opacity: 1 }}
-                                                                            exit={{ height: 0, opacity: 0 }}
-                                                                            transition={{ duration: 0.3 }}
-                                                                            className="pl-4 mt-1"
+                                                                <div className="flex items-center space-x-2">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        className="cursor-pointer"
+                                                                        checked={isCheckedSub}
+                                                                        onChange={() =>
+                                                                            onSelectTag(subCatName, subCatName)
+                                                                        }
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                    />
+                                                                    {hasSubSub && (
+                                                                        <span
+                                                                            className="cursor-pointer"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                toggleSubCategory(subCatName);
+                                                                            }}
                                                                         >
-                                                                            {subCategory.subSubcategories.map(
-                                                                                (subSub) => {
-                                                                                    const tagCount =
-                                                                                        countProductsForTag(
-                                                                                            subSub.name
-                                                                                        );
-                                                                                    return (
-                                                                                        <div
-                                                                                            key={subSub.name}
-                                                                                            className="flex items-center mb-1 text-xs"
-                                                                                        >
-                                                                                            <input
-                                                                                                type="checkbox"
-                                                                                                className="mr-2"
-                                                                                                checked={isTagSelected(
-                                                                                                    subSub.name
-                                                                                                )}
-                                                                                                onChange={() =>
-                                                                                                    onSelectTag(
-                                                                                                        subCatName,
-                                                                                                        subSub.name
-                                                                                                    )
-                                                                                                }
-                                                                                            />
-                                                                                            <label>
-                                                                                                {subSub.name} (
-                                                                                                {tagCount})
-                                                                                            </label>
-                                                                                        </div>
-                                                                                    );
-                                                                                }
+                                                                            {subCatOpen ? (
+                                                                                <FiChevronUp size={14} />
+                                                                            ) : (
+                                                                                <FiChevronDown size={14} />
                                                                             )}
-                                                                        </motion.div>
+                                                                        </span>
                                                                     )}
-                                                                </AnimatePresence>
+                                                                </div>
                                                             </div>
-                                                        );
-                                                    })}
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-                                    </div>
-                                );
-                            })}
+
+                                                            {/* Sub-Subcategories */}
+                                                            {hasSubSub && subCatOpen && (
+                                                                <AnimatePresence>
+                                                                    <motion.div
+                                                                        initial={{ height: 0, opacity: 0 }}
+                                                                        animate={{ height: "auto", opacity: 1 }}
+                                                                        exit={{ height: 0, opacity: 0 }}
+                                                                        transition={{
+                                                                            duration: 0.3,
+                                                                            ease: "easeInOut",
+                                                                        }}
+                                                                        className="pl-4 mt-1"
+                                                                    >
+                                                                        {subCategory.subSubcategories.map((subSub) => {
+                                                                            const tagCount = countProductsForTag(
+                                                                                subSub.name,
+                                                                                allProducts
+                                                                            );
+                                                                            return (
+                                                                                <div
+                                                                                    key={subSub.name}
+                                                                                    className="flex items-center mb-1 text-xs cursor-pointer"
+                                                                                    onClick={() =>
+                                                                                        onSelectTag(
+                                                                                            subCatName,
+                                                                                            subSub.name
+                                                                                        )
+                                                                                    }
+                                                                                >
+                                                                                    <input
+                                                                                        type="checkbox"
+                                                                                        className="mr-2 cursor-pointer"
+                                                                                        checked={isTagSelected(
+                                                                                            subSub.name
+                                                                                        )}
+                                                                                        onChange={() =>
+                                                                                            onSelectTag(
+                                                                                                subCatName,
+                                                                                                subSub.name
+                                                                                            )
+                                                                                        }
+                                                                                        onClick={(e) =>
+                                                                                            e.stopPropagation()
+                                                                                        }
+                                                                                    />
+                                                                                    <label className="cursor-pointer">
+                                                                                        {subSub.name} ({tagCount})
+                                                                                    </label>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </motion.div>
+                                                                </AnimatePresence>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            ))}
                         </div>
 
                         {/* "FILTER ANWENDEN" Button at Bottom */}
-                        <div className="p-4 border-t border-gray-200">
+                        <div className="pt-4 mb-4 p-4">
                             <button
-                                className="w-full py-2 text-center rounded-md font-semibold text-sm bg-primaryColor text-white hover:bg-primaryColor-700 transition-colors"
                                 onClick={handleApplyFilters}
+                                className="w-full py-2 text-center rounded-md font-semibold text-sm bg-primaryColor text-white hover:bg-primaryColor-700 transition-colors"
                             >
                                 FILTER ANWENDEN
                             </button>

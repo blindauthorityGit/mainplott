@@ -17,12 +17,24 @@ import TawkChat from "@/components/tawkto";
 import { ReactLenis, useLenis } from "../libs/lenis";
 import CookieConsentBanner from "@/components/cookie";
 import useIsMobile from "@/hooks/isMobile";
+import { useRouter } from "next/router";
 
 export default function App({ Component, pageProps }) {
     // This effect will scroll to the top on every route change.
     const isMobile = useIsMobile();
 
     console.log(isMobile);
+    const router = useRouter();
+    const clearCart = useStore((state) => state.clearCart);
+
+    useEffect(() => {
+        // Wait until router is ready (hydrated) so that query parameters are available
+        if (!router.isReady) return;
+        if (router.query.done === "true") {
+            console.log("Query done=true detected. Clearing cart...");
+            clearCart();
+        }
+    }, [router.isReady, router.query.done, clearCart]);
 
     useEffect(() => {
         const handleRouteChange = () => {
