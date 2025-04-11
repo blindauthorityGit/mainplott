@@ -88,21 +88,12 @@ export default function MobileMenu({ isOpen, onClose, data }) {
 
                         {/* Scrollable Nav Section */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                            {/* Sample Nav Links */}
-                            <Link
-                                href="/about"
-                                onClick={onClose}
-                                className="block text-lg text-gray-700 hover:text-primaryColor-400"
-                            >
-                                Über uns
-                            </Link>
-
-                            {/* Mega Menu Toggle */}
+                            {/* Sample Nav Links */}{" "}
                             <button
                                 onClick={() => setMegaOpen(!megaOpen)}
                                 className="flex items-center justify-between w-full text-lg text-left text-gray-700 hover:text-primaryColor-400"
                             >
-                                <span>Angebot</span>
+                                <span>Services</span>
                                 {megaOpen ? <FiChevronUp /> : <FiChevronDown />}
                             </button>
                             {/* Collapsible MegaMenu Items */}
@@ -149,7 +140,14 @@ export default function MobileMenu({ isOpen, onClose, data }) {
                                     </motion.div>
                                 )}
                             </AnimatePresence>
-
+                            <Link
+                                href="/about"
+                                onClick={onClose}
+                                className="block text-lg text-gray-700 hover:text-primaryColor-400"
+                            >
+                                Über uns
+                            </Link>
+                            {/* Mega Menu Toggle */}
                             <Link
                                 href="/contact"
                                 onClick={onClose}
@@ -157,7 +155,6 @@ export default function MobileMenu({ isOpen, onClose, data }) {
                             >
                                 Kontakt
                             </Link>
-
                             {/* Shop Button Under The Text
                             <Link
                                 href="/shop?cat=all"
@@ -166,7 +163,6 @@ export default function MobileMenu({ isOpen, onClose, data }) {
                             >
                                 Zum Shop
                             </Link> */}
-
                             {/* Login/Logout with Icon */}
                             <div className="flex items-center gap-2 mt-4">
                                 <FiUser className="text-xl text-primaryColor-600" />
@@ -187,6 +183,13 @@ export default function MobileMenu({ isOpen, onClose, data }) {
                                     </button>
                                 )}
                             </div>
+                            <Link
+                                href="/shop"
+                                onClick={onClose}
+                                className="block text-lg !mt-8 bg-primaryColor-400 py-3 px-6 text-white rounded-lg hover:text-white"
+                            >
+                                zum Shop
+                            </Link>
                         </div>
 
                         {/* Bottom Row: Contact Data & Call/WhatsApp Buttons */}
