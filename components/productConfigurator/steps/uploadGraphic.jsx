@@ -209,6 +209,8 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
 
                         const pdfAnalysisResult = await analyzePdf(file);
 
+                        console.log(pdfAnalysisResult);
+
                         // Call OpenAI with the PDF preview image and a prompt
                         const openAIResponse = await analyzeImageWithOpenAI(
                             pdfAnalysisResult.previewImage,

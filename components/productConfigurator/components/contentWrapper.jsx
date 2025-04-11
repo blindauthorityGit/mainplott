@@ -24,7 +24,7 @@ const ContentWrapper = ({ data, klasse, children, showToggle }) => {
 
         return (
             <div
-                className="text-sm tracking-widest text-darkGrey sm:text-base md:text-lg font-body  xl:leading-relaxed lg:text-base xl:text-sm 2xl:text-base 3xl:text-[1rem] 3xl:leading-7  !text-xs hidden lg:block 2xl:!text-sm"
+                className="text-sm tracking-widest text-darkGrey sm:text-base md:text-lg font-body  xl:leading-relaxed lg:text-base xl:text-sm 2xl:text-base 3xl:text-[1rem] 3xl:leading-7  !text-xs mb-6 lg:mb-0  lg:block 2xl:!text-sm"
                 dangerouslySetInnerHTML={{ __html: htmlContent }}
             ></div>
         );

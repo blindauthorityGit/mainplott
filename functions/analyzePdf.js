@@ -27,7 +27,8 @@ import { uploadPreviewToStorage } from "@/config/firebase";
 
 if (typeof window !== "undefined") {
     // Must set before calling getDocument()
-    GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+    // GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+    GlobalWorkerOptions.workerSrc = "/pdf.worderNew.min.js";
 }
 
 export async function analyzePdf(file) {
@@ -37,11 +38,18 @@ export async function analyzePdf(file) {
             throw new Error("PDF analysis must run in the browser.");
         }
 
+        console.log("I AM RUNNNING");
+
         // 1) Convert the File -> ArrayBuffer
         const arrayBuffer = await file.arrayBuffer();
 
+        console.log(arrayBuffer);
+
         // 2) Load the PDF
+        // const pdfDoc = await getDocument({ data: arrayBuffer }).promise;
         const pdfDoc = await getDocument({ data: arrayBuffer }).promise;
+
+        console.log(pdfDoc);
 
         // 3) Render the first page
         const page = await pdfDoc.getPage(1);
@@ -65,6 +73,8 @@ export async function analyzePdf(file) {
         // 4) Convert to data URL (PNG)
         const dataUrl = canvas.toDataURL("image/png");
 
+        console.log(dataUrl);
+
         // 5) Turn that data URL into an ArrayBuffer for upload
         const response = await fetch(dataUrl);
         const previewFileBuffer = await response.arrayBuffer();
@@ -79,6 +89,8 @@ export async function analyzePdf(file) {
         const fileSize = file.size; // File size in bytes
         const colorSpace = ctx.getContextAttributes().alpha ? "RGBA" : "RGB"; // Check if alpha channel is present
         const alphaChannel = ctx.getContextAttributes().alpha; // Boolean indicating presence of alpha channel
+
+        console.log(fileSize, colorSpace, alphaChannel);
 
         return {
             previewImage: previewDownloadUrl,

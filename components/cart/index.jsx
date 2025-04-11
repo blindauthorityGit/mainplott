@@ -108,7 +108,7 @@ export default function CartSidebar() {
 
             console.log(finalCheckoutUrl);
 
-            // window.location.href = finalCheckoutUrl;
+            window.location.href = finalCheckoutUrl;
         } catch (error) {
             console.error("Checkout Error:", error.message);
             setModalContent("Es gab einen Fehler beim Erstellen des Warenkorbs. Bitte versuchen Sie es erneut.");

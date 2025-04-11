@@ -46,8 +46,8 @@ const GraphicUploadModalContent = ({
         if (!alpha || alpha === "unknown") {
             warnings.alpha = "Es könnte ein weißer Hintergrund entstehen.";
         }
-        if (size > 10485760) {
-            errors.size = "Die Datei ist größer als 10MB.";
+        if (size > 25485760) {
+            errors.size = "Die Datei ist größer als 25MB.";
         }
     } else {
         // JPG/PNG-specific error handling
