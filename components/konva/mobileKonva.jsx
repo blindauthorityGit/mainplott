@@ -559,6 +559,18 @@ const MobileKonvaLayer = forwardRef(
         };
 
         // -------------------------------------------
+        // Added Click Handlers for Toggling Edit Mode
+        // -------------------------------------------
+        // For the Stage: if in edit mode and the clicked shape is not the uploaded graphic, exit edit mode.
+        const handleStageClick = (e) => {
+            // e.target.name() returns the name of the clicked shape if one was set
+            // When not editing, we don't have anything to do.
+            if (isEditing && e.target.name() !== "uploadedGraphic") {
+                setIsEditing(false);
+            }
+        };
+
+        // -------------------------------------------
         // Change Side (round button with a React icon)
         // -------------------------------------------
         const handleSideChange = () => {
@@ -595,7 +607,9 @@ const MobileKonvaLayer = forwardRef(
                     x={stagePosition.x}
                     y={stagePosition.y}
                     draggable={stageIsDraggable}
-                    listening={isEditing} // only catch events in edit mode
+                    // listening={isEditing} // only catch events in edit mode
+                    onClick={handleStageClick}
+                    onTap={handleStageClick}
                 >
                     <Layer>
                         {/* Product Image */}
@@ -625,6 +639,27 @@ const MobileKonvaLayer = forwardRef(
                                 onTransform={handleGraphicTransform}
                                 onTransformEnd={handleGraphicTransformEnd}
                                 dragBoundFunc={dragBoundFunc}
+                                // Give it a name so we can identify it in the Stage click handler
+                                name="uploadedGraphic"
+                                // Always listen for clicks even if the Stage might allow scrolling
+                                listening={true}
+                                // When the uploaded graphic is clicked, turn on edit mode.
+                                onClick={(e) => {
+                                    console.log("WORKS");
+                                    // Prevent the Stage onClick from also firing.
+                                    e.cancelBubble = true;
+                                    if (!isEditing) {
+                                        setIsEditing(true);
+                                    }
+                                }}
+                                onTap={(e) => {
+                                    console.log("WORKS");
+                                    // Prevent the Stage onClick from also firing.
+                                    e.cancelBubble = true;
+                                    if (!isEditing) {
+                                        setIsEditing(true);
+                                    }
+                                }}
                             />
                         )}
 

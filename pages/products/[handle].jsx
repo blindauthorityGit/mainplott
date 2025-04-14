@@ -90,8 +90,8 @@ export default function Product({ product, sizes, relatedProducts, category, glo
                         )}
                     </div>
                 ) : null}
-                <FAQSection faqs={globalData.faqs.faqs}></FAQSection>
                 <MoreProducts relatedProducts={relatedProducts} currentProductHandle={product} />
+                <FAQSection faqs={globalData.faqs.faqs}></FAQSection>
             </MainContainer>
         </>
     );

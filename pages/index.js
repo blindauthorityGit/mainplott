@@ -33,7 +33,6 @@ export default function Home({ sanityData, globalData }) {
                 <Spacer></Spacer>
                 <FAQSection faqs={globalData.faqs.faqs}></FAQSection>
                 <Spacer></Spacer>
-
                 <TestimonialsSection data={globalData.testimonials.testimonials}></TestimonialsSection>
                 <Spacer></Spacer>
             </MainContainer>

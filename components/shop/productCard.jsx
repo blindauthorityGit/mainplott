@@ -51,9 +51,13 @@ function ProductCard({ product }) {
                 )}
             </div>
 
-            {/* Image */}
+            {/* Image with tap/click animation */}
             <Link href={`/products/${handle}`} passHref>
-                <div className="lg:h-64 h-48 border-b-2 border-gray-200 relative cursor-pointer overflow-hidden">
+                <motion.div
+                    className="lg:h-64 h-48 border-b-2 border-gray-200 relative cursor-pointer overflow-hidden"
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                >
                     <ContainImage
                         src={imageNode?.originalSrc}
                         mobileSrc={imageNode?.originalSrc}
@@ -62,7 +66,7 @@ function ProductCard({ product }) {
                             "absolute w-full h-full object-cover transition-transform duration-300 transform hover:scale-105"
                         }
                     />
-                </div>
+                </motion.div>
             </Link>
 
             {/* Content */}
