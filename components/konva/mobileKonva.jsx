@@ -69,6 +69,11 @@ const MobileKonvaLayer = forwardRef(
         const currentSide = purchaseData.currentSide;
         const currentSideData = purchaseData.sides[currentSide] || {};
 
+        // Reset graphicLoaded when switching sides so new uploads are loaded immediately
+        useEffect(() => {
+            setGraphicLoaded(false);
+        }, [purchaseData.currentSide]);
+
         // Set up stage & transformer references
         useEffect(() => {
             setStageRef(stageRef.current);

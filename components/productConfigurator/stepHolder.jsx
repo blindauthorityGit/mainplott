@@ -111,7 +111,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
     const handleNextStep = async () => {
         // If we are at the Design step, export both sides first
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        window.scrollTo({ top: 0 });
 
         if (steps[currentStep] === "Design" && purchaseData.configurator !== "template") {
             setIsExporting(true);
@@ -622,117 +622,133 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 </div>
 
                 {/* Navigation Buttons - Positioned at the bottom */}
-                <div className="mt-auto lg:flex space-x-4 lg:justify-end 2xl:justify-between hidden ">
-                    <StepButton
-                        onClick={() => handlePrevStep(currentStep, steps, setCurrentStep, isMobile)}
-                        disabled={isPrevDisabled(currentStep)}
-                        klasse="bg-textColor"
-                    >
-                        <BiChevronLeft className="inline-block mr-2 text-lg" />
-                        zurück
-                    </StepButton>
-                    {steps[currentStep] === "Zusammenfassung" ? (
+                <div className="mt-auto flex gap-2 lg:gap-4 justify-end 2xl:justify-between">
+                    <div className="w-1/2 lg:w-auto">
                         <StepButton
-                            onClick={() => {
-                                console.log(purchaseData);
-                                const updatedPurchaseData = { ...purchaseData };
-                                const { sides, variants } = updatedPurchaseData;
+                            onClick={() => handlePrevStep(currentStep, steps, setCurrentStep, isMobile)}
+                            disabled={isPrevDisabled(currentStep)}
+                            klasse="bg-textColor"
+                            // Ensure button fills its container on mobile
+                            className="w-full"
+                        >
+                            <BiChevronLeft className="inline-block mr-2 text-lg" />
+                            zurück
+                        </StepButton>
+                    </div>
+                    <div className="w-1/2 lg:w-auto">
+                        {steps[currentStep] === "Zusammenfassung" ? (
+                            <StepButton
+                                onClick={() => {
+                                    console.log(purchaseData);
+                                    const updatedPurchaseData = { ...purchaseData };
+                                    const { sides, variants } = updatedPurchaseData;
 
-                                // 1) Copy and remove "Standard"
-                                const updatedVariants = { ...variants };
-                                if (updatedVariants.Standard) {
-                                    delete updatedVariants.Standard;
-                                }
+                                    // 1) Copy and remove "Standard"
+                                    const updatedVariants = { ...variants };
+                                    if (updatedVariants.Standard) {
+                                        delete updatedVariants.Standard;
+                                    }
 
-                                // 2) Calculate totalQuantity from updatedVariants
-                                const totalQuantity = Object.values(updatedVariants).reduce(
-                                    (sum, variant) => sum + (variant.quantity || 0),
-                                    0
-                                );
+                                    // 2) Calculate totalQuantity from updatedVariants
+                                    const totalQuantity = Object.values(updatedVariants).reduce(
+                                        (sum, variant) => sum + (variant.quantity || 0),
+                                        0
+                                    );
 
-                                // 3) If you have sides "front" / "back", handle veredelung
-                                const sidesToProcess = ["front", "back"];
-                                sidesToProcess.forEach((sideKey) => {
-                                    const side = sides?.[sideKey];
+                                    // 3) If you have sides "front" / "back", handle veredelung
+                                    const sidesToProcess = ["front", "back"];
+                                    sidesToProcess.forEach((sideKey) => {
+                                        const side = sides?.[sideKey];
 
-                                    if (side?.uploadedGraphic || side?.uploadedGraphicFile) {
-                                        const veredelungDetail = veredelungen?.[sideKey];
+                                        if (side?.uploadedGraphic || side?.uploadedGraphicFile) {
+                                            const veredelungDetail = veredelungen?.[sideKey];
 
-                                        if (veredelungDetail) {
-                                            const matchedDiscount = veredelungDetail.preisReduktion.discounts.find(
-                                                (discount) =>
-                                                    totalQuantity >= discount.minQuantity &&
-                                                    (discount.maxQuantity === null ||
-                                                        totalQuantity <= discount.maxQuantity)
-                                            );
-
-                                            console.log(matchedDiscount);
-
-                                            if (matchedDiscount) {
-                                                const variantIndex =
-                                                    veredelungDetail.preisReduktion.discounts.indexOf(matchedDiscount);
-
-                                                const selectedVariant = veredelungDetail.variants.edges[variantIndex];
-
-                                                console.log(
-                                                    variantIndex,
-                                                    selectedVariant,
-                                                    veredelungDetail.variants.edges
+                                            if (veredelungDetail) {
+                                                const matchedDiscount = veredelungDetail.preisReduktion.discounts.find(
+                                                    (discount) =>
+                                                        totalQuantity >= discount.minQuantity &&
+                                                        (discount.maxQuantity === null ||
+                                                            totalQuantity <= discount.maxQuantity)
                                                 );
 
-                                                if (selectedVariant) {
-                                                    updatedVariants[`${sideKey}Veredelung`] = {
-                                                        id: selectedVariant.node.id,
-                                                        size: null,
-                                                        quantity: totalQuantity,
-                                                        price: calculateNetPrice(parseFloat(matchedDiscount.price)),
-                                                        title: `${veredelungDetail.title} ${
-                                                            sideKey.charAt(0).toUpperCase() + sideKey.slice(1)
-                                                        }`,
-                                                        currency: veredelungDetail.currency,
-                                                    };
+                                                console.log(matchedDiscount);
+
+                                                if (matchedDiscount) {
+                                                    const variantIndex =
+                                                        veredelungDetail.preisReduktion.discounts.indexOf(
+                                                            matchedDiscount
+                                                        );
+
+                                                    const selectedVariant =
+                                                        veredelungDetail.variants.edges[variantIndex];
+
                                                     console.log(
-                                                        `Added ${sideKey}Veredelung:`,
-                                                        updatedVariants[`${sideKey}Veredelung`]
+                                                        variantIndex,
+                                                        selectedVariant,
+                                                        veredelungDetail.variants.edges
                                                     );
+
+                                                    if (selectedVariant) {
+                                                        updatedVariants[`${sideKey}Veredelung`] = {
+                                                            id: selectedVariant.node.id,
+                                                            size: null,
+                                                            quantity: totalQuantity,
+                                                            price: calculateNetPrice(parseFloat(matchedDiscount.price)),
+                                                            title: `${veredelungDetail.title} ${
+                                                                sideKey.charAt(0).toUpperCase() + sideKey.slice(1)
+                                                            }`,
+                                                            currency: veredelungDetail.currency,
+                                                        };
+                                                        console.log(
+                                                            `Added ${sideKey}Veredelung:`,
+                                                            updatedVariants[`${sideKey}Veredelung`]
+                                                        );
+                                                    } else {
+                                                        console.error(`No matching variant found for ${sideKey}.`);
+                                                    }
                                                 } else {
-                                                    console.error(`No matching variant found for ${sideKey}.`);
+                                                    console.error(`No matching discount for ${sideKey}.`);
                                                 }
                                             } else {
-                                                console.error(`No matching discount for ${sideKey}.`);
+                                                console.error(`No veredelung detail found for side: ${sideKey}`);
                                             }
-                                        } else {
-                                            console.error(`No veredelung detail found for side: ${sideKey}`);
                                         }
-                                    } else {
-                                    }
-                                });
+                                    });
 
-                                // 4) Update purchase data and proceed
-                                updatedPurchaseData.variants = updatedVariants;
-                                console.log(updatedPurchaseData);
+                                    // 4) Update purchase data and proceed
+                                    updatedPurchaseData.variants = updatedVariants;
+                                    console.log(updatedPurchaseData);
 
-                                addCartItem(updatedPurchaseData);
-                                openCartSidebar();
-                            }}
-                            className="px-4 py-2 !bg-successColor text-white rounded"
-                            klasse="!bg-successColor"
-                        >
-                            <BiShoppingBag className="inline-block mr-2 text-lg" />
-                            In den Einkaufswagen
-                        </StepButton>
-                    ) : (
-                        <StepButton
-                            onClick={() =>
-                                handleNextStep(currentStep, steps, setCurrentStep, purchaseData, isMobile, handleExport)
-                            }
-                            disabled={isNextDisabled(currentStep, steps, purchaseData)}
-                            klasse="bg-textColor"
-                        >
-                            Weiter
-                            <BiChevronRight className="inline-block ml-2 text-lg" />
-                        </StepButton>
-                    )}
+                                    addCartItem(updatedPurchaseData);
+                                    openCartSidebar();
+                                }}
+                                className="px-4 py-2 !bg-successColor text-white rounded w-full"
+                                klasse="!bg-successColor"
+                            >
+                                <BiShoppingBag className="inline-block mr-2 text-lg" />
+                                In den Einkaufswagen
+                            </StepButton>
+                        ) : (
+                            <StepButton
+                                onClick={() =>
+                                    handleNextStep(
+                                        currentStep,
+                                        steps,
+                                        setCurrentStep,
+                                        purchaseData,
+                                        isMobile,
+                                        handleExport
+                                    )
+                                }
+                                disabled={isNextDisabled(currentStep, steps, purchaseData)}
+                                klasse="bg-textColor"
+                                className="w-full"
+                            >
+                                Weiter
+                                <BiChevronRight className="inline-block ml-2 text-lg" />
+                            </StepButton>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

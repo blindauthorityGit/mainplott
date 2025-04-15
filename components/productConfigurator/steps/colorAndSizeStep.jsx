@@ -263,7 +263,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                     </div>
                 )}
 
-                {!isMobile && selectedSize && secondaryOptionName == "Farbe" && (
+                {selectedSize && secondaryOptionName == "Farbe" && (
                     <div
                         className={`flex space-x-3 mt-4 items-center gap-8 lg:mb-16 ${
                             Object.keys(formattedVariants).length > 1 ? "" : "lg:mt-16"

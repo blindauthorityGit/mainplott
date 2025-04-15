@@ -27,29 +27,29 @@ const MobileColorSelector = ({ colors, selectedColor, onColorChange }) => {
     return createPortal(
         <div>
             {/* Floating Button */}
-            <div className="absolute top-28 left-4  ">
+            <div className="absolute top-44 right-6  ">
                 <button
                     onClick={toggleColorSelector}
-                    className=" border-2 border-textColor bg-black text-white p-3 rounded-full z-50 flex items-center justify-center gap-2 transition-transform hover:scale-105"
+                    className=" border-2 border-primaryColor bg-primaryColor text-white p-2 rounded-full z-50 flex items-center justify-center gap-2 transition-transform hover:scale-105"
                     aria-label="Choose Color"
                 >
                     <FaPalette size={24} />
                 </button>{" "}
-                <span className="text-xs font-semibold font-body text-textColor">Farben</span>
+                {/* <span className="text-xs font-semibold font-body text-textColor">Farben</span> */}
             </div>
             {/* Color Selector Dropdown */}
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
                         ref={dropdownRef}
-                        className="absolute top-[calc(72px+80px)] left-4 bg-white rounded-lg shadow-lg p-4 z-50 w-32"
+                        className="absolute top-[calc(112px+80px)] right-20 bg-white rounded-lg shadow-lg p-3 z-50 w-32"
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.2, ease: "easeInOut" }}
                     >
                         {/* <h4 className="font-body font-semibold text-base mb-3 text-center">Choose Color</h4> */}
-                        <div className="flex flex-wrap gap-2 justify-center">
+                        <div className="flex flex-wrap gap-1 justify-center">
                             {colors.map((color, index) => (
                                 <button
                                     key={`mobile-color-${index}`}

@@ -58,7 +58,7 @@ function ProductCard({ product }) {
                     whileTap={{ scale: 0.97 }}
                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 >
-                    <ContainImage
+                    <CoverImage
                         src={imageNode?.originalSrc}
                         mobileSrc={imageNode?.originalSrc}
                         alt={title}
