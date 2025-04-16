@@ -71,7 +71,7 @@ export default function Menu() {
                             } hover:text-primaryColor-400`}
                             onMouseEnter={() => setIsMegaMenuVisible(true)}
                         >
-                            Services
+                            Angebot
                         </Link>
                         <div className="relative">
                             <Link

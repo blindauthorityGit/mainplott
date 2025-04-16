@@ -43,7 +43,7 @@ const Slide = ({ image, mobileImage, headline, text, buttonText, buttonLink }) =
                     mobileFit="contain"
                     alt="Cover Background"
                     klasse={"absolute "}
-                    className="aspect-[2.8/3] lg:aspect-[3/3.25] lg:overflow-visible lg:mt-20 w-[60%] lg:w-full relative lg:static mx-auto"
+                    className="aspect-[2.8/3] lg:aspect-[3/3.25] lg:overflow-visible lg:mt-20 w-[66%] lg:w-full relative lg:static mx-auto"
                 />
             </div>
         </div>

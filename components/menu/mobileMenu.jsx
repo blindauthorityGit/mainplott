@@ -93,7 +93,7 @@ export default function MobileMenu({ isOpen, onClose, data }) {
                                 onClick={() => setMegaOpen(!megaOpen)}
                                 className="flex items-center justify-between w-full text-lg text-left text-gray-700 hover:text-primaryColor-400"
                             >
-                                <span>Services</span>
+                                <span>Angebot</span>
                                 {megaOpen ? <FiChevronUp /> : <FiChevronDown />}
                             </button>
                             {/* Collapsible MegaMenu Items */}
