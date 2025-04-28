@@ -3,7 +3,7 @@ import { Slider, Tabs, Tab, Checkbox, FormControlLabel, Button } from "@mui/mate
 import { P } from "@/components/typography";
 import useStore from "@/store/store";
 import ContentWrapper from "../components/contentWrapper";
-import { FiX, FiInfo, FiGitCommit, FiMaximize } from "react-icons/fi";
+import { FiX, FiInfo, FiGitCommit, FiMaximize, FiRotateCcw } from "react-icons/fi";
 import { IconButton } from "@/components/buttons"; // Adjust import path as needed
 import CustomRadioButton from "@/components/inputs/customRadioButton";
 import VeredelungTable from "@/components/infoTable/veredlungsTable";
@@ -130,6 +130,14 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                     scale: clampedValue,
                 },
             },
+        });
+    };
+
+    // NEW: Rotation handler
+    const handleRotationChange = (e, newValue) => {
+        setPurchaseData({
+            ...purchaseData,
+            sides: { ...purchaseData.sides, [currentSide]: { ...purchaseData.sides[currentSide], rotation: newValue } },
         });
     };
 
@@ -579,6 +587,58 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                             </button>
                         </div>
                     </div>
+                    {/* NEW: Rotation Slider */}
+                    <div className="mb-4">
+                        <P klasse="!text-sm !mb-0">Rotation</P>
+                        <div className="flex space-x-4">
+                            {/* Slider now ranges from -180 to 180, centered at 0 (CCW negative, CW positive) */}
+                            <Slider
+                                value={purchaseData.sides[currentSide].rotation || 0}
+                                min={-180}
+                                max={180}
+                                step={1}
+                                onChange={handleRotationChange}
+                                aria-labelledby="rotation-slider"
+                                sx={{
+                                    "& .MuiSlider-thumb": {
+                                        backgroundColor: "#393836",
+                                        width: 20,
+                                        height: 20,
+                                        border: "2px solid white",
+                                        "&:hover, &.Mui-focusVisible": {
+                                            boxShadow: "0px 0px 0px 8px rgba(79, 70, 229, 0.16)",
+                                        },
+                                    },
+                                    "& .MuiSlider-track": { backgroundColor: "#e6d1d5", height: 6, border: "none" },
+                                    "& .MuiSlider-rail": { backgroundColor: "#EBE0E1", height: 6 },
+                                    "& .MuiSlider-valueLabel": {
+                                        backgroundColor: "#4f46e5",
+                                        color: "white",
+                                        fontSize: "0.875rem",
+                                    },
+                                }}
+                            />
+                            <button
+                                className="bg-textColor text-white p-2 rounded-[10px]"
+                                onClick={() => {
+                                    // reset rotation to zero
+                                    setPurchaseData({
+                                        ...purchaseData,
+                                        sides: {
+                                            ...purchaseData.sides,
+                                            [currentSide]: {
+                                                ...purchaseData.sides[currentSide],
+                                                rotation: 0,
+                                            },
+                                        },
+                                    });
+                                }}
+                            >
+                                <FiRotateCcw />
+                            </button>
+                        </div>
+                    </div>
+
                     <div className="mb-4">
                         <P klasse="!text-sm !mb-0">Größe</P>
                         <div className="flex space-x-4">

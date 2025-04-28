@@ -7,6 +7,7 @@ import {
     FiArrowUp, // Y-axis
     FiGitCommit, // X-axis
     FiMaximize, // Reset
+    FiRotateCcw, // Rotation
 } from "react-icons/fi";
 
 import useStore from "@/store/store"; // import your Zustand store
@@ -70,6 +71,16 @@ export default function MobileSliders({ containerWidth, containerHeight, zoomLev
 
     const handleZoomChange = (e, val) => {
         setZoomLevel(val);
+    };
+
+    const handleRotationChange = (e, val) => {
+        setPurchaseData((prev) => ({
+            ...prev,
+            sides: {
+                ...prev.sides,
+                [prev.currentSide]: { ...prev.sides[prev.currentSide], rotation: val },
+            },
+        }));
     };
 
     const handleResetZoom = () => {
@@ -140,6 +151,16 @@ export default function MobileSliders({ containerWidth, containerHeight, zoomLev
             min: 0,
             max: containerHeight,
         },
+        {
+            key: "rotation",
+            icon: FiRotateCcw,
+            label: "Rotation",
+            onChange: handleRotationChange,
+            value: purchaseData.sides[purchaseData.currentSide]?.rotation || 0,
+            min: -180,
+            max: 180,
+        },
+
         {
             key: "reset",
             icon: FiMaximize,
