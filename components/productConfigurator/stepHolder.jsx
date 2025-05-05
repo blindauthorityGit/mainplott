@@ -126,7 +126,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
         // Now proceed to next step
         if (currentStep == 0 && purchaseData.tryout) {
-            setCurrentStep(steps.length - 1);
+            setCurrentStep(steps.length - 2);
         } else {
             setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
         }

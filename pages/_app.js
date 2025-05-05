@@ -1,7 +1,9 @@
+// pages/_app.js
 import "@/styles/globals.css";
 import { useState, useRef, useEffect } from "react";
+import client from "../client"; // Import the Sanity client
 import Head from "next/head";
-import Router from "next/router"; // Import Router directly
+import Router from "next/router";
 import Menu from "../components/menu";
 import Footer from "../sections/footer";
 import { MenuProvider } from "../context/menuContext";
@@ -20,77 +22,74 @@ import useIsMobile from "@/hooks/isMobile";
 import { useRouter } from "next/router";
 
 export default function App({ Component, pageProps }) {
-    // This effect will scroll to the top on every route change.
     const isMobile = useIsMobile();
-
-    console.log(isMobile);
     const router = useRouter();
     const clearCart = useStore((state) => state.clearCart);
 
+    // this will hold your Sanity toggle
+    const [liveChatEnabled, setLiveChatEnabled] = useState(false);
+
     useEffect(() => {
-        // Wait until router is ready (hydrated) so that query parameters are available
         if (!router.isReady) return;
         if (router.query.done === "true") {
-            console.log("Query done=true detected. Clearing cart...");
             clearCart();
         }
     }, [router.isReady, router.query.done, clearCart]);
 
+    // fetch your “liveChatEnabled” boolean from the settings singleton
     useEffect(() => {
-        const handleRouteChange = () => {
-            // If you use Lenis and need to scroll using its API, you could do:
-            // lenisRef.current.scrollTo(0, 0);
-            window.scrollTo(0, 0);
-        };
-
-        // Log to ensure the effect is mounting
-
-        Router.events.on("routeChangeComplete", handleRouteChange);
-        return () => {
-            Router.events.off("routeChangeComplete", handleRouteChange);
-        };
+        client
+            .fetch(`*[_type == "settingsSingleton"][0].liveChat`)
+            .then((enabled) => {
+                console.log(!!enabled);
+                setLiveChatEnabled(!!enabled);
+                console.log("livechat is here");
+            })
+            .catch((err) => {
+                console.error("Failed to fetch liveChatEnabled", err);
+            });
     }, []);
 
-    const lenis = useLenis(({ scroll }) => {
-        // Called on every scroll if needed
-    });
-    const setUser = useUserStore((state) => state.setUser);
-    const initializeCart = useStore((state) => state.initializeCart);
+    useEffect(() => {
+        const handleRouteChange = () => window.scrollTo(0, 0);
+        Router.events.on("routeChangeComplete", handleRouteChange);
+        return () => Router.events.off("routeChangeComplete", handleRouteChange);
+    }, []);
+
+    const lenis = useLenis();
+    const lenisRef = useRef();
+    const setUser = useUserStore((s) => s.setUser);
+    const initializeCart = useStore((s) => s.initializeCart);
 
     useEffect(() => {
         initializeCart();
     }, [initializeCart]);
 
-    const lenisRef = useRef();
-
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        const unsub = onAuthStateChanged(auth, async (user) => {
             if (user) {
-                const userData = await getUserData(user.uid, process.env.NEXT_PUBLIC_DEV === "true");
-                setUser({
-                    uid: user.uid,
-                    email: user.email,
-                    userType: userData?.userType || "privatkunde",
-                    ...userData,
-                });
+                const data = await getUserData(user.uid, process.env.NEXT_PUBLIC_DEV === "true");
+                setUser({ uid: user.uid, email: user.email, ...data });
             } else {
                 setUser(null);
             }
         });
-        return () => unsubscribe();
+        return () => unsub();
     }, [setUser]);
 
     return (
         <>
             <Head>
                 <link rel="icon" href="/favicon.ico" />
-                {/* Other global head tags */}
             </Head>
             <MenuProvider>
                 <ReactLenis ref={lenisRef} autoRaf={true} root options={{ lerp: 0.08 }}>
                     <Menu />
                     <CartSidebar />
-                    {!isMobile && <TawkChat />}
+
+                    {/** only show TawkChat if not mobile *and* the flag is true */}
+                    {!isMobile && liveChatEnabled && <TawkChat />}
+
                     <Component {...pageProps} />
                     <Spinner />
                     <Modal />

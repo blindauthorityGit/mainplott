@@ -141,5 +141,10 @@ export default {
         },
       ],
     },
+    {
+      name: 'liveChat',
+      title: 'LiveChat',
+      type: 'boolean',
+    },
   ],
 }
