@@ -12,21 +12,26 @@ import IntroText from "../sections/introText";
 import FeaturesSection from "../sections/features";
 import FAQSection from "../sections/faqs";
 import TestimonialsSection from "../sections/testimonials";
+import PortfolioSlider from "../sections/portfolio";
 import Meta from "/components/SEO/";
 
 export default function Home({ sanityData, globalData }) {
     // Log the fetched data using useEffect
     useEffect(() => {}, [sanityData, globalData]);
+    console.log(globalData);
 
     return (
         <>
             <Meta data={sanityData.seo}></Meta>
             <MainContainer>
-                <HeroSlider data={sanityData.slider.slides.reverse()} />
+                <HeroSlider data={sanityData.slider.slides} />
                 <LinkBoxSection data={sanityData.linkBoxes}></LinkBoxSection>
                 <Spacer></Spacer>
                 <IntroText data={sanityData.textImageBlocks[0]}></IntroText>
                 <Spacer></Spacer>
+                <PortfolioSlider data={globalData.portfolio}></PortfolioSlider>
+                <Spacer></Spacer>
+
                 <FeaturesSection data={globalData.features.features}></FeaturesSection>
                 <Spacer></Spacer>
                 <IntroText data={sanityData.textImageBlocks[1]} order></IntroText>
@@ -49,7 +54,8 @@ export async function getServerSideProps() {
     const queryGlobal = `{    "features": *[_type == "featuresSingleton"][0],
     "testimonials": *[_type == "testimonialsSingleton"][0],
     "faqs": *[_type == "faqsSingleton"][0],
-    "settings": *[_type == "settingsSingleton"][0]}
+    "settings": *[_type == "settingsSingleton"][0],
+     "portfolio": *[_type == "portfolioItem"]}
   `; // Adjust your query as needed
     const globalData = await client.fetch(queryGlobal);
 

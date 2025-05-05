@@ -83,6 +83,7 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
     const handleToggle = () => {
         const profiDatenCheckPrice = Number(profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.price?.amount || 0);
         const profiDatenCheckId = profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.id || null;
+        console.log(profiDatenCheckPrice, purchaseData.variants);
         setIsChecked((prev) => {
             const newIsChecked = !prev;
             setPurchaseData((old) => {
@@ -362,7 +363,7 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
         });
     };
 
-    console.log(product?.preisReduktion?.value, product);
+    // console.log(product?.preisReduktion?.value, product);
 
     // --------------------------------------------------
     // Return final UI
