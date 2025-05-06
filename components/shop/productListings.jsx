@@ -10,7 +10,7 @@ const containerVariants = {
 function ProductListings({ products }) {
     return (
         <motion.div
-            className="py-2 lg:py-12 max-w-6xl col-span-12 lg:col-span-9 mx-auto grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3  2xl:grid-cols-4 gap-x-1 gap-y-2 lg:gap-x-4 lg:gap-y-8"
+            className="py-2 lg:py-12 max-w-6xl col-span-12 lg:col-span-9 mx-auto grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4  2xl:grid-cols-4 gap-x-1 gap-y-2 lg:gap-x-2 2xl:gap-x-4 lg:gap-y-4 2xl:gap-y-8"
             initial="hidden"
             animate="visible"
             variants={containerVariants}

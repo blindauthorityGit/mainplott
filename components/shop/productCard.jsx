@@ -33,7 +33,7 @@ function ProductCard({ product }) {
 
     return (
         <motion.div
-            className="lg:h-120 lg:w-64 w-full h-full rounded-[20px] mx-auto border border-gray-200 overflow-hidden bg-white relative"
+            className="lg:h-120  2xl:w-64 w-full h-full rounded-[20px] mx-auto border border-gray-200 overflow-hidden bg-white relative"
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
         >
@@ -54,7 +54,7 @@ function ProductCard({ product }) {
             {/* Image with tap/click animation */}
             <Link href={`/products/${handle}`} passHref>
                 <motion.div
-                    className="lg:h-64 h-48 border-b-2 border-gray-200 relative cursor-pointer overflow-hidden"
+                    className="lg:h-48 2xl:h-64 h-48 border-b-2 border-gray-200 relative cursor-pointer overflow-hidden"
                     whileTap={{ scale: 0.97 }}
                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 >
@@ -72,10 +72,10 @@ function ProductCard({ product }) {
             {/* Content */}
             <div className="h-auto lg:h-auto p-4 flex flex-col justify-between">
                 <div>
-                    <div className="font-body leading-tight text text-base text-textColor lg:text-xl font-semibold ">
+                    <div className="font-body leading-tight text text-base text-textColor lg:text-md 2xl:text-xl font-semibold ">
                         {title}
                     </div>
-                    <div className="text-xs mb-4 lg:mb-2 lg:text-sm text-textColor mt-2 line-clamp-2 font-body">
+                    <div className="text-xs mb-4 lg:mb-2 lg:text-xs 2xl:text-sm text-textColor mt-2 line-clamp-2 font-body">
                         {description}
                     </div>
                 </div>
