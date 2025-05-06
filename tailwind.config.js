@@ -12,6 +12,10 @@ module.exports = {
     ],
     theme: {
         // Customize the container plugin:
+        screens: {
+            ...defaultTheme.screens,
+            "2xl": "1600px",
+        },
         container: {
             center: true, // Centers the container by default.
             padding: "1rem", // Optional: Adds some padding on smaller screens.
@@ -21,7 +25,7 @@ module.exports = {
                 md: "100%",
                 lg: "1024px", // Example for large screens.
                 xl: "1280px", // Example for extra-large screens.
-                "2xl": "1400px", // Custom max-width for ultra-wide screens.
+                // "2xl": "1400px", // Custom max-width for ultra-wide screens.
             },
         },
         extend: {
@@ -57,5 +61,15 @@ module.exports = {
             },
         },
     },
-    plugins: [],
+    plugins: [
+        // this runs after Tailwind’s container rules and re-caps at 1400px
+        // this runs after Tailwind’s container rules and re-caps at 1400px
+        function ({ addComponents }) {
+            addComponents({
+                "@media (min-width: 1600px)": {
+                    ".container": { maxWidth: "1400px" },
+                },
+            });
+        },
+    ],
 };

@@ -44,7 +44,7 @@ const PortfolioSlider = ({ data, headline }) => {
 
     return (
         <div className="w-full relative h-full">
-            <H2 klasse="lg:pl-24">{headline}</H2>
+            <H2 klasse="lg:pl-24 text-center">{headline}</H2>
             <Swiper
                 modules={[Navigation, Pagination, A11y]}
                 loop
