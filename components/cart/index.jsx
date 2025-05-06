@@ -29,7 +29,8 @@ export default function CartSidebar() {
             if (!checkoutUrl) throw new Error("Checkout URL missing");
             window.location.href = checkoutUrl;
         } catch (err) {
-            setModalContent("Fehler beim Erstellen des Warenkorbs.");
+            console.error("❌ createCart failed:", err);
+            setModalContent("Fehler beim Erstellen des Warenkorbs:\n" + err.message);
             setModalOpen(true);
         }
     };
