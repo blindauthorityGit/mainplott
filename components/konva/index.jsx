@@ -241,8 +241,8 @@ const KonvaLayer = forwardRef(
                     uploadedGraphicRef.current.y(placement.y);
                 }
                 // Optionally, set offsets for rotation:
-                uploadedGraphicRef.current.offsetX(0);
-                uploadedGraphicRef.current.offsetY(0);
+                uploadedGraphicRef.current.offsetX(placement.finalWidth / 2);
+                uploadedGraphicRef.current.offsetY(placement.finalHeight / 2);
                 uploadedGraphicRef.current.image(loadedImg);
                 uploadedGraphicRef.current.getLayer().batchDraw();
 
@@ -342,7 +342,7 @@ const KonvaLayer = forwardRef(
 
         const handleGraphicTransformEnd = (e) => {
             if (isGraphicDraggable) {
-                const newScale = Math.min(e.target.scaleX(), 3.5);
+                const newScale = Math.min(e.target.scaleX(), 5.5);
                 setScale(newScale);
                 e.target.scaleX(newScale);
                 e.target.scaleY(newScale);
@@ -496,7 +496,7 @@ const KonvaLayer = forwardRef(
                             y={boundingRect.y}
                             width={boundingRect.width}
                             height={boundingRect.height}
-                            // stroke="#ff0069"
+                            stroke="#ff0069"
                         />
                         {purchaseData.configurator !== "template" && (uploadedGraphicFile || uploadedGraphicURL) && (
                             <KonvaImage
@@ -595,6 +595,7 @@ const KonvaLayer = forwardRef(
                                 }}
                                 variant="contained"
                                 color="primary"
+                                a
                             >
                                 <FiZoomOut size={16} />
                             </Button>
