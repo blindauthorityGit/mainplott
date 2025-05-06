@@ -77,8 +77,8 @@ const Slide = ({
                     mobileSrc={urlFor(mobileImage).url()}
                     mobileFit="contain"
                     alt={label || ""}
-                    klasse="absolute rounded-3xl"
-                    className="aspect-[4/3] lg:aspect-[2.8/3] w-[90%] lg:w-full mx-auto"
+                    klasse="absolute rounded-xl lg:rounded-3xl"
+                    className="aspect-[4/4] lg:aspect-[2.8/3] w-[100%] lg:w-full mx-auto"
                     onClick={onClick}
                 />
             </motion.div>

@@ -29,7 +29,10 @@ export default function Home({ sanityData, globalData }) {
                 <Spacer></Spacer>
                 <IntroText data={sanityData.textImageBlocks[0]}></IntroText>
                 <Spacer></Spacer>
-                <PortfolioSlider data={globalData.portfolio}></PortfolioSlider>
+                <PortfolioSlider
+                    data={globalData.portfolio}
+                    headline={globalData.settings.portfolioHeadline}
+                ></PortfolioSlider>
                 <Spacer></Spacer>
 
                 <FeaturesSection data={globalData.features.features}></FeaturesSection>

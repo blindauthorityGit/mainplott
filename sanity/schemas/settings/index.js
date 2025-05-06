@@ -142,6 +142,11 @@ export default {
       ],
     },
     {
+      name: 'portfolioHeadline',
+      title: 'Portfolio Headline',
+      type: 'text',
+    },
+    {
       name: 'liveChat',
       title: 'LiveChat',
       type: 'boolean',

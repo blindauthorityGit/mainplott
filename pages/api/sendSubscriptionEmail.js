@@ -1,107 +1,78 @@
 import nodemailer from "nodemailer";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore/lite";
-import { db } from "../../config/firebase"; // Adjust this import according to your firebase config file path
+import { db } from "../../config/firebase";
 import axios from "axios";
 
 export default async function handler(req, res) {
-    // Correct way to access the environment variable
-
-    if (req.method === "POST") {
-        try {
-            // Save to Firestore: dev = true -> "dev_anmeldungen", dev = false -> "anmeldung_kurse"
-            const collectionName = process.env.NEXT_DEV === "true" ? "dev_anmeldungen" : "anmeldung_kurse";
-
-            // Save to Firestore only if NEXT_DEV is not true
-            // if (process.env.NEXT_DEV === "true") {
-            //     // Save to the "dev_anmeldungen" collection in development mode
-            //     await addDoc(collection(db, "dev_anmeldungen"), {
-            //         ...req.body, // Spread the body data
-            //         createdAt: serverTimestamp(), // Add the server timestamp for the creation time
-            //     });
-            // } else {
-            //     // Save to the "anmeldung_kurse" collection in production mode
-            //     await addDoc(collection(db, "anmeldung_kurse"), {
-            //         ...req.body, // Spread the body data
-            //         createdAt: serverTimestamp(), // Add the server timestamp for the creation time
-            //     });
-            // }
-
-            // Set up Nodemailer
-            const transporter = nodemailer.createTransport({
-                host: process.env.NEXT_DEV === "true" ? "smtp.world4you.com" : "smtp.world4you.com",
-                port: 587,
-                secure: false,
-                auth: {
-                    user:
-                        process.env.NEXT_DEV === "true" ? process.env.NEXT_W4YUSER : process.env.NEXT_MAIL_BUCHUNG_LIVE,
-                    pass:
-                        process.env.NEXT_DEV === "true" ? process.env.NEXT_W4YPASSWORD : process.env.NEXT_MAIL_PW_LIVE,
-                },
-            });
-
-            // Define email templates
-            const pekipText = `Liebe/t ${req.body.name},
-vielen Dank für Dein Interesse an einem PEKiP Kurs.
-
-Ist Dein Baby noch nicht auf der Welt:
-
-Durch diese Anfrage wirst Du automatisch auf der Interessentenliste eingetragen. In der Regel beginnt die Planung für die Kurse ca. 3-4 Wochen vor Beginn.
-
-Wir machen die Altersspanne der neuen Kurse immer auch von der Nachfrage abhängig. Daher können wir jetzt noch nicht sagen, an welchem Tag und zu welcher Uhrzeit, der für Dich passende Kurs stattfinden wird.
-
-Ist Dein Baby schon auf der Welt und älter als 8 Wochen? Alle aktuellen Kurse sind voll belegt. Du kommst mit dieser Anfrage automatisch auf die Warteliste für einen „Nachrückerplatz“ falls sich Kapazitäten ergeben.
-
-Sobald wir in die Planung für weitere Kurse gehen und Dir einen Platz anbieten können, melden wir uns wieder bei Dir.
-
-Bis dahin wünschen wir alles Gute und hoffen ihr könnt diese unglaubliche und aufregende Zeit richtig genießen.
-
-Alles liebe!
-
-Deine PEKiP Gruppenleitungen`;
-
-            const pekipHtml = `
-<p>Liebe/t ${req.body.name},</p>
-<p>vielen Dank für Dein Interesse an einem PEKiP Kurs.</p>
-<p><strong>Ist Dein Baby noch nicht auf der Welt:</strong></p>
-<p>Durch diese Anfrage wirst Du automatisch auf der Interessentenliste eingetragen. In der Regel beginnt die Planung für die Kurse ca. 3-4 Wochen vor Beginn.</p>
-<p>Wir machen die Altersspanne der neuen Kurse immer auch von der Nachfrage abhängig. Daher können wir jetzt noch nicht sagen, an welchem Tag und zu welcher Uhrzeit, der für Dich passende Kurs stattfinden wird.</p>
-<p><strong>Ist Dein Baby schon auf der Welt und älter als 8 Wochen?</strong> </p>
-<p>Alle aktuellen Kurse sind voll belegt. Du kommst mit dieser Anfrage automatisch auf die Warteliste für einen „Nachrückerplatz“ falls sich Kapazitäten ergeben.</p>
-<p>Sobald wir in die Planung für weitere Kurse gehen und Dir einen Platz anbieten können, melden wir uns wieder bei Dir.</p>
-<p>Bis dahin wünschen wir alles Gute und hoffen ihr könnt diese unglaubliche und aufregende Zeit richtig genießen.</p>
-<p>Alles liebe!</p>
-<p>Deine PEKiP Gruppenleitungen</p>`;
-
-            const userMailOptions = {
-                from: process.env.NEXT_DEV === "true" ? process.env.NEXT_W4YUSER : process.env.NEXT_W4YUSER,
-                // from: "info@mainglueckskind.de",
-                to: req.body.email,
-                subject: "Anmelde Bestätigung",
-                text: "req.body.isPekip ? pekipText : nonPekipText",
-                html: "req.body.isPekip ? pekipHtml : nonPekipHtml",
-            };
-
-            const adminMailOptions = {
-                from: process.env.NEXT_DEV === "true" ? process.env.NEXT_W4YUSER : process.env.NEXT_W4YUSER,
-                to: process.env.NEXT_DEV === "true" ? "office@atelierbuchner.at" : process.env.NEXT_W4YUSER, // Replace with your admin email
-                // cc: "info@mainglueckskind.de", // CC email
-
-                subject: `Neuer User hat sich regisrtiert`,
-                html: `
-             <p>Neuer User da</p>`,
-            };
-
-            // Send emails
-            await transporter.sendMail(userMailOptions);
-            await transporter.sendMail(adminMailOptions);
-
-            res.status(200).json({ message: "Anmeldung erfolgreich gespeichert und bestätigt" });
-        } catch (error) {
-            console.error("Error:", error);
-            res.status(500).json({ error: "Fehler bei der Verarbeitung Ihrer Anfrage" });
-        }
-    } else {
+    if (req.method !== "POST") {
         res.setHeader("Allow", ["POST"]);
-        res.status(405).end(`Method ${req.method} Not Allowed`);
+        return res.status(405).end(`Method ${req.method} Not Allowed`);
+    }
+
+    try {
+        // 1) Anmeldung in Firestore speichern
+        const collectionName = process.env.NEXT_DEV === "true" ? "dev_anmeldungen" : "anmeldung_kurse";
+        await addDoc(collection(db, collectionName), {
+            ...req.body,
+            createdAt: serverTimestamp(),
+        });
+
+        // 2) E-Mail versenden
+        const transporter = nodemailer.createTransport({
+            host: "smtp.world4you.com",
+            port: 587,
+            secure: false,
+            auth: {
+                user: process.env.NEXT_DEV === "true" ? process.env.NEXT_W4YUSER : process.env.NEXT_MAIL_BUCHUNG_LIVE,
+                pass: process.env.NEXT_DEV === "true" ? process.env.NEXT_W4YPASSWORD : process.env.NEXT_MAIL_PW_LIVE,
+            },
+        });
+
+        // 3) Firmenkunden-Mailtexte (ohne Listenpunkte)
+        const businessText = `Sehr geehrte/r Kunde,
+
+vielen Dank für Ihre Anmeldung als Firmenkunde auf Mainplott. Ihr Account wurde erfolgreich angelegt. Sie können sich ab sofort unter https://mainplott.de/login mit Ihrer E-Mail ${req.body.email} anmelden.
+
+Für Rückfragen steht Ihnen unser Vertriebsteam gerne zur Verfügung unter Tel. +49 174 / 3177690 oder per E-Mail an info@mainplott.de.
+
+Mit freundlichen Grüßen
+Ihr Mainplott-Team`;
+
+        const businessHtml = `
+      <p>Sehr geehrte/r Kunde,</p>
+      <p>vielen Dank für Ihre Anmeldung als <strong>Firmenkunde</strong> auf <strong>Mainplott</strong>.</p>
+      <p>Ihr Account wurde erfolgreich angelegt. Sie können sich ab sofort unter
+         <a href="https://mainplott.de/login">mainplott.de/login</a>
+         mit Ihrer E-Mail <strong>${req.body.email}</strong> anmelden.</p>
+      <p>Für Rückfragen steht Ihnen unser Vertriebsteam gerne zur Verfügung unter
+         <a href="tel:+491743177690">+49 174 / 3177690</a> oder per E-Mail an
+         <a href="mailto:info@mainplott.de">info@mainplott.de</a>.</p>
+      <p>Mit freundlichen Grüßen,<br/>Ihr Mainplott-Team</p>
+    `;
+
+        const userMailOptions = {
+            from: process.env.NEXT_DEV === "true" ? process.env.NEXT_W4YUSER : process.env.NEXT_MAIL_BUCHUNG_LIVE,
+            to: req.body.email,
+            subject: "Willkommen als Firmenkunde bei Mainplott",
+            text: businessText,
+            html: businessHtml,
+        };
+
+        // 4) Info-Mail an Admin
+        const adminMailOptions = {
+            from: process.env.NEXT_DEV === "true" ? process.env.NEXT_W4YUSER : process.env.NEXT_MAIL_BUCHUNG_LIVE,
+            to: process.env.NEXT_DEV === "true" ? "office@atelierbuchner.at" : process.env.NEXT_W4YUSER,
+            subject: `Neuer Firmenkunde: ${req.body.email}`,
+            html: `<p>Ein neuer Firmenkunde hat sich registriert: <strong>${req.body.email}</strong></p>`,
+        };
+
+        // Mails abschicken
+        await transporter.sendMail(userMailOptions);
+        await transporter.sendMail(adminMailOptions);
+
+        return res.status(200).json({ message: "Anmeldung erfolgreich gespeichert und bestätigt" });
+    } catch (error) {
+        console.error("Error in /api/register:", error);
+        return res.status(500).json({ error: "Fehler bei der Verarbeitung Ihrer Anfrage" });
     }
 }

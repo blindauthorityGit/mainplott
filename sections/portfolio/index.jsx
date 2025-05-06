@@ -6,13 +6,14 @@ import Slide from "./slide";
 import { GeneralNavButton } from "../../components/buttons";
 import useStore from "@/store/store"; // ← your zustand store
 import { LightBox } from "@/components/modalContent";
+import { H1, H2, P } from "@/components/typography";
 
 // Swiper styles
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
-const PortfolioSlider = ({ data }) => {
+const PortfolioSlider = ({ data, headline }) => {
     const [swiper, setSwiper] = useState(null);
 
     const setModalOpen = useStore((s) => s.setModalOpen);
@@ -43,13 +44,14 @@ const PortfolioSlider = ({ data }) => {
 
     return (
         <div className="w-full relative h-full">
+            <H2 klasse="lg:pl-24">{headline}</H2>
             <Swiper
                 modules={[Navigation, Pagination, A11y]}
                 loop
                 autoHeight
                 onSwiper={setSwiper}
                 className="w-full"
-                centeredSlides={true}
+                // centeredSlides={true}
                 // default for the smallest screens
                 slidesPerView={1.3}
                 spaceBetween={4}

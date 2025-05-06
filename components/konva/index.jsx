@@ -241,8 +241,10 @@ const KonvaLayer = forwardRef(
                     uploadedGraphicRef.current.y(placement.y);
                 }
                 // Optionally, set offsets for rotation:
-                uploadedGraphicRef.current.offsetX(placement.finalWidth / 2);
-                uploadedGraphicRef.current.offsetY(placement.finalHeight / 2);
+                uploadedGraphicRef.current.offsetX(0);
+                uploadedGraphicRef.current.offsetY(0);
+                // uploadedGraphicRef.current.offsetX(placement.finalWidth / 2);
+                // uploadedGraphicRef.current.offsetY(placement.finalHeight / 2);
                 uploadedGraphicRef.current.image(loadedImg);
                 uploadedGraphicRef.current.getLayer().batchDraw();
 
@@ -496,7 +498,7 @@ const KonvaLayer = forwardRef(
                             y={boundingRect.y}
                             width={boundingRect.width}
                             height={boundingRect.height}
-                            stroke="#ff0069"
+                            // stroke="#ff0069"
                         />
                         {purchaseData.configurator !== "template" && (uploadedGraphicFile || uploadedGraphicURL) && (
                             <KonvaImage
