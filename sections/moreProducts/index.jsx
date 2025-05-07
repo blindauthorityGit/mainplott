@@ -3,7 +3,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function MoreProducts({ relatedProducts, currentProductHandle }) {
-    const [visibleCount, setVisibleCount] = useState(8); // Initially show 8 products
+    const [visibleCount, setVisibleCount] = useState(12); // Initially show 8 products
     if (!relatedProducts || relatedProducts.length === 0) {
         return null;
     }
