@@ -106,7 +106,7 @@ function ProductCard({ product }) {
                             </>
                         )}
                     </div>
-                    <div className="text-base lg:text-lg font-body text-gray-600 font-primary font-semibold mb-2 mt-4">
+                    <div className="text-base 2xl:text-lg font-body text-gray-600 font-primary font-semibold mb-2 mt-4">
                         {calculateLowestPrice(product.node.variants.edges)}
                         {user?.userType == "firmenkunde" ? (
                             <p className="text-xs font-body font-thin">ohne MwSt.</p>

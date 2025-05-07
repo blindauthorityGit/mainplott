@@ -26,7 +26,7 @@ export default function MoreProducts({ relatedProducts, currentProductHandle }) 
             <h2 className="text-2xl font-bold mb-6 text-center text-textColor lg:text-left">
                 Mehr aus dieser Kategorie
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <AnimatePresence>
                     {filteredProducts.slice(0, visibleCount).map((product, index) => (
                         <motion.div
@@ -35,7 +35,7 @@ export default function MoreProducts({ relatedProducts, currentProductHandle }) 
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
                             transition={{ duration: 0.3, delay: index * 0.05 }}
-                            className="group bg-white rounded-lg shadow-md hover:shadow-lg transition overflow-hidden"
+                            className="group bg-white rounded-lg shadow-sm hover:shadow-lg transition overflow-hidden"
                         >
                             <Link href={`/products/${product.handle}`}>
                                 {/* Image Container with uniform aspect ratio */}
@@ -49,7 +49,7 @@ export default function MoreProducts({ relatedProducts, currentProductHandle }) 
                                     )}
                                 </div>
                                 {/* Product Title */}
-                                <h3 className="mt-2 mb-4 text-sm lg:text-base font-medium text-center text-gray-700 px-2">
+                                <h3 className="mt-2 mb-4 text-sm 2xl:text-base font-semibold text-center text-gray-700 px-2">
                                     {product.title}
                                 </h3>
                             </Link>

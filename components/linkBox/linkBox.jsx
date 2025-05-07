@@ -73,16 +73,16 @@ const LinkBox = ({ klasse, iconUrl, link, image, text, icon, details, title }) =
 
                 {/* Text with color animation */}
                 <motion.div className="mt-2 relative inline-block px-1">
-                    <h3 className="relative !mb-2 lg:!mb-4 !font-bold text-textColor xl:!text-xl !font-body text-sm  lg:text-xl   2xl:text-3xl 2xl:mb-8">
+                    <h3 className="relative !mb-2 lg:!mb-4 !font-bold text-textColor xl:!text-lg !font-body text-sm  lg:text-xl   2xl:text-3xl 2xl:mb-8">
                         {text}
                     </h3>
                     {title && (
-                        <h3 className="relative !mb-2 lg:!mb-4 !font-bold text-textColor xl:!text-xl !font-body text-sm  lg:text-xl   2xl:text-3xl 2xl:mb-8">
+                        <h3 className="relative !mb-2 lg:!mb-4 !font-bold text-textColor xl:!text-lg !font-body text-sm  lg:text-xl   2xl:text-3xl 2xl:mb-8">
                             {title}{" "}
                         </h3>
                     )}
 
-                    {details && <P klasse="lg:!-mt-3 !text-xs lg:!text-base">{details}</P>}
+                    {details && <P klasse="lg:!-mt-3 !text-xs 2xl:!text-base">{details}</P>}
                 </motion.div>
             </Link>
         </motion.div>

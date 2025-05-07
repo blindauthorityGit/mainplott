@@ -269,7 +269,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                             Object.keys(formattedVariants).length > 1 ? "" : "lg:mt-16"
                         }`}
                     >
-                        <div className="left font-body font-semibold">Farbe</div>
+                        <div className="left font-body  font-semibold">Farbe</div>
                         <div className="right flex flex-wrap -mx-1 -my-1 ">
                             {formattedVariants[selectedSize]?.colors?.map(({ color }, index) => (
                                 <div key={`color-${index}`} className="px-1 py-1">

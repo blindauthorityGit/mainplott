@@ -14,7 +14,7 @@ const Element = ({ question, answer }) => {
     return (
         <div className="outer font-body mb-2 lg:mb-4">
             <div
-                className="question bg-white text-lg lg:text-2xl font-semibold flex items-center p-4 lg:p-8 text-textColor justify-between cursor-pointer"
+                className="question bg-white text-lg 2xl:text-2xl font-semibold flex items-center p-4 2xl:p-8 text-textColor justify-between cursor-pointer"
                 onClick={toggleAnswer}
             >
                 {question}

@@ -26,13 +26,13 @@ export default function TopBarFilter({
             <div className="flex flex-wrap items-center gap-2 hidden lg:flex">
                 {hasFilters && (
                     <>
-                        <span className="font-semibold">Aktive Filter:</span>
+                        <span className="font-semibold text-sm">Aktive Filter:</span>
                         {selectedCats
                             .filter((c) => c.toLowerCase() !== "all")
                             .map((c) => (
                                 <div
                                     key={c}
-                                    className="flex items-center px-2 py-1 bg-primaryColor-200 rounded-full text-sm"
+                                    className="flex items-center px-2 py-1 bg-primaryColor-200 rounded-full text-xs"
                                 >
                                     {c}
                                     <button
@@ -53,7 +53,7 @@ export default function TopBarFilter({
                         ))}
                     </>
                 )}
-                <span className="text-sm text-gray-600 ml-2">Produkte: {totalCount}</span>
+                <span className="text-xs text-gray-600 ml-2">Produkte: {totalCount}</span>
             </div>
 
             {/* Right side: search + sort */}
@@ -74,7 +74,7 @@ export default function TopBarFilter({
 
                 {/* Sort dropdown */}
                 <div className="flex items-center space-x-2">
-                    <label htmlFor="sort" className="text-sm text-textColor font-semibold">
+                    <label htmlFor="sort" className="text-xs text-textColor font-semibold">
                         Sortieren nach:
                     </label>
                     <select

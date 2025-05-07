@@ -134,7 +134,7 @@ const KonvaLayer = forwardRef(
         // or fall back to default values.
         let boundingRect;
 
-        if (purchaseData.product.konfigBox && purchaseData.product.konfigBox.value) {
+        if (purchaseData?.product?.konfigBox && purchaseData?.product?.konfigBox?.value) {
             try {
                 // Parse the JSON from konfigBox. Expected format: {"width": 1, "height": 0.128}
                 const konfig = JSON.parse(purchaseData.product.konfigBox.value);

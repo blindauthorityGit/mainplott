@@ -330,8 +330,8 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                 transition={{ duration: 0.3, ease: "easeInOut" }}
                                 className="mb-4 p-4 bg-accentColor border border-gray-300 rounded-lg"
                             >
-                                <H3 klasse="text-lg text-errorColor mb-2">ZUERST LESEN, DANN UPLOADEN</H3>
-                                <P klasse="mb-4 text-sm text-gray-700">
+                                <P klasse="text-lg text-errorColor font-semibold mb-2">ZUERST LESEN, DANN UPLOADEN</P>
+                                <P klasse="mb-4 !text-xs text-gray-700">
                                     Bitte beachten Sie, dass Sie nur Grafiken hochladen dürfen, die Ihnen gehören oder
                                     für deren Nutzung Sie die Erlaubnis haben. Weitere Informationen finden Sie auf
                                     unserer{" "}
@@ -369,7 +369,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                         </p>
                                     ) : (
                                         <>
-                                            <p className="font-body hidden lg:block font-semibold text-xl text-textColor">
+                                            <p className="font-body hidden lg:block font-semibold 2xl:text-xl text-textColor">
                                                 Ziehen Sie Ihre Grafik hierher oder klicken Sie, um eine Datei
                                                 hochzuladen.
                                             </p>
@@ -404,7 +404,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                         )}
                     </AnimatePresence>
 
-                    <P klasse="!text-sm mt-4 mb-4">
+                    <P klasse="!text-xs mt-4 mb-4">
                         Akzeptierte Formate: JPG, PNG, PDF
                         <br />
                         max 25 MB

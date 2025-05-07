@@ -12,12 +12,12 @@ const NumberInputField = ({ label, value, onIncrement, onDecrement, onChange, co
                         style={{ backgroundColor: color }}
                     />
                 )}
-                <span className="flex-1 font-bold">{label}</span>
+                <span className="flex-1 text-xs 2xl:text-sm font-bold">{label}</span>
 
                 {/* Decrement Button */}
                 <button
                     onClick={onDecrement}
-                    className="w-10 h-8 flex items-center justify-center border rounded text-lg font-semibold bg-gray-200 hover:bg-gray-300"
+                    className="w-10 h-6 2xl:h-8  flex items-center justify-center border rounded text-lg font-semibold bg-gray-200 hover:bg-gray-300"
                 >
                     -
                 </button>
@@ -27,13 +27,13 @@ const NumberInputField = ({ label, value, onIncrement, onDecrement, onChange, co
                     type="number"
                     value={value}
                     onChange={onChange}
-                    className="w-16 h-8 text-center border rounded text-lg text-sm"
+                    className="w-12 h-6 2xl:h-8 text-center border rounded  text-sm"
                 />
 
                 {/* Increment Button */}
                 <button
                     onClick={onIncrement}
-                    className="w-10 h-8 flex items-center justify-center border rounded text-lg font-semibold bg-gray-200 hover:bg-gray-300"
+                    className="w-10 h-6 2xl:h-8 flex items-center justify-center border rounded text-lg font-semibold bg-gray-200 hover:bg-gray-300"
                 >
                     +
                 </button>

@@ -418,7 +418,7 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
                             <P klasse="!text-xs mb-2 pl-2">EUR {medianPricePerPiece}/Stk.</P>
                         </div>
                         {/* If layoutService is selected, show extra text */}
-                        {purchaseData.variants.layoutService && (
+                        {purchaseData?.variants?.layoutService && (
                             <P klasse="!text-xs">
                                 + EUR {getUserPiecePrice(purchaseData.variants.layoutService.price)} LayoutService
                             </P>

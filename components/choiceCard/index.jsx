@@ -58,7 +58,7 @@ export default function ChoiceCard({ icon: Icon, heading, description, configura
                 <H4 klasse="text-base lg:text-xl font-bold text-textColor !text-center mb-2">{heading}</H4>
 
                 {/* Description */}
-                <P klasse="text-center text-xs text-textColor font-body ">{description}</P>
+                <P klasse="text-center !text-xs text-textColor font-body ">{description}</P>
             </motion.div>
         </div>
     );

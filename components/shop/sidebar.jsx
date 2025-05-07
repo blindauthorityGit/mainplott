@@ -60,14 +60,14 @@ export default function Sidebar({
 
     return (
         <div className="bg-white rounded-2xl hidden lg:block p-8 w-full col-span-12 lg:col-span-3 max-w-xs font-body">
-            <div className="sticky top-[50px] 2xl:top-[150px]">
+            <div className="sticky top-[50px] xl:top-[96px] 2xl:top-[150px]">
                 <button
-                    className={`w-full mb-4 p-2 font-bold rounded-[6px] text-center ${
-                        isCatSelected("all") ? "bg-primaryColor text-white" : "bg-gray-200 text-textColor"
+                    className={`w-full mb-4 p-2 font-semibold rounded-[6px] text-sm text-center ${
+                        isCatSelected("all") ? "bg-textColor text-white" : "bg-gray-200 text-textColor"
                     }`}
                     onClick={onResetFilters}
                 >
-                    ALLE PRODUKTE
+                    Alle Produkte
                 </button>
 
                 {categories.map((topLevelCat) => {
@@ -84,7 +84,7 @@ export default function Sidebar({
                                     )
                                 }
                             >
-                                <h4 className="text-base font-regular">{topLevelCat.name}</h4>
+                                <h4 className="text-sm 2xl:text-base font-regular">{topLevelCat.name}</h4>
                                 {openCategories.includes(topLevelCat.name) ? (
                                     <FiChevronUp size={20} />
                                 ) : (
@@ -152,7 +152,7 @@ export default function Sidebar({
                                                         )}
 
                                                         <p
-                                                            className="font-semibold text-sm text-textColor cursor-pointer"
+                                                            className="font-semibold text-xs 2xl:text-sm text-textColor cursor-pointer"
                                                             onClick={(e) => {
                                                                 // also toggle expansion if hasSubSub
                                                                 e.stopPropagation();
@@ -190,7 +190,7 @@ export default function Sidebar({
                                                             animate={{ height: "auto", opacity: 1 }}
                                                             exit={{ height: 0, opacity: 0 }}
                                                             transition={{ duration: 0.3, ease: "easeInOut" }}
-                                                            className="pl-6 mt-2"
+                                                            className="pl-6 mt-2 mb-4"
                                                         >
                                                             {subCategory.subSubcategories.map((subSub) => {
                                                                 const subSubSlug = subSub.value; // e.g. "hoodie"
@@ -215,7 +215,7 @@ export default function Sidebar({
                                                                                 onSelectTag(mainCatSlug, subSubSlug)
                                                                             }
                                                                         />
-                                                                        <label className="text-sm text-textColor cursor-pointer">
+                                                                        <label className="text-xs 2xl:text-sm text-textColor cursor-pointer">
                                                                             {subSubDisplay} ({tagCount})
                                                                         </label>
                                                                     </div>

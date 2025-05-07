@@ -501,8 +501,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 </>
             ) : (
                 <div className="hidden lg:block">
-                    <div className="mb-4">
-                        <P klasse="!text-sm !mb-0">X-Achse Position</P>
+                    <div className="mb-4 lg:mb-2 2xl:mb-4">
+                        <P klasse="!text-xs 2xl:!text-sm !mb-0">X-Achse Position</P>
                         <div className="flex space-x-4">
                             <Slider
                                 value={purchaseData.sides[currentSide].xPosition}
@@ -544,8 +544,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                             </button>
                         </div>
                     </div>
-                    <div className="mb-4">
-                        <P klasse="!text-sm !mb-0">Y-Achse Position</P>
+                    <div className="mb-4 lg:mb-2 2xl:mb-4">
+                        <P klasse="!text-xs 2xl:!text-sm !mb-0">Y-Achse Position</P>
                         <div className="flex space-x-4">
                             <Slider
                                 value={purchaseData.sides[currentSide].yPosition}
@@ -588,8 +588,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                         </div>
                     </div>
                     {/* NEW: Rotation Slider */}
-                    <div className="mb-4">
-                        <P klasse="!text-sm !mb-0">Rotation</P>
+                    <div className="mb-4 lg:mb-2 2xl:mb-4">
+                        <P klasse="!text-xs 2xl:!text-sm !mb-0">Rotation</P>
                         <div className="flex space-x-4">
                             {/* Slider now ranges from -180 to 180, centered at 0 (CCW negative, CW positive) */}
                             <Slider
@@ -639,8 +639,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                         </div>
                     </div>
 
-                    <div className="mb-4">
-                        <P klasse="!text-sm !mb-0">Größe</P>
+                    <div className="mb-4 lg:mb-2 2xl:mb-4">
+                        <P klasse="!text-xs 2xl:!text-sm !mb-0">Größe</P>
                         <div className="flex space-x-4">
                             <Slider
                                 value={purchaseData.sides[currentSide].scale}
