@@ -41,7 +41,9 @@ const MegaMenu = ({ isVisible, data, onClose }) => {
                                 <motion.div key={index} className="text-center p-4" variants={itemVariants}>
                                     <div className="mb-4 relative">
                                         <Link
-                                            href={`${item.imageLink}`}
+                                            href={
+                                                item.imageLink.startsWith("/") ? item.imageLink : "/" + item.imageLink
+                                            }
                                             onClick={() => {
                                                 onClose();
                                             }}
@@ -55,7 +57,7 @@ const MegaMenu = ({ isVisible, data, onClose }) => {
                                         </Link>
                                     </div>
                                     <Link
-                                        href={`/${item.imageLink}`}
+                                        href={item.imageLink.startsWith("/") ? item.imageLink : "/" + item.imageLink}
                                         onClick={() => {
                                             onClose();
                                         }}
@@ -76,7 +78,7 @@ const MegaMenu = ({ isVisible, data, onClose }) => {
                                                 />
 
                                                 <Link
-                                                    href={`${point.link}`}
+                                                    href={point.link.startsWith("/") ? point.link : "/" + point.link}
                                                     onClick={onClose}
                                                     className="relative group"
                                                 >
