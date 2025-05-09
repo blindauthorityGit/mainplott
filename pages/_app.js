@@ -20,6 +20,7 @@ import { ReactLenis, useLenis } from "../libs/lenis";
 import CookieConsentBanner from "@/components/cookie";
 import useIsMobile from "@/hooks/isMobile";
 import { useRouter } from "next/router";
+import { collectionGroup } from "firebase/firestore/lite";
 
 export default function App({ Component, pageProps }) {
     const isMobile = useIsMobile();
@@ -28,6 +29,8 @@ export default function App({ Component, pageProps }) {
 
     // this will hold your Sanity toggle
     const [liveChatEnabled, setLiveChatEnabled] = useState(false);
+
+    console.log(<TawkChat />);
 
     useEffect(() => {
         if (!router.isReady) return;
@@ -83,12 +86,13 @@ export default function App({ Component, pageProps }) {
                 <link rel="icon" href="/favicon.ico" />
             </Head>
             <MenuProvider>
-                <ReactLenis ref={lenisRef} autoRaf={true} root options={{ lerp: 0.08 }}>
+                <ReactLenis ref={lenisRef} autoRaf={true} root options={{ lerp: 0.15 }}>
                     <Menu />
                     <CartSidebar />
 
                     {/** only show TawkChat if not mobile *and* the flag is true */}
-                    {!isMobile && liveChatEnabled && <TawkChat />}
+                    {/* {!isMobile && liveChatEnabled && <TawkChat />} */}
+                    <TawkChat />
 
                     <Component {...pageProps} />
                     <Spinner />
