@@ -421,7 +421,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
             {/* Left - Product Image / Konva Layer with fade in/out animation */}
             <div className="col-span-12 lg:col-span-6 2xl:col-span-6 relative mb-4 lg:mb-0" ref={containerRef}>
-                <div className="w-full flex items-center justify-center xl:min-h-[640px] 2xl:min-h-[840px] lg:max-h-[860px] relative">
+                <div className="w-full flex items-center justify-center xl:min-h-[600px] 2xl:min-h-[800px] lg:max-h-[760px] relative">
                     <AnimatePresence mode="wait">
                         {steps[currentStep] === "Design" && purchaseData.configurator !== "template" ? (
                             <div
@@ -553,7 +553,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     key={displayedImage}
                                     ref={imageRef}
                                     style={{
-                                        maxHeight: isMobile ? "auto" : "860px",
+                                        maxHeight: isMobile ? "auto" : "760px",
                                         width: isMobile ? "" : imageSize.width ? `${imageSize.width}px` : "auto",
                                         height: isMobile ? "" : imageSize.height ? `auto` : "auto",
                                         objectFit: "contain",

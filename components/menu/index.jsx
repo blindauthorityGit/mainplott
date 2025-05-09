@@ -29,6 +29,8 @@ export default function Menu() {
     const user = useUserStore((state) => state.user);
     const router = useRouter();
 
+    console.log(menuData);
+
     useEffect(() => {
         const handleScroll = () => {
             if (window.scrollY > 400) {

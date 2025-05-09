@@ -110,7 +110,11 @@ export default function MobileMenu({ isOpen, onClose, data }) {
                                         {data?.menu?.map((item, index) => (
                                             <div key={index} className="mb-4">
                                                 <Link
-                                                    href={`/${item.title}`}
+                                                    href={
+                                                        item.imageLink.startsWith("/")
+                                                            ? item.imageLink
+                                                            : "/" + item.imageLink
+                                                    }
                                                     onClick={onClose}
                                                     className="block text-sm font-semibold mb-1 text-gray-700 hover:text-primaryColor-600"
                                                 >
