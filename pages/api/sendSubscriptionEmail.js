@@ -11,7 +11,7 @@ export default async function handler(req, res) {
 
     try {
         // 1) Anmeldung in Firestore speichern
-        const collectionName = process.env.NEXT_DEV === "true" ? "dev_anmeldungen" : "anmeldung_kurse";
+        const collectionName = process.env.NEXT_DEV === "true" ? "dev_anmeldungen" : "anmeldung_kunden";
         await addDoc(collection(db, collectionName), {
             ...req.body,
             createdAt: serverTimestamp(),
@@ -60,7 +60,7 @@ Ihr Mainplott-Team`;
 
         // 4) Info-Mail an Admin
         const adminMailOptions = {
-            from: process.env.NEXT_DEV === "true" ? process.env.NEXT_W4YUSER : process.env.NEXT_MAIL_BUCHUNG_LIVE,
+            from: process.env.NEXT_DEV === "true" ? process.env.NEXT_W4YUSER : process.env.NEXT_W4YUSER,
             to: process.env.NEXT_DEV === "true" ? "office@atelierbuchner.at" : process.env.NEXT_W4YUSER,
             subject: `Neuer Firmenkunde: ${req.body.email}`,
             html: `<p>Ein neuer Firmenkunde hat sich registriert: <strong>${req.body.email}</strong></p>`,
