@@ -243,6 +243,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 ...prev,
                 currentSide: prev.currentSide === "front" ? "back" : "front",
             }));
+            console.log(purchaseData);
         }
     };
 

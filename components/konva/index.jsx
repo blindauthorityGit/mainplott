@@ -503,6 +503,7 @@ const KonvaLayer = forwardRef(
                         {purchaseData.configurator !== "template" && (uploadedGraphicFile || uploadedGraphicURL) && (
                             <KonvaImage
                                 ref={uploadedGraphicRef}
+                                key={purchaseData.currentSide}
                                 crossOrigin="anonymous"
                                 draggable={isGraphicDraggable}
                                 x={position.x}

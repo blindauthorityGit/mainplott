@@ -33,15 +33,14 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         setShowSpinner,
         isMobileSliderOpen,
     } = useStore();
-    const [activeTab, setActiveTab] = useState(0); // Track which tab is active
     const [copyFrontToBack, setCopyFrontToBack] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState(null);
     const [uploadedFile, setUploadedFile] = useState(null);
 
     const boundingRect = purchaseData.boundingRect; // { x, y, width, height }
-
-    const currentSide = activeTab === 0 ? "front" : "back";
+    const currentSide = purchaseData.currentSide || "front";
+    const tabIndex = currentSide === "front" ? 0 : 1;
 
     const isMobile = useIsMobile();
 
@@ -141,12 +140,11 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         });
     };
 
-    const handleTabChange = (event, newValue) => {
-        setActiveTab(newValue);
-        setPurchaseData((prevState) => ({
-            ...prevState,
-            currentSide: newValue === 0 ? "front" : "back",
-        }));
+    const handleTabChange = (_event, newIndex) => {
+        setPurchaseData({
+            ...purchaseData,
+            currentSide: newIndex === 0 ? "front" : "back",
+        });
     };
 
     const handleCopyFrontToBack = (event) => {
@@ -401,9 +399,9 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         }
     }, [currentSide, positions, setPurchaseData, purchaseData.sides]);
 
-    useEffect(() => {
-        setActiveTab(purchaseData.currentSide === "front" ? 0 : 1);
-    }, [purchaseData.currentSide]);
+    // useEffect(() => {
+    //     setActiveTab(purchaseData.currentSide === "front" ? 0 : 1);
+    // }, [purchaseData.currentSide]);
 
     let minX = 0;
     let maxX = purchaseData.containerWidth; // fallback
@@ -424,7 +422,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
 
             {/* Material-UI Tabs Component */}
             <Tabs
-                value={activeTab}
+                value={tabIndex}
                 onChange={handleTabChange}
                 textColor="primary"
                 indicatorColor="primary"
@@ -687,7 +685,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
             )}
 
             {/* Copy Front Design to Back */}
-            {activeTab === 1 && !purchaseData.sides[currentSide].uploadedGraphicFile && (
+            {tabIndex === 1 && !purchaseData.sides[currentSide].uploadedGraphicFile && (
                 <FormControlLabel
                     control={<Checkbox checked={copyFrontToBack} onChange={handleCopyFrontToBack} color="primary" />}
                     label="Vorderseite auf Rückseite kopieren"

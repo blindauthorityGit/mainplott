@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import client from "../../client"; // Sanity client for data fetching
 import { BasicPortableText } from "@/components/content";
 import Meta from "@/components/SEO/";
+import { uploadFileToStorage } from "@/config/firebase"; // adjust path to where you export it
 
 export default function Vektorisieren({ data }) {
     // We now store the actual file object (for upload)
@@ -39,17 +40,37 @@ export default function Vektorisieren({ data }) {
         setSubmitting(true);
         setResponseMsg("");
 
-        const data = new FormData();
-        data.append("name", formData.name);
-        data.append("email", formData.email);
-        data.append("phone", formData.phone);
-        data.append("message", formData.message);
-        data.append("file", file);
+        const safeName = formData.name.trim().replace(/\s+/g, "_");
+
+        let fileUrl = "";
+        if (file) {
+            try {
+                // you can choose any path pattern you like:
+                const storagePath = `vektorRequests/${safeName}_${Date.now()}_${file.name}`;
+                fileUrl = await uploadFileToStorage(file, storagePath);
+            } catch (uploadErr) {
+                console.error("Upload to Storage failed:", uploadErr);
+                setResponseMsg("Fehler beim Hochladen der Datei.");
+                setSubmitting(false);
+                return;
+            }
+        }
+
+        // now send JSON with your form fields + the uploaded file URL
+        const payload = {
+            ...formData,
+            fileUrl,
+        };
+
+        console.log(payload);
+
+        // data.append("file", file);
 
         try {
             const res = await fetch("/api/vektorisieren", {
                 method: "POST",
-                body: data,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
             });
             const json = await res.json();
             if (res.ok) {

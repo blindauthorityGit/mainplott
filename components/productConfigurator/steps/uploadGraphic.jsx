@@ -39,7 +39,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
     const [uploadedFile, setUploadedFile] = useState(null);
     const [uploading, setUploading] = useState(true);
     const [uploadError, setUploadError] = useState(null);
-    const [currentSide, setCurrentSide] = useState("front"); // Track the current side being worked on
+    const currentSide = purchaseData.currentSide || "front";
     const [isChecked, setIsChecked] = useState(false); // State for disclaimer acceptance
     const [acceptedDisclaimer, setAcceptedDisclaimer] = useState(false); // State for disclaimer acceptance
 
