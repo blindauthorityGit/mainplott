@@ -134,6 +134,8 @@ const KonvaLayer = forwardRef(
         // or fall back to default values.
         let boundingRect;
 
+        console.log("KONFIG BOX:", purchaseData?.product?.konfigBox);
+
         if (purchaseData?.product?.konfigBox && purchaseData?.product?.konfigBox?.value) {
             try {
                 // Parse the JSON from konfigBox. Expected format: {"width": 1, "height": 0.128}
@@ -233,6 +235,9 @@ const KonvaLayer = forwardRef(
                     });
                 }
 
+                console.log("PLACEMENT", placement);
+                console.log("KONFIG BOX", purchaseData.product.konfigBox);
+
                 // Apply the placement values to your graphic:
                 uploadedGraphicRef.current.width(placement.finalWidth);
                 uploadedGraphicRef.current.height(placement.finalHeight);
@@ -259,6 +264,8 @@ const KonvaLayer = forwardRef(
                         },
                     },
                 }));
+
+                console.log(purchaseData.sides.back);
 
                 // Mark graphic as loaded and handle transformer visibility, etc.
                 setGraphicLoaded(true);
@@ -319,6 +326,10 @@ const KonvaLayer = forwardRef(
                 onExportReady(handleExport);
             }
         }, [onExportReady]);
+
+        useEffect(() => {
+            console.log(purchaseData);
+        }, [purchaseData]);
 
         // ---------------------------
         // Drag / Scale / Rotation logic for the graphic
@@ -498,7 +509,7 @@ const KonvaLayer = forwardRef(
                             y={boundingRect.y}
                             width={boundingRect.width}
                             height={boundingRect.height}
-                            // stroke="#ff0069"
+                            stroke="#ff0069"
                         />
                         {purchaseData.configurator !== "template" && (uploadedGraphicFile || uploadedGraphicURL) && (
                             <KonvaImage

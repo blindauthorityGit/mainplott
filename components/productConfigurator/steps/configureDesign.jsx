@@ -17,6 +17,7 @@ import handleDeleteUpload from "@/functions/handleDeleteUpload";
 import handleShowDetails from "@/functions/handleShowDetail";
 import handleFileUpload from "@/functions/handleFileUpload";
 import getImagePlacement from "@/functions/getImagePlacement";
+import { getFixedImagePlacement } from "@/functions/getImagePlacement";
 import { centerVertically, centerHorizontally } from "@/functions/centerFunctions";
 import resetScale from "@/functions/resetScale"; // Import the resetScale function
 import useIsMobile from "@/hooks/isMobile";
@@ -197,6 +198,23 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 imageNaturalWidth: image.width,
                 imageNaturalHeight: image.height,
             });
+
+            // NEW: center within your true print-area (boundingRect),
+            // or fallback to the full container if no custom box exists:
+            //    const rect = purchaseData.boundingRect || {
+            //      x: 0,
+            //      y: 0,
+            //      width:  purchaseData.containerWidth,
+            //      height: purchaseData.containerHeight,
+            //    };
+            //    const placement = getFixedImagePlacement({
+            //      imageNaturalWidth:  img.width,
+            //      imageNaturalHeight: img.height,
+            //      boundingRect:       rect,
+            //      centerImage:        true,
+            //    });
+
+            console.log("THE COORDINATES", x, y);
 
             // Calculate centered position
             const centeredX = (purchaseData.containerWidth - imageWidth) / 2;
@@ -399,9 +417,40 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         }
     }, [currentSide, positions, setPurchaseData, purchaseData.sides]);
 
-    // useEffect(() => {
-    //     setActiveTab(purchaseData.currentSide === "front" ? 0 : 1);
-    // }, [purchaseData.currentSide]);
+    useEffect(() => {
+        const side = purchaseData.currentSide;
+        const sideData = purchaseData.sides[side] || {};
+        // If xPosition or yPosition is missing, center it in the pink box:
+        if (purchaseData.boundingRect && (sideData.xPosition == null || sideData.yPosition == null)) {
+            const { x: bx, y: by, width: bw, height: bh } = purchaseData.boundingRect;
+            // If you already have width/scale in sideData use them, otherwise assume desiredWidth/Height:
+            const w = sideData.width || 120;
+            const h = sideData.height || 120;
+            const s = sideData.scale || 1;
+            // Center top-left:
+            const centeredX = bx + (bw - w * s) / 2;
+            const centeredY = by + (bh - h * s) / 2;
+
+            setPurchaseData((prev) => ({
+                ...prev,
+                sides: {
+                    ...prev.sides,
+                    [side]: {
+                        ...prev.sides[side],
+                        xPosition: centeredX,
+                        yPosition: centeredY,
+                    },
+                },
+            }));
+        }
+    }, [
+        purchaseData.currentSide,
+        purchaseData.boundingRect?.x,
+        purchaseData.boundingRect?.y,
+        purchaseData.boundingRect?.width,
+        purchaseData.boundingRect?.height,
+        purchaseData.sides,
+    ]);
 
     let minX = 0;
     let maxX = purchaseData.containerWidth; // fallback
