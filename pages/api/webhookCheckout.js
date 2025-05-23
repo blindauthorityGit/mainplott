@@ -8,6 +8,7 @@ export const config = {
 
 export default function handler(req, res) {
     if (req.method !== "POST") {
+        res.setHeader("Allow", "POST");
         return res.status(405).end("Method Not Allowed");
     }
 
@@ -32,15 +33,15 @@ export default function handler(req, res) {
             const props = item.properties || {};
             // finde alle Seiten („front“, „back“, …)
             const sides = {};
-            Object.entries(props).forEach(([k, v]) => {
+            Object.entries(props).forEach(([key, value]) => {
                 let m;
-                if ((m = /^uploadedGraphic_(.+)$/i.exec(k))) {
+                if ((m = /^uploadedGraphic_(.+)$/i.exec(key))) {
                     sides[m[1]] = sides[m[1]] || {};
-                    sides[m[1]].graphic = v;
+                    sides[m[1]].graphic = value;
                 }
-                if ((m = /^designURL_(.+)$/i.exec(k))) {
+                if ((m = /^designURL_(.+)$/i.exec(key))) {
                     sides[m[1]] = sides[m[1]] || {};
-                    sides[m[1]].design = v;
+                    sides[m[1]].design = value;
                 }
             });
             return {
@@ -50,9 +51,18 @@ export default function handler(req, res) {
             };
         });
 
+    // Log-Ausgabe
     console.log("👉 Produkte:", products);
-    console.log("👉 Veredelungen:", veredelungen);
+    console.log("👉 Veredelungen:");
+    veredelungen.forEach((v, idx) => {
+        console.log(`  [${idx}] ${v.title} (x${v.quantity})`);
+        Object.entries(v.sideLinks).forEach(([side, links]) => {
+            console.log(`      ${side}:`);
+            if (links.graphic) console.log(`        Grafik: ${links.graphic}`);
+            if (links.design) console.log(`        Design:  ${links.design}`);
+        });
+    });
 
-    // antworte Shopify
+    // Antwort an Shopify
     res.status(200).json({ received: true });
 }
