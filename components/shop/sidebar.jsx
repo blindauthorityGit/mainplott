@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import urlFor from "@/functions/urlFor";
+import GeneralCheckBoxSmall from "@/components/inputs/generalCheckboxSmall";
 
 export default function Sidebar({
     categories, // e.g. [ { name: "Textilveredelung", subcategories: [ { name: "Streetwear", value: "streetwear", subSubcategories: [...] }, ... ] }, ... ]
@@ -172,12 +173,19 @@ export default function Sidebar({
                                                         </p>
 
                                                         {/* SubCategory checkbox for filtering the main cat */}
-                                                        <input
+                                                        {/* <input
                                                             type="checkbox"
                                                             className="cursor-pointer"
                                                             checked={checkedSubCat}
                                                             onChange={(e) => {
                                                                 e.stopPropagation();
+                                                                onSelectCategory(mainCatSlug);
+                                                            }}
+                                                        /> */}
+                                                        <GeneralCheckBoxSmall
+                                                            isChecked={checkedSubCat}
+                                                            onToggle={(e) => {
+                                                                // e.stopPropagation();
                                                                 onSelectCategory(mainCatSlug);
                                                             }}
                                                         />
@@ -207,14 +215,21 @@ export default function Sidebar({
                                                                         key={subSubSlug}
                                                                         className="flex items-center mb-1 2xl:mb-2"
                                                                     >
-                                                                        <input
+                                                                        <GeneralCheckBoxSmall
+                                                                            isChecked={isChecked}
+                                                                            onToggle={(e) => {
+                                                                                // e.stopPropagation();
+                                                                                onSelectTag(mainCatSlug, subSubSlug);
+                                                                            }}
+                                                                        />
+                                                                        {/* <input
                                                                             type="checkbox"
                                                                             className="mr-2 cursor-pointer"
                                                                             checked={isChecked}
                                                                             onChange={() =>
                                                                                 onSelectTag(mainCatSlug, subSubSlug)
                                                                             }
-                                                                        />
+                                                                        /> */}
                                                                         <label className="text-xs 2xl:text-sm text-textColor cursor-pointer">
                                                                             {subSubDisplay} ({tagCount})
                                                                         </label>
