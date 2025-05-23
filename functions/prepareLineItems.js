@@ -5,47 +5,40 @@ const prepareLineItems = (cartItems) => {
         const { variants, profiDatenCheckPrice, sides, personalisierungsText, layout, design, configurator, product } =
             item;
 
-        const isAllInclusive = product?.preisModell?.value?.includes("Alles inklusive") || false;
+        const isAllInclusive =
+            Boolean(product?.preisModell?.value) && product.preisModell.value.includes("Alles inklusive");
 
-        // 1) Size-/Color-Varianten & Veredelungen
+        // 1) Size-/Color-Varianten & ggf. Veredelungen
         Object.entries(variants).forEach(([key, variant]) => {
-            // Skip everything without valid ID/Quantity oder Extras
             if (!variant.id || variant.quantity <= 0 || key === "layoutService" || key === "profiDatenCheck") {
                 return;
             }
 
-            // Skip Veredelung wenn "Alles inklusive"
             const isVeredelung = /veredelung/i.test(key);
             if (isVeredelung && isAllInclusive) {
+                // skip Veredelungen bei All-Inclusive
                 return;
             }
 
-            // Baue Basis-Attribute
+            // Basis-Attribute für jede Zeile
             const customAttributes = [
                 { key: "price", value: parseFloat(variant.price || 0).toFixed(2) },
-                { key: "itemIndex", value: String(itemIndex) }, // Zuordnung zum Cart-Item
+                { key: "itemIndex", value: String(itemIndex) },
             ];
 
             if (isVeredelung) {
-                // z.B. key = "frontVeredelung" → side = "front"
+                // Beispiel key="frontVeredelung" → side="front"
                 const side = key.replace(/Veredelung/i, "").toLowerCase();
 
-                // Titel
-                customAttributes.push({
-                    key: "title",
-                    value: `Veredelung ${side}`,
-                });
+                customAttributes.push(
+                    { key: "title", value: `Veredelung ${side}` },
+                    {
+                        key: "Platzierung",
+                        value: configurator !== "template" ? "Freie Platzierung" : "Fixe Position",
+                    }
+                );
 
-                // Menge der Veredelung (wurde in purchaseData bereits auf Gesamtstückzahl gesetzt)
-                // → wir nutzen variant.quantity direkt
-
-                // Platzierung
-                customAttributes.push({
-                    key: "Platzierung",
-                    value: configurator !== "template" ? "Freie Platzierung" : "Fixe Position",
-                });
-
-                // Uploaded file (Grafik)
+                // hochgeladene Grafik
                 const uploaded = sides?.[side]?.uploadedGraphic?.downloadURL;
                 if (uploaded) {
                     customAttributes.push({
@@ -53,8 +46,7 @@ const prepareLineItems = (cartItems) => {
                         value: uploaded,
                     });
                 }
-
-                // Exportiertes Design
+                // exportiertes Design
                 const designURL = design?.[side]?.downloadURL;
                 if (designURL) {
                     customAttributes.push({
@@ -63,14 +55,33 @@ const prepareLineItems = (cartItems) => {
                     });
                 }
             } else {
-                // → das ist eine ganz normale Produkt-Variante (Größe/Farbe)
+                // normale Size/Color-Variante
                 customAttributes.push({
                     key: "title",
                     value: variant.size ? `Variante ${variant.size}` : `Variant ${key}`,
                 });
+
+                // wenn All-Inclusive, hängen wir hier die hochgeladenen Grafiken & Designs an
+                if (isAllInclusive) {
+                    Object.keys(sides).forEach((side) => {
+                        const uploaded = sides[side]?.uploadedGraphic?.downloadURL;
+                        if (uploaded) {
+                            customAttributes.push({
+                                key: `uploadedGraphic_${side}`,
+                                value: uploaded,
+                            });
+                        }
+                        const designURL = design?.[side]?.downloadURL;
+                        if (designURL) {
+                            customAttributes.push({
+                                key: `designURL_${side}`,
+                                value: designURL,
+                            });
+                        }
+                    });
+                }
             }
 
-            // Personalisierungstext
             if (personalisierungsText) {
                 customAttributes.push({
                     key: "personalisierungsText",
@@ -110,10 +121,16 @@ const prepareLineItems = (cartItems) => {
                 { key: "itemIndex", value: String(itemIndex) },
             ];
             if (layout?.instructions) {
-                attrs.push({ key: "layoutInstructions", value: layout.instructions });
+                attrs.push({
+                    key: "layoutInstructions",
+                    value: layout.instructions,
+                });
             }
             if (layout?.uploadedFile?.downloadURL) {
-                attrs.push({ key: "layoutFile", value: layout.uploadedFile.downloadURL });
+                attrs.push({
+                    key: "layoutFile",
+                    value: layout.uploadedFile.downloadURL,
+                });
             }
             lineItems.push({
                 variantId: ls.id,
