@@ -166,10 +166,26 @@ export const uploadPreviewToStorage = async (previewFileBuffer, fileName) => {
     }
 };
 
-export const uploadImageToStorage = async (blob, fileName) => {
-    const filePath = `configuredImages/${fileName}`;
-    const storageRef = ref(storage, filePath);
+// export const uploadImageToStorage = async (blob, fileName) => {
+//     const filePath = `configuredImages/${fileName}`;
+//     const storageRef = ref(storage, filePath);
 
+//     await uploadBytes(storageRef, blob);
+//     return await getDownloadURL(storageRef);
+// };
+
+export const uploadImageToStorage = async (blob, fileName) => {
+    const isDev = process.env.NEXT_PUBLIC_DEV === "true";
+    console.log(isDev);
+
+    // Heutiges Datum im Format YYYY-MM-DD
+    const currentDate = new Date().toISOString().split("T")[0];
+
+    // Pfad mit Tagesordner und dev/production Unterordner
+    const basePath = isDev ? "dev_configuredImages" : "configuredImages";
+    const filePath = `${basePath}/${currentDate}/${fileName}`;
+
+    const storageRef = ref(storage, filePath);
     await uploadBytes(storageRef, blob);
     return await getDownloadURL(storageRef);
 };

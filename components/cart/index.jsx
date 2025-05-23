@@ -26,6 +26,8 @@ export default function CartSidebar() {
         try {
             const lineItems = prepareLineItems(cartItems);
             const checkoutUrl = await createCart(lineItems, [], userNotes);
+            console.log(lineItems);
+            console.log(checkoutUrl);
             if (!checkoutUrl) throw new Error("Checkout URL missing");
             window.location.href = checkoutUrl;
         } catch (err) {
@@ -34,6 +36,8 @@ export default function CartSidebar() {
             setModalOpen(true);
         }
     };
+
+    console.log(cartItems);
 
     return (
         <AnimatePresence>
