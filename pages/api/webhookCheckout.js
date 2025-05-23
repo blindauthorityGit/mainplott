@@ -110,7 +110,7 @@ export default async function handler(req, res) {
 
         const mailOptions = {
             from: process.env.NEXT_DEV === "true" ? process.env.NEXT_W4YUSER : process.env.NEXT_W4YUSER,
-            to: process.env.NEXT_DEV === "true" ? "office@atelierbuchner.at" : "office@atelierbuchner.at", // Admin-Mail
+            to: process.env.NEXT_DEV === "true" ? "office@atelierbuchner.at" : process.env.NEXT_W4YUSER, // Admin-Mail
             subject: `🛒 Neuer Checkout #${payload.name || payload.token}`,
             text: textBody,
             html: htmlBody,
