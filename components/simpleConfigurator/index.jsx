@@ -7,6 +7,7 @@ import CustomTextField from "@/components/inputs/customTextField";
 import QuantitySelector from "@/components/inputs/quantitySelector";
 import { P, H3 } from "@/components/typography";
 import dynamic from "next/dynamic";
+import { calculateNetPrice } from "@/functions/calculateNetPrice";
 
 //Hooks
 import useIsMobile from "@/hooks/isMobile";
@@ -144,7 +145,11 @@ export default function SimpleConfigurator({ product }) {
                                 />
 
                                 <H3 klasse="!mb-2 mt-8">
-                                    EUR {(Number(price) * (purchaseData.quantity || 1)).toFixed(2)}
+                                    {/* EUR {(Number(price) * (purchaseData.quantity || 1)).toFixed(2)} */}
+                                    EUR{" "}
+                                    {(calculateNetPrice(Number(price)) * (purchaseData.quantity || 1))
+                                        .toFixed(2)
+                                        .replace(".", ",")}
                                 </H3>
                             </div>
                         </motion.div>
