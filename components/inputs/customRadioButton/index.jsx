@@ -163,7 +163,7 @@ function getGraphicForProductType(product, label) {
         return ZollStockPositions[label] || "/images/default.png";
     }
 
-    return TShirtPositions[label] || "/images/default.png";
+    return TShirtPositions[label] || Front;
 }
 
 const CustomRadioButton = ({ id, name, label, icon, value, checked, onChange, product }) => {

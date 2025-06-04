@@ -147,8 +147,11 @@ const KonvaLayer = forwardRef(
                 // Center the bounding box. (Alternatively, you can calculate x and y differently if needed.)
                 const x = konfig?.x ? konfig.x * containerWidth : (containerWidth - width) / 2;
 
-                const y = (containerHeight - height) / 2;
+                // const y = (containerHeight - height) / 2;
+                // Use konfig.y if defined, otherwise center vertically:
+                const y = konfig.y !== undefined ? konfig.y * containerHeight : (containerHeight - height) / 2;
                 boundingRect = { x, y, width, height };
+                console.log(boundingRect);
 
                 setPurchaseData((prev) => ({
                     ...prev,
@@ -193,6 +196,8 @@ const KonvaLayer = forwardRef(
                 },
             }));
         }
+
+        console.log(boundingRect);
 
         useEffect(() => {
             if (uploadedGraphicRef.current) {
@@ -509,7 +514,7 @@ const KonvaLayer = forwardRef(
                             y={boundingRect.y}
                             width={boundingRect.width}
                             height={boundingRect.height}
-                            // stroke="#ff0069"
+                            stroke="#ff0069"
                         />
                         {purchaseData.configurator !== "template" && (uploadedGraphicFile || uploadedGraphicURL) && (
                             <KonvaImage
