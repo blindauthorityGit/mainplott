@@ -296,10 +296,12 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
                 id: formattedVariants[size]?.colors?.find((c) => c.color === purchaseData.selectedColor)?.id || null,
             };
 
+            console.log(currentVariant);
+
             return (
                 <NumberInputField
                     key={size}
-                    label={size}
+                    label={size === "Default Title" ? product.title : size}
                     value={currentVariant.quantity}
                     onIncrement={() => {
                         // On increment, recalc the ID
@@ -372,7 +374,7 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
         <div className="lg:px-16 lg:mt-8 font-body">
             <ContentWrapper data={{ title: "Staffelung" }}>
                 {useSubVariantMapping ? renderSubVariantMapping() : renderTextileMapping()}
-
+                {console.log(renderTextileMapping())}
                 {/* Profi Datencheck Checkbox */}
                 <div className="h-8"></div>
                 <div className="flex bg-accentColor p-4">

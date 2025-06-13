@@ -751,8 +751,10 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
             {purchaseData.sides[currentSide].uploadedGraphicFile && (
                 <div className="flex items-center space-x-4 flex-wrap justify-between">
                     <div className="info w-full lg:will-change-auto">
-                        {}
-                        <VeredelungTable brustData={veredelungen.front} rueckenData={veredelungen.back} />
+                        {console.log(product?.preisModell?.value.includes("Alles inklusive"))}
+                        {!product?.preisModell?.value.includes("Alles inklusive") && (
+                            <VeredelungTable brustData={veredelungen.front} rueckenData={veredelungen.back} />
+                        )}
                     </div>
                     <div className="flex items-center gap-4 mt-4 font-body text-sm">
                         {purchaseData.sides[currentSide].isPDF ? (
