@@ -270,12 +270,15 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                         }`}
                     >
                         <div className="left font-body  font-semibold">Farbe</div>
-                        <div className="right flex flex-wrap -mx-1 -my-1 ">
+                        <div className="right md:flex md:flex-wrap md:-mx-1 md:-my-1 grid grid-cols-4 gap-x-3 gap-y-2 md:grid-cols-none md:gap-0">
                             {formattedVariants[selectedSize]?.colors?.map(({ color }, index) => (
-                                <div key={`color-${index}`} className="px-1 py-1">
+                                <div
+                                    key={`color-${index}`}
+                                    className="flex flex-col items-center px-0 py-0 md:px-1 md:py-1"
+                                >
                                     <CustomCheckBox
                                         key={`color-${index}`}
-                                        klasse={`bg-${color} `}
+                                        klasse={`bg-${color}`}
                                         isChecked={selectedColor === color}
                                         onClick={() => handleColorChange(color)}
                                         activeClass=" border-2 border-textColor text-white"
@@ -285,6 +288,9 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
                                         showTooltip={true}
                                         showLabel={false}
                                     />
+                                    <div className="text-[10px] font-body text-center leading-tight mt-1 md:hidden">
+                                        {color.replace(/\b\w/g, (char) => char.toUpperCase())}
+                                    </div>
                                 </div>
                             ))}
                         </div>
