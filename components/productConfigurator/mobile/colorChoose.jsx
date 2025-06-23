@@ -42,27 +42,33 @@ const MobileColorSelector = ({ colors, selectedColor, onColorChange }) => {
                 {isOpen && (
                     <motion.div
                         ref={dropdownRef}
-                        className="absolute top-[calc(112px+80px)] right-20 bg-white rounded-lg shadow-lg p-3 z-50 w-32"
+                        className="absolute top-[calc(112px+80px)] right-20 bg-white rounded-lg shadow-lg p-3 z-50 w-48"
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.2, ease: "easeInOut" }}
                     >
                         {/* <h4 className="font-body font-semibold text-base mb-3 text-center">Choose Color</h4> */}
-                        <div className="flex flex-wrap gap-1 justify-center">
+                        <div className="grid grid-cols-3 gap-x-8 gap-y-2 justify-items-center">
                             {colors.map((color, index) => (
-                                <button
-                                    key={`mobile-color-${index}`}
-                                    className={`w-8 h-8 rounded-full border ${
-                                        selectedColor === color.color ? "border-textColor border-2" : "border-textColor"
-                                    } hover:scale-110 transition-transform`}
-                                    style={{ backgroundColor: getColorHex(color.color) }}
-                                    onClick={() => {
-                                        onColorChange(color.color);
-                                        setIsOpen(false); // Close after selection
-                                    }}
-                                    aria-label={`Select color ${color.color}`}
-                                />
+                                <div key={`mobile-color-${index}`} className="flex flex-col items-center">
+                                    <button
+                                        className={`w-8 h-8 rounded-full border ${
+                                            selectedColor === color.color
+                                                ? "border-textColor border-2"
+                                                : "border-textColor"
+                                        } hover:scale-110 transition-transform`}
+                                        style={{ backgroundColor: getColorHex(color.color) }}
+                                        onClick={() => {
+                                            onColorChange(color.color);
+                                            setIsOpen(false);
+                                        }}
+                                        aria-label={`Select color ${color.color}`}
+                                    />
+                                    <div className="text-[10px] font-body text-center leading-tight mt-1 md:hidden">
+                                        {color.color.replace(/\b\w/g, (char) => char.toUpperCase())}
+                                    </div>
+                                </div>
                             ))}
                         </div>
                     </motion.div>
