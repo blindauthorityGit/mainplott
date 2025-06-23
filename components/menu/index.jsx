@@ -115,7 +115,7 @@ export default function Menu() {
                     <div className="flex items-center space-x-4 md:space-x-4">
                         {/* CTA Button */}
                         <MainButton
-                            klasse="!mt-0 !max-w-[240px] font-base !min-w-[0] px-12 !text-white"
+                            klasse="!mt-0 !max-w-[200px] font-base !min-w-[0] px-12 !text-white"
                             link="/shop?cat=all"
                             className="hidden md:inline-block   "
                         >
@@ -138,7 +138,7 @@ export default function Menu() {
                                     {/* <span className="mr-4">Hallo, {user.email}</span> */}
                                     {/* Optionally show userType */}
                                     {/* {user.userType && <span className="mr-4">({user.userType})</span>} */}
-                                    <button onClick={handleLogout} className="text-primaryColor hover:underline">
+                                    <button onClick={handleLogout} className="text-primaryColor  hover:underline">
                                         Logout
                                     </button>
                                 </>
