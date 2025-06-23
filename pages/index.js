@@ -18,7 +18,7 @@ import Meta from "/components/SEO/";
 export default function Home({ sanityData, globalData }) {
     // Log the fetched data using useEffect
     useEffect(() => {}, [sanityData, globalData]);
-    console.log(globalData);
+    console.log(globalData.portfolio);
 
     return (
         <>
@@ -58,7 +58,8 @@ export async function getServerSideProps() {
     "testimonials": *[_type == "testimonialsSingleton"][0],
     "faqs": *[_type == "faqsSingleton"][0],
     "settings": *[_type == "settingsSingleton"][0],
-     "portfolio": *[_type == "portfolioItem"]}
+            "portfolio": *[_type == "portfolioItem"] | order(orderRank asc)
+}
   `; // Adjust your query as needed
     const globalData = await client.fetch(queryGlobal);
 

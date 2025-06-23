@@ -9,6 +9,7 @@ export default {
       title: 'Portfolio Items',
       type: 'array',
       of: [{type: 'portfolioItem'}],
+      options: {sortable: true}, // ← Drag & Drop im Array
     },
   ],
   preview: {

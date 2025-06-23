@@ -12,7 +12,9 @@ import {
 } from 'react-icons/md'
 import {GoHome} from 'react-icons/go'
 
-export default (S) =>
+import {orderableDocumentListDeskItem} from '@sanity/orderable-document-list'
+
+export default (S, context) =>
   S.list()
     .title('Content')
     .items([
@@ -119,12 +121,22 @@ export default (S) =>
         ),
 
       // --- Portfolio Items (non-singleton) ---
-      S.listItem()
-        .title('Portfolio Items')
-        .id('portfolioItems')
-        .icon(MdCollections)
-        .schemaType('portfolioItem')
-        .child(S.documentTypeList('portfolioItem').title('Portfolio Items')),
+      // S.listItem()
+      //   .title('Portfolio Items')
+      //   .id('portfolioItems')
+      //   .icon(MdCollections)
+      //   .schemaType('portfolioItem')
+      //   .child(S.documentTypeList('portfolioItem').title('Portfolio Items')),
+
+      // Portfolio Items mit Sortieransicht
+      orderableDocumentListDeskItem({
+        type: 'portfolioItem',
+        title: 'Portfolio Items',
+        icon: MdCollections,
+        id: 'orderable-portfolio',
+        S,
+        context, // <-- MUSS hier mit rein!
+      }),
 
       S.divider(),
 
