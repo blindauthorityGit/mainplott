@@ -27,16 +27,18 @@ import client from "../../client";
 import { useRouter } from "next/router";
 
 export default function Product({ product, sizes, relatedProducts, category, globalData }) {
-    const { resetPurchaseData } = useStore(); // Add a reset function in your Zustand store
+    const { resetPurchaseData, purchaseData } = useStore(); // Add a reset function in your Zustand store
     const router = useRouter();
     const { handle } = router.query; // Extract the product handle from the URL
 
     const [galleryImages, setGalleryImages] = useState([]);
     const [selectedImage, setSelectedImage] = useState(null);
 
+    const isEditing = router.query.editIndex != null;
+
     // Reset purchase data and images on product change
     useEffect(() => {
-        resetPurchaseData();
+        if (!isEditing) resetPurchaseData();
 
         // Reset gallery images when the handle changes
         const customImages =
@@ -47,7 +49,11 @@ export default function Product({ product, sizes, relatedProducts, category, glo
         if (customImages.length > 0) {
             setSelectedImage(customImages[0]);
         }
-    }, [handle, product]);
+    }, [handle, product, isEditing]);
+
+    useEffect(() => {
+        console.log("PÖRTSCHESE", purchaseData);
+    }, [purchaseData]);
 
     // Extract the product title from the Shopify data
     const productTitle = product?.productByHandle?.title || "Unbekanntes Produkt";

@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import { v4 as uuidv4 } from "uuid"; // To generate unique IDs for each cart item
 import { saveCartToLocalStorage, loadCartFromLocalStorage } from "@/functions/localStorage"; // Import the functions
+const stored = loadCartFromLocalStorage();
 
-const useStore = create((set) => ({
+const useStore = create((set, get) => ({
     activeCategory: "",
     activeSubCategory: "",
     activeTags: [],
@@ -23,6 +24,8 @@ const useStore = create((set) => ({
 
     // SHOP DATA
     purchaseData: {
+        id: null,
+
         selectedSize: null,
         configurator: "configurator",
         containerWidth: null,
@@ -71,6 +74,7 @@ const useStore = create((set) => ({
     resetPurchaseData: (persistentData = {}) =>
         set({
             purchaseData: {
+                id: null,
                 selectedSize: null,
                 configurator: null,
                 containerWidth: null,
@@ -101,7 +105,11 @@ const useStore = create((set) => ({
                         scale: 1,
                     },
                 },
-                variants: null,
+                variants: {
+                    // size: null,
+                    // color: null,
+                    // quantity: 0,
+                },
                 // ...persistentData, // Preserve specific values if provided
             },
         }),
@@ -112,7 +120,22 @@ const useStore = create((set) => ({
     //     ),
 
     // Cart Items Array and Functions
-    cartItems: [],
+    cartItems: typeof window !== "undefined" ? loadCartFromLocalStorage() : [], // Server-Fallback
+    // … restlicher State …
+    // our new cache:
+    blobCache: {},
+
+    // store a Blob under a given item id
+    cacheBlob: (id, blob) =>
+        set((state) => ({
+            blobCache: {
+                ...state.blobCache,
+                [id]: blob,
+            },
+        })),
+
+    // retrieve the cached Blob (or undefined)
+    getCachedBlob: (id) => get().blobCache[id],
 
     // Load cart from localStorage on initialization
     initializeCart: () => {
@@ -124,13 +147,15 @@ const useStore = create((set) => ({
     openCartSidebar: () => set({ isCartSidebarOpen: true }),
     closeCartSidebar: () => set({ isCartSidebarOpen: false }),
 
-    addCartItem: (item) => {
+    addCartItem: (item) =>
         set((state) => {
-            const updatedCartItems = [...state.cartItems, { ...item, id: uuidv4() }];
-            saveCartToLocalStorage(updatedCartItems); // Save to local storage if needed
+            // if item.id already exists, use it; otherwise generate
+            const id = item.id || uuidv4();
+            const newItem = { ...item, id };
+            const updatedCartItems = [...state.cartItems, newItem];
+            saveCartToLocalStorage(updatedCartItems);
             return { cartItems: updatedCartItems };
-        });
-    },
+        }),
 
     // Remove item from cart by id
     removeCartItem: (id) => {
@@ -161,7 +186,7 @@ const useStore = create((set) => ({
 
     updateCartItem: (id, updatedData) =>
         set((state) => ({
-            cartItems: state.cartItems.map((item) => (item.id === id ? { ...item, ...updatedData } : item)),
+            cartItems: state.cartItems.map((it) => (it.id === id ? { ...it, ...updatedData } : it)),
         })),
 
     // Modal and Spinner

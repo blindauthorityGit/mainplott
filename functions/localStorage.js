@@ -5,6 +5,7 @@ export const saveCartToLocalStorage = (cartItems) => {
 
 // Load cart items from localStorage
 export const loadCartFromLocalStorage = () => {
-    const storedCartItems = localStorage.getItem("cartItems");
-    return storedCartItems ? JSON.parse(storedCartItems) : [];
+    if (typeof window === "undefined") return []; // Server-Fallback
+    const stored = window.localStorage.getItem("cartItems");
+    return stored ? JSON.parse(stored) : [];
 };

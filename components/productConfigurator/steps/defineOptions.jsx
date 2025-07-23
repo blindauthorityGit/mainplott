@@ -48,6 +48,8 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
         }
     }, [product.preisModell]);
 
+    console.log("PURCHASEDATA LASTS TEP", purchaseData);
+
     /**
      * CLEANUP EFFECT:
      *   If sub-variant => remove leftover "size" keys
@@ -61,14 +63,14 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
             if (useSubVariantMapping) {
                 // remove leftover purely “size” keys
                 Object.entries(newVariants).forEach(([k, v]) => {
-                    if (v.size && !v.color) {
+                    if (v && v.color && !v.size) {
                         delete newVariants[k];
                     }
                 });
             } else {
                 // remove leftover purely “color” keys
                 Object.entries(newVariants).forEach(([k, v]) => {
-                    if (v.color && !v.size) {
+                    if (v && v.size && !v.color) {
                         delete newVariants[k];
                     }
                 });
@@ -296,7 +298,7 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
                 id: formattedVariants[size]?.colors?.find((c) => c.color === purchaseData.selectedColor)?.id || null,
             };
 
-            console.log(currentVariant);
+            // console.log(currentVariant);
 
             return (
                 <NumberInputField
@@ -374,7 +376,7 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
         <div className="lg:px-16 lg:mt-8 font-body">
             <ContentWrapper data={{ title: "Staffelung" }}>
                 {useSubVariantMapping ? renderSubVariantMapping() : renderTextileMapping()}
-                {console.log(renderTextileMapping())}
+                {/* {console.log(renderTextileMapping())} */}
                 {/* Profi Datencheck Checkbox */}
                 <div className="h-8"></div>
                 <div className="flex bg-accentColor p-4">
@@ -425,7 +427,7 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
                                 + EUR {getUserPiecePrice(purchaseData.variants.layoutService.price)} LayoutService
                             </P>
                         )}
-                        {purchaseData.variants.profiDatenCheck && (
+                        {purchaseData?.variants?.profiDatenCheck && (
                             <P klasse="!text-xs">
                                 + EUR {getUserPiecePrice(purchaseData.variants.profiDatenCheck.price)} Profi Datencheck
                             </P>

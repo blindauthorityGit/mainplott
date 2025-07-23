@@ -64,9 +64,9 @@ export default function App({ Component, pageProps }) {
     const setUser = useUserStore((s) => s.setUser);
     const initializeCart = useStore((s) => s.initializeCart);
 
-    useEffect(() => {
-        initializeCart();
-    }, [initializeCart]);
+    // useEffect(() => {
+    //     initializeCart();
+    // }, [initializeCart]);
 
     useEffect(() => {
         const unsub = onAuthStateChanged(auth, async (user) => {

@@ -757,7 +757,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                         )}
                     </div>
                     <div className="flex items-center gap-4 mt-4 font-body text-sm">
-                        {purchaseData.sides[currentSide].isPDF ? (
+                        {/* {purchaseData.sides[currentSide].isPDF ? (
                             <img
                                 className="max-h-24 max-w-24 rounded-[20px]"
                                 src={purchaseData.sides[currentSide].preview}
@@ -769,7 +769,35 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                 src={URL.createObjectURL(purchaseData.sides[currentSide].uploadedGraphicFile)}
                                 alt="Uploaded Preview"
                             />
-                        )}
+                        )} */}
+
+                        {(() => {
+                            const side = purchaseData.sides[currentSide];
+                            if (side.isPDF) {
+                                return (
+                                    <img
+                                        className="max-h-24 max-w-24 rounded-[20px]"
+                                        src={side.preview}
+                                        alt="Uploaded Preview"
+                                    />
+                                );
+                            }
+
+                            // if it's an actual File/Blob, createObjectURL; otherwise use your saved URL
+                            const fileOrUrl = side.uploadedGraphicFile;
+                            const previewSrc =
+                                fileOrUrl instanceof Blob
+                                    ? URL.createObjectURL(fileOrUrl)
+                                    : side.uploadedGraphic?.downloadURL || "";
+
+                            return (
+                                <img
+                                    className="max-h-24 max-w-36 rounded-[20px]"
+                                    src={previewSrc}
+                                    alt="Uploaded Preview"
+                                />
+                            );
+                        })()}
 
                         <div className="flex flex-col gap-2">
                             <IconButton

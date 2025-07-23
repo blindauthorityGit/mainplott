@@ -260,6 +260,10 @@ export async function getProductByHandle(handle) {
     const response = await callShopify(query);
     const product = response.data.productByHandle;
 
+    if (!product) {
+        // unknown handle -> let the page render 404
+        return null;
+    }
     // Create sizes array
     const sizes =
         product.variants?.edges
@@ -535,7 +539,6 @@ export async function getAllProducts() {
 
     try {
         const response = await callShopify(query);
-
         // Safely handle null or undefined responses
         return response?.data?.products?.edges || [];
     } catch (error) {

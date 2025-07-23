@@ -5,7 +5,7 @@ import { uploadFileToTempFolder } from "@/config/firebase"; // Import the upload
 import { analyzeImage } from "@/functions/analyzeImage"; // Import the analyzeImage function
 import { analyzePdf } from "@/functions/analyzePdf"; // Import the analyzePdf function
 import PdfPreview from "@/components/pdfPreview";
-import { P } from "@/components/typography";
+import { P, H4 } from "@/components/typography";
 import Link from "next/link"; // Import Next.js Link for navigation
 import GeneralCheckBox from "@/components/inputs/generalCheckbox"; // Import custom checkbox component
 import { motion, AnimatePresence } from "framer-motion"; // Import Framer Motion
@@ -14,8 +14,10 @@ import { GraphicUploadModalContent } from "@/components/modalContent"; // Import
 import LoadingSpinner from "@/components/spinner"; // Import the loading spinner component
 import { H3 } from "@/components/typography";
 import { TbDragDrop } from "react-icons/tb";
+import { FiTrash2, FiChevronDown } from "react-icons/fi";
 
 import analyzeImageWithOpenAI from "@/functions/analyzeImageWithOpenAI";
+import { saveImageToDB, getImagesFromDB, deleteImageFromDB } from "@/indexedDB/graphics";
 
 //IDB
 // import { saveImageToDB, getImageFromDB } from "@/indexedDB";
@@ -43,6 +45,10 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
     const [isChecked, setIsChecked] = useState(false); // State for disclaimer acceptance
     const [acceptedDisclaimer, setAcceptedDisclaimer] = useState(false); // State for disclaimer acceptance
 
+    const [cachedGraphics, setCachedGraphics] = useState([]);
+    const [selectedCachedId, setSelectedCachedId] = useState(null);
+    const [showCached, setShowCached] = useState(false); // accordion toggle
+
     const stepData = {
         title: "Grafik hochladen",
     };
@@ -53,9 +59,32 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
     }
 
     useEffect(() => {
+        (async () => {
+            const imgs = await getImagesFromDB();
+            setCachedGraphics(imgs); // show suggestions
+        })();
+    }, []);
+
+    useEffect(() => {
         // Set uploaded file from purchaseData when side or purchaseData changes
         setUploadedFile(purchaseData.sides[currentSide]?.uploadedGraphicFile || null);
     }, [currentSide, purchaseData]);
+
+    /* -------------------- helpers & callbacks --------------------- */
+    const handleDeleteCached = async (id) => {
+        await deleteImageFromDB(id);
+        setCachedGraphics((prev) => prev.filter((g) => g.id !== id));
+        if (selectedCachedId === id) setSelectedCachedId(null);
+    };
+
+    /* ---------------- choose cached and continue --------------- */
+    const handleUseSelected = () => {
+        if (!selectedCachedId) return;
+        const sel = cachedGraphics.find((g) => g.id === selectedCachedId);
+        if (!sel) return;
+        const file = new File([sel.blob], sel.name, { type: sel.blob.type });
+        handleNewFileUpload(file);
+    };
 
     // Function to handle new file upload, similar to the initial file drop
     const handleNewFileUpload = async (newFile) => {
@@ -68,6 +97,8 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                 // Upload the new file to Firebase temporary folder
                 const userId = purchaseData?.userId || "anonymous"; // Replace with real user ID if available
                 const fileMetadata = await uploadFileToTempFolder(newFile, userId);
+
+                await saveImageToDB(newFile);
 
                 // Update the purchaseData for the current side
                 setPurchaseData({
@@ -154,6 +185,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                     // Upload the file to Firebase temporary folder
                     const userId = purchaseData?.userId || "anonymous"; // Replace with real user ID if available
                     const fileMetadata = await uploadFileToTempFolder(file, userId);
+
                     // Save metadata to the store
 
                     // setPurchaseData({
@@ -258,6 +290,8 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                         );
                     }
 
+                    await saveImageToDB(file);
+
                     // Open modal
                     setModalOpen(true);
 
@@ -353,54 +387,136 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
 
                     <AnimatePresence>
                         {acceptedDisclaimer && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 20 }}
-                                transition={{ duration: 0.3, ease: "easeInOut" }}
-                                {...getRootProps()}
-                                className="flex flex-col items-center justify-center bg-primaryColor-100 rounded-[20px] border-dashed border-2 p-8 lg:p-12 border-gray-400"
-                            >
-                                <input {...getInputProps()} />
-                                <div className="text-center">
-                                    {isDragActive ? (
-                                        <p className="font-body font-semibold text-xl text-primaryColor">
-                                            Lassen Sie los, um die Grafik hochzuladen!
-                                        </p>
-                                    ) : (
-                                        <>
-                                            <p className="font-body hidden lg:block font-semibold 2xl:text-xl text-textColor">
-                                                Ziehen Sie Ihre Grafik hierher oder klicken Sie, um eine Datei
-                                                hochzuladen.
+                            <>
+                                <motion.div
+                                    initial={{ opacity: 0, y: -20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 20 }}
+                                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                                    {...getRootProps()}
+                                    className="flex flex-col items-center justify-center bg-primaryColor-100 rounded-[20px] border-dashed border-2 p-8 lg:p-12 border-gray-400"
+                                >
+                                    <input {...getInputProps()} />
+                                    <div className="text-center">
+                                        {isDragActive ? (
+                                            <p className="font-body font-semibold text-xl text-primaryColor">
+                                                Lassen Sie los, um die Grafik hochzuladen!
                                             </p>
-                                            <p className="font-body lg:hidden font-semibold text-lg text-textColor">
-                                                Wählen Sie Ihre Grafik
-                                            </p>{" "}
-                                        </>
+                                        ) : (
+                                            <>
+                                                <p className="font-body hidden lg:block font-semibold 2xl:text-xl text-textColor">
+                                                    Ziehen Sie Ihre Grafik hierher oder klicken Sie, um eine Datei
+                                                    hochzuladen.
+                                                </p>
+                                                <p className="font-body lg:hidden font-semibold text-lg text-textColor">
+                                                    Wählen Sie Ihre Grafik
+                                                </p>{" "}
+                                            </>
+                                        )}
+                                        <div className="flex justify-center text-6xl p-6 text-textColor">
+                                            <TbDragDrop></TbDragDrop>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className="px-6 py-2 !font-semibold bg-primaryColor font-body text-white rounded-lg hover:bg-primaryColor-600"
+                                        >
+                                            Datei auswählen
+                                        </button>
+                                    </div>
+                                    {uploadError && (
+                                        <div className="mt-4 text-center">
+                                            <p className="font-body text-red-600">{uploadError}</p>
+                                        </div>
                                     )}
-                                    <div className="flex justify-center text-6xl p-6 text-textColor">
-                                        <TbDragDrop></TbDragDrop>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        className="px-6 py-2 !font-semibold bg-primaryColor font-body text-white rounded-lg hover:bg-primaryColor-600"
-                                    >
-                                        Datei auswählen
-                                    </button>
-                                </div>
-                                {uploadError && (
-                                    <div className="mt-4 text-center">
-                                        <p className="font-body text-red-600">{uploadError}</p>
+                                    {uploadedFile && !uploading && (
+                                        <div className="mt-4 text-center">
+                                            <p className="font-body text-gray-700">
+                                                Hochgeladene Datei: {uploadedFile.name}
+                                            </p>
+                                        </div>
+                                    )}
+                                </motion.div>
+
+                                {/* Accordion for cached graphics */}
+                                {!uploadedFile && cachedGraphics.length > 0 && (
+                                    <div className="mb-6">
+                                        {/* Header */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCached((prev) => !prev)}
+                                            className="w-full flex items-center justify-between bg-accentColor mt-4 px-4 py-3 rounded-lg shadow font-semibold"
+                                        >
+                                            <span>Zuletzt benutzte Grafiken</span>
+                                            <FiChevronDown
+                                                className={`transition-transform ${
+                                                    showCached ? "rotate-180" : "rotate-0"
+                                                }`}
+                                            />
+                                        </button>
+
+                                        {/* Panel */}
+                                        <AnimatePresence initial={false}>
+                                            {showCached && (
+                                                <motion.div
+                                                    key="panel"
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: "auto", opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    transition={{ duration: 0.25, ease: "easeInOut" }}
+                                                    className="overflow-hidden bg-accentColor/50 px-4 pb-4 rounded-b-lg"
+                                                >
+                                                    <div className="pt-4 flex flex-wrap gap-4">
+                                                        {cachedGraphics.map(({ id, name, blob }) => {
+                                                            const isSelected = id === selectedCachedId;
+                                                            return (
+                                                                <div key={id} className="relative group">
+                                                                    {/* DELETE */}
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleDeleteCached(id);
+                                                                        }}
+                                                                        className="absolute -top-2 -right-2 bg-red-600 p-1.5 rounded-full text-white shadow hover:bg-red-700"
+                                                                    >
+                                                                        <FiTrash2 size={14} />
+                                                                    </button>
+                                                                    {/* SELECT */}
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setSelectedCachedId(id)}
+                                                                        className={`rounded-lg overflow-hidden shadow focus:outline-none ${
+                                                                            isSelected ? "ring-4 ring-primaryColor" : ""
+                                                                        }`}
+                                                                    >
+                                                                        <img
+                                                                            src={URL.createObjectURL(blob)}
+                                                                            alt={name}
+                                                                            className="h-24 w-24 object-contain"
+                                                                        />
+                                                                    </button>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    {/* confirm selection */}
+                                                    {selectedCachedId && (
+                                                        <div className="mt-4">
+                                                            <button
+                                                                type="button"
+                                                                onClick={handleUseSelected}
+                                                                className="px-6 py-2 bg-primaryColor text-white rounded-lg font-semibold hover:bg-primaryColor-600"
+                                                            >
+                                                                Weiter mit gewählter Grafik
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
                                 )}
-                                {uploadedFile && !uploading && (
-                                    <div className="mt-4 text-center">
-                                        <p className="font-body text-gray-700">
-                                            Hochgeladene Datei: {uploadedFile.name}
-                                        </p>
-                                    </div>
-                                )}
-                            </motion.div>
+                            </>
                         )}
                     </AnimatePresence>
 

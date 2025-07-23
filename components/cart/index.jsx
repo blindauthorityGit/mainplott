@@ -1,6 +1,7 @@
 // components/CartSidebar.jsx
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import useStore from "@/store/store";
 import { FiTrash2, FiX } from "react-icons/fi";
@@ -37,6 +38,11 @@ export default function CartSidebar() {
         }
     };
 
+    function closeSideBar() {
+        console.log("BUBUBUBU");
+        closeCartSidebar();
+    }
+
     console.log(cartItems);
 
     return (
@@ -51,13 +57,13 @@ export default function CartSidebar() {
                         exit={{ x: "100%" }}
                         transition={{ type: "spring", stiffness: 400, damping: 20, duration: 0.2 }}
                     >
-                        <button onClick={closeCartSidebar} className="self-end mb-6">
+                        <button onClick={() => closeCartSidebar()} className="self-end mb-6">
                             <FiX className="text-3xl" />
                         </button>
 
                         <div className="flex-1 overflow-y-auto">
                             {cartItems.length > 0 ? (
-                                cartItems.map((item) => {
+                                cartItems.map((item, index) => {
                                     // do we have per-size variants?
                                     const hasVariants = item.variants && Object.keys(item.variants).length > 0;
 
@@ -76,19 +82,27 @@ export default function CartSidebar() {
 
                                     return (
                                         <div key={item.id} className="flex items-center mb-8">
-                                            <img
-                                                src={
-                                                    item.tryout
-                                                        ? item.cartImage
-                                                        : item.design?.front?.downloadURL ||
-                                                          item.design?.back?.downloadURL ||
-                                                          item.selectedImage ||
-                                                          item.product?.images?.edges?.[0]?.node.originalSrc ||
-                                                          ""
-                                                }
-                                                alt={item.productName}
-                                                className="w-16 mr-4"
-                                            />
+                                            {item.product.handle && (
+                                                <Link
+                                                    onClick={closeSideBar}
+                                                    href={`/products/${item.product.handle}?editIndex=${index}`}
+                                                    prefetch={false}
+                                                >
+                                                    <img
+                                                        src={
+                                                            item.tryout
+                                                                ? item.cartImage
+                                                                : item.design?.front?.downloadURL ||
+                                                                  item.design?.back?.downloadURL ||
+                                                                  item.selectedImage ||
+                                                                  item.product?.images?.edges?.[0]?.node.originalSrc ||
+                                                                  ""
+                                                        }
+                                                        alt={item.productName}
+                                                        className="w-16 mr-4"
+                                                    />
+                                                </Link>
+                                            )}
                                             <div className="flex-1">
                                                 <H5 klasse="!mb-2">{item.productName}</H5>
 

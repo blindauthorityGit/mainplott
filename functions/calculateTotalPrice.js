@@ -17,6 +17,9 @@ export const calculateTotalPrice = (
 
     // We'll also track how many "product" pieces (not services) there are, ignoring veredelung, layout, etc.
     Object.entries(variants).forEach(([key, variant]) => {
+        // Skip alles, was wir nicht sauber verarbeiten können
+        if (!variant || !variant.size) return; // ❶ neuer Guard
+
         // skip "profiDatenCheck" and "layoutService" from the base product calc
         if (key === "profiDatenCheck" || key === "layoutService") {
             return;
