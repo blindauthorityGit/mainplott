@@ -3,6 +3,7 @@ import { openDB } from "idb";
 
 const DB_NAME = "graphic-cache";
 const STORE = "files";
+const TTL_MS = 24 * 60 * 60 * 1000; // 24 h
 
 export async function getDB() {
     return openDB(DB_NAME, 1, {
@@ -23,7 +24,21 @@ export async function saveImageToDB(file) {
 
 export async function getImagesFromDB() {
     const db = await getDB();
-    return db.getAll(STORE); // [{id, name, blob, …}, …]
+    const all = await db.getAll(STORE);
+    const now = Date.now();
+    const keep = [];
+
+    // Lösche alles, was älter als TTL ist
+    await Promise.all(
+        all.map(async (f) => {
+            if (now - (f.savedAt ?? now) > TTL_MS) {
+                await db.delete(STORE, f.id); // ⬅️ weg damit
+            } else {
+                keep.push(f);
+            }
+        })
+    );
+    return keep; // nur frische Einträge
 }
 
 export async function deleteImageFromDB(id) {

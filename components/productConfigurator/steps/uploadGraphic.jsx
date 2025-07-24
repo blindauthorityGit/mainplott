@@ -39,6 +39,8 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
         setShowSpinner,
     } = useStore();
     const [uploadedFile, setUploadedFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null); // ⭐ preview
+
     const [uploading, setUploading] = useState(true);
     const [uploadError, setUploadError] = useState(null);
     const currentSide = purchaseData.currentSide || "front";
@@ -64,6 +66,17 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
             setCachedGraphics(imgs); // show suggestions
         })();
     }, []);
+
+    /* ---------------- Preview URL ---------------- */
+    useEffect(() => {
+        if (uploadedFile) {
+            const url = URL.createObjectURL(uploadedFile);
+            setPreviewUrl(url);
+            return () => URL.revokeObjectURL(url);
+        } else {
+            setPreviewUrl(null);
+        }
+    }, [uploadedFile]);
 
     useEffect(() => {
         // Set uploaded file from purchaseData when side or purchaseData changes
@@ -429,8 +442,11 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                         </div>
                                     )}
                                     {uploadedFile && !uploading && (
-                                        <div className="mt-4 text-center">
+                                        <div className="mt-4 text-center flex flex-col items-center">
+                                            {" "}
+                                            <img src={previewUrl} className="max-h-24" alt="" />
                                             <p className="font-body text-gray-700">
+                                                {" "}
                                                 Hochgeladene Datei: {uploadedFile.name}
                                             </p>
                                         </div>
@@ -440,10 +456,9 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                 {/* Accordion for cached graphics */}
                                 {!uploadedFile && cachedGraphics.length > 0 && (
                                     <div className="mb-6">
-                                        {/* Header */}
                                         <button
                                             type="button"
-                                            onClick={() => setShowCached((prev) => !prev)}
+                                            onClick={() => setShowCached((p) => !p)}
                                             className="w-full flex items-center justify-between bg-accentColor mt-4 px-4 py-3 rounded-lg shadow font-semibold"
                                         >
                                             <span>Zuletzt benutzte Grafiken</span>
@@ -453,8 +468,6 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                                 }`}
                                             />
                                         </button>
-
-                                        {/* Panel */}
                                         <AnimatePresence initial={false}>
                                             {showCached && (
                                                 <motion.div
@@ -470,7 +483,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                                             const isSelected = id === selectedCachedId;
                                                             return (
                                                                 <div key={id} className="relative group">
-                                                                    {/* DELETE */}
+                                                                    {/* Delete */}
                                                                     <button
                                                                         type="button"
                                                                         onClick={(e) => {
@@ -481,36 +494,31 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                                                     >
                                                                         <FiTrash2 size={14} />
                                                                     </button>
-                                                                    {/* SELECT */}
+                                                                    {/* Select */}
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => setSelectedCachedId(id)}
+                                                                        onClick={() => {
+                                                                            setSelectedCachedId(id);
+                                                                            const file = new File([blob], name, {
+                                                                                type: blob.type,
+                                                                            });
+                                                                            handleNewFileUpload(file);
+                                                                        }}
                                                                         className={`rounded-lg overflow-hidden shadow focus:outline-none ${
                                                                             isSelected ? "ring-4 ring-primaryColor" : ""
                                                                         }`}
                                                                     >
+                                                                        {" "}
                                                                         <img
                                                                             src={URL.createObjectURL(blob)}
                                                                             alt={name}
                                                                             className="h-24 w-24 object-contain"
-                                                                        />
+                                                                        />{" "}
                                                                     </button>
                                                                 </div>
                                                             );
                                                         })}
                                                     </div>
-                                                    {/* confirm selection */}
-                                                    {selectedCachedId && (
-                                                        <div className="mt-4">
-                                                            <button
-                                                                type="button"
-                                                                onClick={handleUseSelected}
-                                                                className="px-6 py-2 bg-primaryColor text-white rounded-lg font-semibold hover:bg-primaryColor-600"
-                                                            >
-                                                                Weiter mit gewählter Grafik
-                                                            </button>
-                                                        </div>
-                                                    )}
                                                 </motion.div>
                                             )}
                                         </AnimatePresence>

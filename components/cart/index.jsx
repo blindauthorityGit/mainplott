@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import useStore from "@/store/store";
-import { FiTrash2, FiX } from "react-icons/fi";
+import { FiTrash2, FiX, FiEdit2 } from "react-icons/fi";
 import Overlay from "../modal/overlay";
 import { H5, P, H3 } from "@/components/typography";
 import { TextField } from "@mui/material";
@@ -61,7 +61,7 @@ export default function CartSidebar() {
                             <FiX className="text-3xl" />
                         </button>
 
-                        <div className="flex-1 overflow-y-auto">
+                        <div className="flex-1 overflow-y-auto font-body">
                             {cartItems.length > 0 ? (
                                 cartItems.map((item, index) => {
                                     // do we have per-size variants?
@@ -81,39 +81,105 @@ export default function CartSidebar() {
                                     }
 
                                     return (
-                                        <div key={item.id} className="flex items-center mb-8">
-                                            {item.product.handle && (
-                                                <Link
-                                                    onClick={closeSideBar}
-                                                    href={`/products/${item.product.handle}?editIndex=${index}`}
-                                                    prefetch={false}
-                                                >
-                                                    <img
-                                                        src={
-                                                            item.tryout
-                                                                ? item.cartImage
-                                                                : item.design?.front?.downloadURL ||
-                                                                  item.design?.back?.downloadURL ||
-                                                                  item.selectedImage ||
-                                                                  item.product?.images?.edges?.[0]?.node.originalSrc ||
-                                                                  ""
-                                                        }
-                                                        alt={item.productName}
-                                                        className="w-16 mr-4"
-                                                    />
-                                                </Link>
-                                            )}
+                                        <div key={item.id} className="flex items-start mb-8">
+                                            {/* Vorschaubild */}
+                                            <Link
+                                                onClick={closeSideBar}
+                                                href={`/products/${item.product.handle}?editIndex=${index}`}
+                                                prefetch={false}
+                                            >
+                                                <img
+                                                    src={
+                                                        item.tryout
+                                                            ? item.cartImage
+                                                            : item.design?.front?.downloadURL ||
+                                                              item.design?.back?.downloadURL ||
+                                                              item.selectedImage ||
+                                                              item.product?.images?.edges?.[0]?.node.originalSrc ||
+                                                              ""
+                                                    }
+                                                    alt={item.productName}
+                                                    className="w-16 mr-4 rounded"
+                                                />
+                                            </Link>
+
                                             <div className="flex-1">
                                                 <H5 klasse="!mb-2">{item.productName}</H5>
 
-                                                <p className="text-sm">Menge: {qtyDisplay}</p>
+                                                {/* 1) Size-Badges */}
+                                                {item.variants && (
+                                                    <div className="flex flex-wrap gap-2 mb-2">
+                                                        <div className="flex flex-wrap gap-2 mb-2">
+                                                            <span className="px-2 py-1  text-primaryColor font-bold text-xs rounded-full">
+                                                                Varianten:
+                                                            </span>
+                                                            {Object.entries(item.variants)
+                                                                .filter(
+                                                                    ([variantName, det]) =>
+                                                                        det.quantity > 0 &&
+                                                                        variantName !== "frontVeredelung" &&
+                                                                        variantName !== "backVeredelung"
+                                                                )
+                                                                .map(([size, det]) => (
+                                                                    <span
+                                                                        key={size}
+                                                                        className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full"
+                                                                    >
+                                                                        {det.quantity}× {size}
+                                                                    </span>
+                                                                ))}
+                                                        </div>
+                                                    </div>
+                                                )}
 
-                                                <p className="text-sm">Preis: € {Number(item.totalPrice).toFixed(2)}</p>
+                                                {/* 2) Veredelungs-Badges */}
+                                                {item.variants &&
+                                                    (() => {
+                                                        const vd = [];
+                                                        if (item.variants.frontVeredelung?.quantity > 0) {
+                                                            vd.push(`${item.variants.frontVeredelung.quantity}× Front`);
+                                                        }
+                                                        if (item.variants.backVeredelung?.quantity > 0) {
+                                                            vd.push(`${item.variants.backVeredelung.quantity}× Rücken`);
+                                                        }
+                                                        if (vd.length === 0) return null;
+                                                        return (
+                                                            <div className="flex flex-wrap gap-2 mb-2">
+                                                                <span className="px-2 py-1  text-primaryColor font-bold text-xs rounded-full">
+                                                                    Veredelungen:
+                                                                </span>
+                                                                {vd.map((text, i) => (
+                                                                    <span
+                                                                        key={i}
+                                                                        className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full"
+                                                                    >
+                                                                        {text}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        );
+                                                    })()}
+
+                                                {/* 3) Einzelpreis */}
+                                                <p className="text-sm font-semibold">
+                                                    Preis: €{Number(item.totalPrice).toFixed(2)}
+                                                </p>
                                             </div>
 
+                                            {/* EDIT-Icon */}
+                                            <Link
+                                                onClick={closeSideBar}
+                                                href={`/products/${item.product.handle}?editIndex=${index}`}
+                                                prefetch={false}
+                                                className="ml-4 text-gray-600 hover:text-gray-800"
+                                            >
+                                                <FiEdit2 className="text-xl" />
+                                            </Link>
+
+                                            {/* Mülleimer */}
                                             <button
                                                 onClick={() => removeCartItem(item.id)}
-                                                className="text-red-500 hover:text-red-700"
+                                                className="text-red-500 hover:text-red-700 ml-4"
                                             >
                                                 <FiTrash2 className="text-lg" />
                                             </button>
@@ -126,8 +192,8 @@ export default function CartSidebar() {
                         </div>
 
                         {/* User notes */}
-                        <div className="my-4">
-                            <P klasse="mb-2 font-semibold">Besondere Anmerkungen:</P>
+                        <div className="my-4 bg-[#ffeffe]">
+                            <P klasse="mb-2 font-semibold !tracking-wider">Besondere Anmerkungen:</P>
                             <TextField
                                 fullWidth
                                 multiline
@@ -143,9 +209,18 @@ export default function CartSidebar() {
                         <div className="mt-4 mb-6">
                             <H3 klasse="!mb-2">Gesamtsumme: €{totalPrice}</H3>
                         </div>
+
+                        {/* … nach der Gesamtsumme, vor dem Checkout-Button */}
+                        <div className="mt-2 mb-4 text-center">
+                            <Link href="/shop" onClick={closeSideBar} prefetch={false}>
+                                <button className="text-sm font-semibold text-textColor hover:underline">
+                                    ← Weiter einkaufen
+                                </button>
+                            </Link>
+                        </div>
                         <button
                             onClick={handleCheckout}
-                            className="w-full mt-6 bg-primaryColor text-white py-3 rounded-lg"
+                            className="w-full mt-6 bg-primaryColor font-bold text-white py-3 rounded-lg"
                         >
                             ZUR KASSE
                         </button>
