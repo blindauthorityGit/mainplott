@@ -21,7 +21,7 @@ const Slide = ({ image, mobileImage, headline, text, buttonText, buttonLink }) =
         <div className="grid grid-cols-12  lg:px-56 relative items-center mt-[-1rem] lg:mt-[-0rem]">
             <div className="col-span-12 lg:col-span-6 text-center lg:text-left -mt-[3rem] z-30 px-6 lg:px-0 lg:mt-6">
                 <H1>{colorLastWord(headline)}</H1>
-                <P klasse="hidden lg:block">{text}</P>
+                <P klasse=" lg:block">{text}</P>
 
                 {/* Wrapped button inside Framer Motion */}
                 <motion.div

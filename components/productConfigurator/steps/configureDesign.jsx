@@ -17,6 +17,7 @@ import handleDeleteUpload from "@/functions/handleDeleteUpload";
 import handleShowDetails from "@/functions/handleShowDetail";
 import handleFileUpload from "@/functions/handleFileUpload";
 import getImagePlacement from "@/functions/getImagePlacement";
+import getMaxUniformScale from "@/functions/getMaxUniformScale";
 import { getFixedImagePlacement } from "@/functions/getImagePlacement";
 import { centerVertically, centerHorizontally } from "@/functions/centerFunctions";
 import resetScale from "@/functions/resetScale"; // Import the resetScale function
@@ -52,6 +53,18 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     const containerHeight = purchaseData.containerHeight || 500;
 
     useEffect(() => {}, [isMobileSliderOpen]);
+
+    function getDynamicRect(side) {
+        const rect = purchaseData.boundingRect; // starre Print-Area
+        const data = purchaseData.sides[side] || {};
+        if (!rect || !data.width || !data.height) return rect;
+
+        const scale = data.scale || 1;
+        const dx = (data.width / 2) * scale; // offsetX * scale
+        const dy = (data.height / 2) * scale; // offsetY * scale
+
+        return { ...rect, x: rect.x + dx, y: rect.y + dy };
+    }
 
     // Remove or conditionally include this useEffect
     useEffect(() => {
@@ -91,43 +104,72 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     };
 
     const sideData = purchaseData.sides[currentSide] || {};
-    let allowedMaxScale = 3.5; // fallback value
-    if (
-        purchaseData.boundingRect &&
-        sideData.width &&
-        sideData.height &&
-        sideData.xPosition != null &&
-        sideData.yPosition != null
-    ) {
-        allowedMaxScale = Math.min(
-            (purchaseData.boundingRect.x + purchaseData.boundingRect.width - sideData.xPosition) / sideData.width,
-            (purchaseData.boundingRect.y + purchaseData.boundingRect.height - sideData.yPosition) / sideData.height
-        );
-    }
 
-    const handleScaleChange = (event, newValue) => {
-        const sideData = purchaseData.sides[currentSide] || {};
-        let allowedMaxScale = 3.5; // fallback
+    const dynRect = getDynamicRect(currentSide) || { x: 0, y: 0, width: 0, height: 0 };
+    const printRect = purchaseData.boundingRect || { x: 0, y: 0, width: 0, height: 0 };
+
+    let minX = dynRect.x;
+    let maxX = dynRect.x + dynRect.width - (sideData.width || 120) * (sideData.scale || 1);
+    let minY = dynRect.y;
+    let maxY = dynRect.y + dynRect.height - (sideData.height || 120) * (sideData.scale || 1);
+
+    const USE_DYNAMIC_MAX = false;
+    const FIXED_MAX_SCALE = 3.0;
+    let allowedMaxScale;
+
+    if (!USE_DYNAMIC_MAX) {
+        // fester Wert
+        allowedMaxScale = FIXED_MAX_SCALE;
+    } else {
+        // die bisherige dynamische Logik
+        allowedMaxScale = 3.5; // Fallback
         if (
-            boundingRect &&
+            printRect.width &&
             sideData.width &&
             sideData.height &&
             sideData.xPosition != null &&
             sideData.yPosition != null
         ) {
-            allowedMaxScale = Math.min(
-                (boundingRect.x + boundingRect.width - sideData.xPosition) / sideData.width,
-                (boundingRect.y + boundingRect.height - sideData.yPosition) / sideData.height
-            );
+            allowedMaxScale = getMaxUniformScale({
+                rect: printRect,
+                img: {
+                    width: sideData.width,
+                    height: sideData.height,
+                    xPosition: sideData.xPosition,
+                    yPosition: sideData.yPosition,
+                    scale: sideData.scale || 1,
+                },
+            });
         }
-        const clampedValue = Math.min(newValue, allowedMaxScale);
+    }
+
+    /***** Handler ****************************************************/
+    const handleScaleChange = (_e, newValue) => {
+        const sd = purchaseData.sides[currentSide] || {};
+
+        /*  Dynamisch neu berechnen oder einfach FIXED_MAX_SCALE nehmen  */
+        const maxScale = USE_DYNAMIC_MAX
+            ? getMaxUniformScale({
+                  rect: printRect,
+                  img: {
+                      width: sd.width,
+                      height: sd.height,
+                      xPosition: sd.xPosition,
+                      yPosition: sd.yPosition,
+                      scale: sd.scale || 1,
+                  },
+              })
+            : FIXED_MAX_SCALE;
+
+        const clamped = Math.min(newValue, maxScale);
+
         setPurchaseData({
             ...purchaseData,
             sides: {
                 ...purchaseData.sides,
                 [currentSide]: {
-                    ...purchaseData.sides[currentSide],
-                    scale: clampedValue,
+                    ...sd,
+                    scale: clamped,
                 },
             },
         });
@@ -452,17 +494,17 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         purchaseData.sides,
     ]);
 
-    let minX = 0;
-    let maxX = purchaseData.containerWidth; // fallback
-    let minY = 0;
-    let maxY = purchaseData.containerHeight; // fallback
+    // let minX = 0;
+    // let maxX = purchaseData.containerWidth; // fallback
+    // let minY = 0;
+    // let maxY = purchaseData.containerHeight; // fallback
 
-    if (boundingRect) {
-        minX = boundingRect.x;
-        maxX = boundingRect.x + boundingRect.width - 120;
-        minY = boundingRect.y;
-        maxY = boundingRect.y + boundingRect.height - 120;
-    }
+    // if (boundingRect) {
+    //     minX = boundingRect.x;
+    //     maxX = boundingRect.x + boundingRect.width - 120;
+    //     minY = boundingRect.y;
+    //     maxY = boundingRect.y + boundingRect.height - 120;
+    // }
 
     return (
         <div className="flex flex-col lg:px-16 lg:mt-4 2xl:mt-8 font-body ">

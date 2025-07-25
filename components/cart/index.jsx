@@ -192,8 +192,8 @@ export default function CartSidebar() {
                         </div>
 
                         {/* User notes */}
-                        <div className="my-4 bg-[#ffeffe]">
-                            <P klasse="mb-2 font-semibold !tracking-wider">Besondere Anmerkungen:</P>
+                        <div className="my-4 bg-[#ffeffe] ">
+                            <P klasse="mb-2 font-semibold !tracking-wider px-4 py-2">Besondere Anmerkungen:</P>
                             <TextField
                                 fullWidth
                                 multiline
@@ -202,6 +202,7 @@ export default function CartSidebar() {
                                 value={userNotes}
                                 onChange={(e) => setUserNotes(e.target.value)}
                                 variant="outlined"
+                                className="font-body"
                             />
                         </div>
 
