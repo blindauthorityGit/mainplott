@@ -597,7 +597,7 @@ const KonvaLayer = forwardRef(
                             y={getDynamicRect().y}
                             width={boundingRect.width}
                             height={boundingRect.height}
-                            stroke="#ff0069"
+                            // stroke="#ff0069"
                         />
                         {purchaseData.configurator !== "template" && (uploadedGraphicFile || uploadedGraphicURL) && (
                             <KonvaImage
