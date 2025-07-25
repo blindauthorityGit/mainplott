@@ -192,7 +192,7 @@ export default function CartSidebar() {
                         </div>
 
                         {/* User notes */}
-                        <div className="my-4 bg-[#ffeffe] ">
+                        <div className="my-4 bg-[#f3f4f6] ">
                             <P klasse="mb-2 font-semibold !tracking-wider px-4 py-2">Besondere Anmerkungen:</P>
                             <TextField
                                 fullWidth
