@@ -1,27 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { Slider, Tabs, Tab, Checkbox, FormControlLabel, Button } from "@mui/material";
+import { Tabs, Tab, Button, Checkbox, FormControlLabel } from "@mui/material";
 import { P } from "@/components/typography";
 import useStore from "@/store/store";
 import ContentWrapper from "../components/contentWrapper";
-import { FiX, FiInfo, FiGitCommit, FiMaximize, FiRotateCcw } from "react-icons/fi";
-import { IconButton } from "@/components/buttons"; // Adjust import path as needed
+import { FiX, FiType, FiImage } from "react-icons/fi";
+import { IconButton } from "@/components/buttons";
 import CustomRadioButton from "@/components/inputs/customRadioButton";
 import VeredelungTable from "@/components/infoTable/veredlungsTable";
-
-import generateVeredelungsPrice from "@/functions/generateVeredelungPrice";
-
-// import { handleShowDetails, handleDeleteUpload } from "@/functions/fileHandlers";
+import GraphicControls from "@/components/productConfigurator/controls/GraphicControls";
+import TextControls from "@/components/productConfigurator/controls/TextControls";
 
 // FUNCTIONS
-import handleDeleteUpload from "@/functions/handleDeleteUpload";
-import handleShowDetails from "@/functions/handleShowDetail";
 import handleFileUpload from "@/functions/handleFileUpload";
 import getImagePlacement from "@/functions/getImagePlacement";
 import getMaxUniformScale from "@/functions/getMaxUniformScale";
 import { getFixedImagePlacement } from "@/functions/getImagePlacement";
 import { centerVertically, centerHorizontally } from "@/functions/centerFunctions";
-import resetScale from "@/functions/resetScale"; // Import the resetScale function
+import resetScale from "@/functions/resetScale";
 import useIsMobile from "@/hooks/isMobile";
+
+import { v4 as uuidv4 } from "uuid";
 
 export default function ConfigureDesign({ product, setCurrentStep, steps, currentStep, veredelungen }) {
     const {
@@ -34,8 +32,10 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         setDpi,
         setShowSpinner,
         isMobileSliderOpen,
+        setActiveElement,
+        updateText,
     } = useStore();
-    const [copyFrontToBack, setCopyFrontToBack] = useState(false);
+
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState(null);
     const [uploadedFile, setUploadedFile] = useState(null);
@@ -43,279 +43,158 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     const boundingRect = purchaseData.boundingRect; // { x, y, width, height }
     const currentSide = purchaseData.currentSide || "front";
     const tabIndex = currentSide === "front" ? 0 : 1;
-
     const isMobile = useIsMobile();
 
-    //fr radio buttons
-    const [selectedValue, setSelectedValue] = useState(purchaseData.sides[currentSide]?.position || "");
+    // Seite / Elemente
+    const side = purchaseData.sides[currentSide] || {};
+    const texts = side.texts || [];
+    const uploadedGraphics = side.uploadedGraphics || [];
+    const activeGraphicId = side.activeGraphicId || uploadedGraphics?.[0]?.id;
+    const activeGraphic = uploadedGraphics.find((g) => g.id === activeGraphicId) || uploadedGraphics[0] || null;
+    const active = side.activeElement || null;
+    const activeText = active?.type === "text" ? texts.find((t) => t.id === active.id) : null;
 
-    const containerWidth = purchaseData.containerWidth || 500; // Set a default value for safety
+    const containerWidth = purchaseData.containerWidth || 500;
     const containerHeight = purchaseData.containerHeight || 500;
+
+    const printRect = purchaseData.boundingRect || { x: 0, y: 0, width: 0, height: 0 };
+    const fontSizeMin = 10;
+    const fontSizeMax = Math.round(printRect.height * 0.6);
+    const xMinText = printRect.x;
+    const xMaxText = printRect.x + printRect.width;
+    const yMinText = printRect.y;
+    const yMaxText = printRect.y + printRect.height;
 
     useEffect(() => {}, [isMobileSliderOpen]);
 
-    function getDynamicRect(side) {
-        const rect = purchaseData.boundingRect; // starre Print-Area
-        const data = purchaseData.sides[side] || {};
+    function getDynamicRect(sideKey) {
+        const rect = purchaseData.boundingRect;
+        const data = purchaseData.sides[sideKey] || {};
         if (!rect || !data.width || !data.height) return rect;
 
         const scale = data.scale || 1;
-        const dx = (data.width / 2) * scale; // offsetX * scale
-        const dy = (data.height / 2) * scale; // offsetY * scale
+        const dx = (data.width / 2) * scale;
+        const dy = (data.height / 2) * scale;
 
         return { ...rect, x: rect.x + dx, y: rect.y + dy };
     }
 
-    // Remove or conditionally include this useEffect
     useEffect(() => {
-        // Only set currentSide if it’s not defined yet
         if (!purchaseData.currentSide) {
-            setPurchaseData((prevData) => ({
-                ...prevData,
-                currentSide: "front",
-            }));
+            setPurchaseData((prevData) => ({ ...prevData, currentSide: "front" }));
         }
     }, []);
 
-    const handleXChange = (event, newValue) => {
-        setPurchaseData({
-            ...purchaseData,
+    const handleXChange = (_e, newValue) => {
+        if (!activeGraphic) return;
+        setPurchaseData((prev) => ({
+            ...prev,
             sides: {
-                ...purchaseData.sides,
+                ...prev.sides,
                 [currentSide]: {
-                    ...purchaseData.sides[currentSide],
-                    xPosition: newValue,
+                    ...prev.sides[currentSide],
+                    uploadedGraphics: prev.sides[currentSide].uploadedGraphics.map((g) =>
+                        g.id === activeGraphicId ? { ...g, xPosition: newValue } : g
+                    ),
                 },
             },
-        });
+        }));
     };
 
-    const handleYChange = (event, newValue) => {
-        setPurchaseData({
-            ...purchaseData,
+    const handleYChange = (_e, newValue) => {
+        if (!activeGraphic) return;
+        setPurchaseData((prev) => ({
+            ...prev,
             sides: {
-                ...purchaseData.sides,
+                ...prev.sides,
                 [currentSide]: {
-                    ...purchaseData.sides[currentSide],
-                    yPosition: newValue,
+                    ...prev.sides[currentSide],
+                    uploadedGraphics: prev.sides[currentSide].uploadedGraphics.map((g) =>
+                        g.id === activeGraphicId ? { ...g, yPosition: newValue } : g
+                    ),
                 },
             },
-        });
+        }));
     };
-
-    const sideData = purchaseData.sides[currentSide] || {};
 
     const dynRect = getDynamicRect(currentSide) || { x: 0, y: 0, width: 0, height: 0 };
-    const printRect = purchaseData.boundingRect || { x: 0, y: 0, width: 0, height: 0 };
 
-    let minX = dynRect.x;
-    let maxX = dynRect.x + dynRect.width - (sideData.width || 120) * (sideData.scale || 1);
-    let minY = dynRect.y;
-    let maxY = dynRect.y + dynRect.height - (sideData.height || 120) * (sideData.scale || 1);
+    const minX = printRect.x + ((activeGraphic?.width ?? 0) * (activeGraphic?.scale ?? 1)) / 2;
+    const maxX = printRect.x + printRect.width - ((activeGraphic?.width ?? 0) * (activeGraphic?.scale ?? 1)) / 2;
+    const minY = printRect.y + ((activeGraphic?.height ?? 0) * (activeGraphic?.scale ?? 1)) / 2;
+    const maxY = printRect.y + printRect.height - ((activeGraphic?.height ?? 0) * (activeGraphic?.scale ?? 1)) / 2;
 
     const USE_DYNAMIC_MAX = false;
     const FIXED_MAX_SCALE = 3.0;
-    let allowedMaxScale;
+    let allowedMaxScale = USE_DYNAMIC_MAX ? 3.5 : FIXED_MAX_SCALE;
 
-    if (!USE_DYNAMIC_MAX) {
-        // fester Wert
-        allowedMaxScale = FIXED_MAX_SCALE;
-    } else {
-        // die bisherige dynamische Logik
-        allowedMaxScale = 3.5; // Fallback
-        if (
-            printRect.width &&
-            sideData.width &&
-            sideData.height &&
-            sideData.xPosition != null &&
-            sideData.yPosition != null
-        ) {
-            allowedMaxScale = getMaxUniformScale({
-                rect: printRect,
-                img: {
-                    width: sideData.width,
-                    height: sideData.height,
-                    xPosition: sideData.xPosition,
-                    yPosition: sideData.yPosition,
-                    scale: sideData.scale || 1,
-                },
-            });
-        }
-    }
-
-    /***** Handler ****************************************************/
     const handleScaleChange = (_e, newValue) => {
-        const sd = purchaseData.sides[currentSide] || {};
-
-        /*  Dynamisch neu berechnen oder einfach FIXED_MAX_SCALE nehmen  */
-        const maxScale = USE_DYNAMIC_MAX
-            ? getMaxUniformScale({
-                  rect: printRect,
-                  img: {
-                      width: sd.width,
-                      height: sd.height,
-                      xPosition: sd.xPosition,
-                      yPosition: sd.yPosition,
-                      scale: sd.scale || 1,
-                  },
-              })
-            : FIXED_MAX_SCALE;
-
-        const clamped = Math.min(newValue, maxScale);
-
-        setPurchaseData({
-            ...purchaseData,
+        if (!activeGraphic) return;
+        setPurchaseData((prev) => ({
+            ...prev,
             sides: {
-                ...purchaseData.sides,
+                ...prev.sides,
                 [currentSide]: {
-                    ...sd,
-                    scale: clamped,
+                    ...prev.sides[currentSide],
+                    uploadedGraphics: prev.sides[currentSide].uploadedGraphics.map((g) =>
+                        g.id === activeGraphicId ? { ...g, scale: newValue } : g
+                    ),
                 },
             },
-        });
+        }));
     };
 
-    // NEW: Rotation handler
-    const handleRotationChange = (e, newValue) => {
-        setPurchaseData({
-            ...purchaseData,
-            sides: { ...purchaseData.sides, [currentSide]: { ...purchaseData.sides[currentSide], rotation: newValue } },
-        });
+    const handleRotationChange = (_e, newValue) => {
+        if (!activeGraphic) return;
+        setPurchaseData((prev) => ({
+            ...prev,
+            sides: {
+                ...prev.sides,
+                [currentSide]: {
+                    ...prev.sides[currentSide],
+                    uploadedGraphics: prev.sides[currentSide].uploadedGraphics.map((g) =>
+                        g.id === activeGraphicId ? { ...g, rotation: newValue } : g
+                    ),
+                },
+            },
+        }));
     };
 
     const handleTabChange = (_event, newIndex) => {
-        setPurchaseData({
-            ...purchaseData,
-            currentSide: newIndex === 0 ? "front" : "back",
-        });
-    };
-
-    const handleCopyFrontToBack = (event) => {
-        const isChecked = event.target.checked;
-        setCopyFrontToBack(isChecked);
-
-        if (isChecked && purchaseData.sides.front.uploadedGraphic) {
-            // Retrieve stored graphic dimensions and current scale from the front side
-            const graphicWidth = purchaseData.sides.front.width || 0;
-            const graphicHeight = purchaseData.sides.front.height || 0;
-            const scale = purchaseData.sides.front.scale || 1;
-
-            // Compute the displayed (scaled) dimensions
-            const displayedWidth = graphicWidth * scale;
-            const displayedHeight = graphicHeight * scale;
-
-            // Compute centered positions so that the graphic's center aligns with the container's center
-            const centeredX = (purchaseData.containerWidth - displayedWidth) / 2;
-            const centeredY = (purchaseData.containerHeight - displayedHeight) / 2;
-
-            // Copy front design to back, resetting rotation and using the centered positions
-            setPurchaseData({
-                ...purchaseData,
-                sides: {
-                    ...purchaseData.sides, // Keep both front and back
-                    back: {
-                        ...purchaseData.sides.front, // Copy all front design properties to back
-                        xPosition: centeredX,
-                        yPosition: centeredY,
-                        rotation: 0, // Reset rotation for the back side
-                    },
-                },
-            });
-        }
+        setPurchaseData({ ...purchaseData, currentSide: newIndex === 0 ? "front" : "back" });
     };
 
     const handleGraphicUpload = async (event) => {
         const newFile = event.target.files[0];
+        if (!newFile) return;
 
-        const image = new Image();
-        image.src = URL.createObjectURL(newFile);
-
-        image.onload = () => {
-            const imageWidth = image.width;
-            const imageHeight = image.height;
-
-            const { x, y } = getImagePlacement({
-                containerWidth: purchaseData.containerWidth,
-                containerHeight: purchaseData.containerHeight,
-                imageNaturalWidth: image.width,
-                imageNaturalHeight: image.height,
-            });
-
-            // NEW: center within your true print-area (boundingRect),
-            // or fallback to the full container if no custom box exists:
-            //    const rect = purchaseData.boundingRect || {
-            //      x: 0,
-            //      y: 0,
-            //      width:  purchaseData.containerWidth,
-            //      height: purchaseData.containerHeight,
-            //    };
-            //    const placement = getFixedImagePlacement({
-            //      imageNaturalWidth:  img.width,
-            //      imageNaturalHeight: img.height,
-            //      boundingRect:       rect,
-            //      centerImage:        true,
-            //    });
-
-            console.log("THE COORDINATES", x, y);
-
-            // Calculate centered position
-            const centeredX = (purchaseData.containerWidth - imageWidth) / 2;
-            const centeredY = (purchaseData.containerHeight - imageHeight) / 2;
-
-            setPurchaseData({
-                ...purchaseData,
-                sides: {
-                    ...purchaseData.sides,
-                    [currentSide]: {
-                        ...purchaseData.sides[currentSide],
-                        xPosition: x,
-                        yPosition: y,
-                    },
-                },
-            });
-        };
-
-        if (newFile) {
-            await handleFileUpload({
-                newFile,
-                currentSide,
-                purchaseData,
-                setUploadedFile,
-                setPurchaseData,
-                setModalOpen,
-                setShowSpinner,
-                setModalContent,
-                setUploading,
-                setUploadError,
-                setColorSpace,
-                setDpi,
-                steps,
-                currentStep,
-                setCurrentStep,
-            });
-        }
-    };
-
-    const handleRotateImage = () => {
-        setPurchaseData({
-            ...purchaseData,
-            currentSide: purchaseData.currentSide === "front" ? "back" : "front",
+        await handleFileUpload({
+            newFile,
+            currentSide,
+            purchaseData,
+            setUploadedFile,
+            setPurchaseData,
+            setModalOpen,
+            setShowSpinner,
+            setModalContent,
+            setUploading,
+            setUploadError,
+            setColorSpace,
+            setDpi,
+            steps,
+            currentStep,
+            setCurrentStep,
         });
     };
 
     const stepData = {
         title: purchaseData.configurator == "template" ? "Vorlage wählen" : "Platzierung",
-        // description: "Passen Sie das Design auf dem Produkt an.",
     };
 
-    // Parse and prioritize positions
-    // Parse and prioritize positions
+    // Positions (Template)
     const getPositions = () => {
         if (product?.fixedPositions?.value) {
-            // Parse fixed positions and map them to the expected structure
             const fixed = JSON.parse(product.fixedPositions.value);
-
-            // Front positions: Brust, Oberschenkel vorne, Vorne
             const frontPositions = fixed
                 .filter(
                     (pos) =>
@@ -326,150 +205,42 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                         pos.includes("Zollstock") ||
                         pos.includes("Front")
                 )
-                .map((name) => ({
-                    name,
-                    enabled: true,
-                    position: { x: 0.42, y: 0.42 },
-                }));
-
-            // Back positions: Rücken, Oberschenkel hinten, Hinten
+                .map((name) => ({ name, enabled: true, position: { x: 0.42, y: 0.42 } }));
             const backPositions = fixed
                 .filter(
-                    (pos) =>
-                        pos.includes("Rücken") ||
-                        pos.includes("Oberschenkel hinten") ||
-                        pos.includes("Zollstock") ||
-                        pos.includes("Hinten")
+                    (pos) => pos.includes("Rücken") || pos.includes("Oberschenkel hinten") || pos.includes("Hinten")
                 )
-                .map((name) => ({
-                    name,
-                    enabled: true,
-                    position: { x: 0.42, y: 0.42 },
-                }));
-
-            return {
-                front: { default: frontPositions },
-                back: { default: backPositions },
-            };
+                .map((name) => ({ name, enabled: true, position: { x: 0.42, y: 0.42 } }));
+            return { front: { default: frontPositions }, back: { default: backPositions } };
         }
-
-        // Default to templatePositions if no fixed positions exist
         return product?.templatePositions ? JSON.parse(product.templatePositions.value).properties : null;
     };
-
     const positions = getPositions();
 
-    // At the top of your component, ensure purchaseData.sides exists
     useEffect(() => {
         if (!purchaseData.sides) {
             setPurchaseData((prev) => ({ ...prev, sides: { front: {} } }));
         }
     }, []);
 
-    // In ConfigureDesign, right before the useEffect that sets the default position:
-    const effectivePositions = positions || {
-        front: { default: [{ name: "front", position: { x: 0.5, y: 0.5 } }] },
-    };
-    // If the current side isn’t defined in positions, default to "front"
-    const effectiveSide = effectivePositions[currentSide] ? currentSide : "front";
-
-    useEffect(() => {
-        if (!purchaseData.sides[currentSide]?.position && positions[currentSide]?.default) {
-            const defaultOption = positions[currentSide].default[0];
-            setSelectedValue(defaultOption.name);
-
-            if (purchaseData.boundingRect) {
-                // Use custom bounding box for position calculations:
-                setPurchaseData({
-                    ...purchaseData,
-                    sides: {
-                        ...purchaseData.sides,
-                        [currentSide]: {
-                            ...purchaseData.sides[currentSide],
-                            position: defaultOption.name,
-                            xPosition:
-                                purchaseData.boundingRect.x +
-                                purchaseData.boundingRect.width * defaultOption.position.x,
-                            yPosition:
-                                purchaseData.boundingRect.y +
-                                purchaseData.boundingRect.height * defaultOption.position.y,
-                        },
-                    },
-                });
-            } else {
-                // Fallback to full container calculations:
-                setPurchaseData({
-                    ...purchaseData,
-                    sides: {
-                        ...purchaseData.sides,
-                        [currentSide]: {
-                            ...purchaseData.sides[currentSide],
-                            position: defaultOption.name,
-                            xPosition: purchaseData.containerWidth * defaultOption.position.x,
-                            yPosition: purchaseData.containerHeight * defaultOption.position.y,
-                        },
-                    },
-                });
-            }
-        }
-    }, [
-        currentSide,
-        positions,
-        purchaseData.containerWidth,
-        purchaseData.containerHeight,
-        purchaseData.boundingRect, // include this dependency
-    ]);
-
-    useEffect(() => {
-        console.log(
-            "SIDESWITCH",
-            purchaseData.sides[currentSide]?.xPosition,
-            purchaseData.sides[currentSide]?.yPosition
-        );
-    }, [currentSide]);
-
-    // Handle position change
     const handleChange = (value) => {
         setPurchaseData((prevData) => ({
             ...prevData,
             sides: {
                 ...prevData.sides,
-                [currentSide]: {
-                    ...prevData.sides[currentSide],
-                    position: value,
-                },
+                [currentSide]: { ...prevData.sides[currentSide], position: value },
             },
         }));
     };
 
-    // Initialize default position for the current side
     useEffect(() => {
-        const defaultOption = positions[currentSide]?.default?.[0];
-        if (!purchaseData.sides[currentSide]?.position && defaultOption) {
-            setPurchaseData((prevData) => ({
-                ...prevData,
-                sides: {
-                    ...prevData.sides,
-                    [currentSide]: {
-                        ...prevData.sides[currentSide],
-                        position: defaultOption.name,
-                    },
-                },
-            }));
-        }
-    }, [currentSide, positions, setPurchaseData, purchaseData.sides]);
-
-    useEffect(() => {
-        const side = purchaseData.currentSide;
-        const sideData = purchaseData.sides[side] || {};
-        // If xPosition or yPosition is missing, center it in the pink box:
+        const sideKey = purchaseData.currentSide;
+        const sideData = purchaseData.sides[sideKey] || {};
         if (purchaseData.boundingRect && (sideData.xPosition == null || sideData.yPosition == null)) {
             const { x: bx, y: by, width: bw, height: bh } = purchaseData.boundingRect;
-            // If you already have width/scale in sideData use them, otherwise assume desiredWidth/Height:
             const w = sideData.width || 120;
             const h = sideData.height || 120;
             const s = sideData.scale || 1;
-            // Center top-left:
             const centeredX = bx + (bw - w * s) / 2;
             const centeredY = by + (bh - h * s) / 2;
 
@@ -477,11 +248,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 ...prev,
                 sides: {
                     ...prev.sides,
-                    [side]: {
-                        ...prev.sides[side],
-                        xPosition: centeredX,
-                        yPosition: centeredY,
-                    },
+                    [sideKey]: { ...prev.sides[sideKey], xPosition: centeredX, yPosition: centeredY },
                 },
             }));
         }
@@ -494,24 +261,113 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         purchaseData.sides,
     ]);
 
-    // let minX = 0;
-    // let maxX = purchaseData.containerWidth; // fallback
-    // let minY = 0;
-    // let maxY = purchaseData.containerHeight; // fallback
+    // Active helpers
+    const setTextProp = (patch) => {
+        if (!activeText) return;
+        updateText(currentSide, activeText.id, patch);
+    };
+    const handleCenterX = () => centerHorizontally({ purchaseData, setPurchaseData, currentSide });
+    const handleCenterY = () => centerVertically({ purchaseData, setPurchaseData, currentSide });
+    const handleResetRotation = () => {
+        if (!activeGraphic) return;
+        setPurchaseData((prev) => ({
+            ...prev,
+            sides: {
+                ...prev.sides,
+                [currentSide]: {
+                    ...prev.sides[currentSide],
+                    uploadedGraphics: prev.sides[currentSide].uploadedGraphics.map((g) =>
+                        g.id === activeGraphicId ? { ...g, rotation: 0 } : g
+                    ),
+                },
+            },
+        }));
+    };
+    const handleResetScaleBtn = () => resetScale({ purchaseData, setPurchaseData, currentSide });
 
-    // if (boundingRect) {
-    //     minX = boundingRect.x;
-    //     maxX = boundingRect.x + boundingRect.width - 120;
-    //     minY = boundingRect.y;
-    //     maxY = boundingRect.y + boundingRect.height - 120;
-    // }
+    // Empty state check
+    const noElementsCurrent = uploadedGraphics.length === 0 && texts.length === 0;
+
+    // Front → Back Übernehmen
+    const frontSide = purchaseData.sides?.front || { uploadedGraphics: [], texts: [] };
+    const hasFrontStuff = (frontSide.uploadedGraphics?.length || 0) > 0 || (frontSide.texts?.length || 0) > 0;
+
+    const centerX = (purchaseData.boundingRect?.x || 0) + (purchaseData.boundingRect?.width || containerWidth) / 2;
+    const centerY = (purchaseData.boundingRect?.y || 0) + (purchaseData.boundingRect?.height || containerHeight) / 2;
+
+    const copyGraphicToCurrent = (g) => {
+        const id = uuidv4();
+        setPurchaseData((prev) => ({
+            ...prev,
+            sides: {
+                ...prev.sides,
+                [currentSide]: {
+                    ...prev.sides[currentSide],
+                    uploadedGraphics: [
+                        ...(prev.sides[currentSide].uploadedGraphics || []),
+                        { ...g, id, xPosition: centerX, yPosition: centerY, rotation: 0 },
+                    ],
+                    activeGraphicId: id,
+                    activeElement: { type: "graphic", id },
+                },
+            },
+        }));
+    };
+
+    const copyTextToCurrent = (t) => {
+        const id = uuidv4();
+        setPurchaseData((prev) => ({
+            ...prev,
+            sides: {
+                ...prev.sides,
+                [currentSide]: {
+                    ...prev.sides[currentSide],
+                    texts: [
+                        ...(prev.sides[currentSide].texts || []),
+                        { ...t, id, x: centerX, y: centerY, rotation: 0 },
+                    ],
+                    activeTextId: id,
+                    activeElement: { type: "text", id },
+                },
+            },
+        }));
+    };
+
+    const addCenteredText = () => {
+        const id = uuidv4();
+        setPurchaseData((prev) => ({
+            ...prev,
+            sides: {
+                ...prev.sides,
+                [currentSide]: {
+                    ...prev.sides[currentSide],
+                    texts: [
+                        ...(prev.sides[currentSide].texts || []),
+                        {
+                            id,
+                            value: "Text hier bearbeiten",
+                            x: centerX,
+                            y: centerY,
+                            fontSize: 36,
+                            fontFamily: "Roboto",
+                            fill: "#000",
+                            scale: 1,
+                            rotation: 0,
+                        },
+                    ],
+                    activeTextId: id,
+                    activeElement: { type: "text", id },
+                },
+            },
+        }));
+    };
 
     return (
         <div className="flex flex-col lg:px-16 lg:mt-4 2xl:mt-8 font-body ">
-            {/* Check for mobile Design, if true dont render it for UI reasons */}
-            {steps[currentStep] === "Design" && isMobile ? null : <ContentWrapper data={stepData} showToggle />}
+            {/* Header */}
+            {/* {steps[currentStep] === "Design" && isMobile ? null : <ContentWrapper data={stepData} showToggle />} */}
 
-            {/* Material-UI Tabs Component */}
+            {/* Tabs */}
             <Tabs
                 value={tabIndex}
                 onChange={handleTabChange}
@@ -520,356 +376,304 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 aria-label="Product side tabs"
                 centered={isMobile}
                 className="mb-8 font-body text-xl !hidden lg:!flex"
-                style={{ color: "#4f46e5", textAlign: "center" }} // Inline style to override default MUI color
+                style={{ color: "#4f46e5", textAlign: "center" }}
                 sx={{
-                    "& .MuiTabs-indicator": {
-                        backgroundColor: "#ba979d", // Replace with your Tailwind primary color
-                    },
-                    "& .Mui-selected": {
-                        color: "#393836!important", // Selected tab color
-                        fontWeight: "bold", // Bold text for   centered={isMobile}the active tab
-                    },
-                    "& .MuiTab-root": {
-                        minWidth: 0, // Minimize width for better styling control
-                        padding: "0.75rem 1.5rem", // Add custom padding
-                        transition: "color 0.3s", // Smooth color transition
-                    },
+                    "& .MuiTabs-indicator": { backgroundColor: "#ba979d" },
+                    "& .Mui-selected": { color: "#393836!important", fontWeight: "bold" },
+                    "& .MuiTab-root": { minWidth: 0, padding: "0.75rem 1.5rem", transition: "color 0.3s" },
                 }}
             >
-                <Tab
-                    label="Vorderseite"
-                    className="text-xl font-semibold text-textColor px-4 py-2 hover:text-primaryColor transition-colors duration-300"
-                />
-                {selectedVariant?.backImageUrl && (
-                    <Tab
-                        label="Rückseite"
-                        className="text-lg font-semibold text-textColor px-4 py-2 hover:text-primaryColor transition-colors duration-300"
-                    />
-                )}
+                <Tab label="Vorderseite" className="text-xl font-semibold" />
+                {selectedVariant?.backImageUrl && <Tab label="Rückseite" className="text-lg font-semibold" />}
             </Tabs>
 
-            {/* Upload Button Section */}
-            {!purchaseData.sides[currentSide].uploadedGraphicFile ? (
-                <Button
-                    variant="contained"
-                    component="label"
-                    sx={{
-                        mt: 1.5, // Tailwind equivalent for `mt-6`
-                        px: 3, // Tailwind equivalent for `px-6`
-                        py: 1, // Tailwind equivalent for `py-2`
-                        backgroundColor: "#ba979d",
-                        color: "white",
-                        fontFamily: "Montserrat",
-                        borderRadius: "8px",
-                        "&:hover": {
-                            backgroundColor: "primaryColor.light",
-                        },
-                        boxShadow: "none",
-                    }}
-                >
-                    Datei hochladen
-                    <input type="file" hidden onChange={handleGraphicUpload} />
-                </Button>
-            ) : purchaseData.configurator === "template" ? (
-                <>
-                    <div className="flex flex-wrap  lg:mb-4">
-                        {positions[currentSide].default.map((option, index) => (
-                            <CustomRadioButton
-                                key={`radio${index}`}
-                                id={option.name}
-                                name="custom-radio-group"
-                                label={option.name}
-                                icon={option.icon}
-                                value={option.name}
-                                product={product}
-                                checked={purchaseData.sides[currentSide]?.position === option.name}
-                                onChange={() => handleChange(option.name, option.position.x, option.position.y)} // Pass additional parameters
-                            />
-                        ))}
-                    </div>{" "}
-                </>
+            {/* --- Steuerbereich --- */}
+            {purchaseData.configurator === "template" ? (
+                // TEMPLATE: Radio-Buttons (bleibt!)
+                <div className="flex flex-wrap lg:mb-4">
+                    {positions?.[currentSide]?.default?.map((option, index) => (
+                        <CustomRadioButton
+                            key={`radio${index}`}
+                            id={option.name}
+                            name="custom-radio-group"
+                            label={option.name}
+                            icon={option.icon}
+                            value={option.name}
+                            product={product}
+                            checked={purchaseData.sides[currentSide]?.position === option.name}
+                            onChange={() => handleChange(option.name, option.position.x, option.position.y)}
+                        />
+                    ))}
+                </div>
+            ) : noElementsCurrent ? (
+                // FREIE PLATZIERUNG: Leerer Zustand → zwei CTAs
+                <div className="flex gap-3">
+                    <Button
+                        variant="contained"
+                        component="label"
+                        sx={{
+                            mt: 1.5,
+                            px: 3,
+                            py: 1,
+                            backgroundColor: "#ba979d",
+                            color: "white",
+                            borderRadius: "8px",
+                            boxShadow: "none",
+                            "&:hover": { backgroundColor: "primaryColor.light" },
+                        }}
+                        startIcon={<FiImage />}
+                    >
+                        Datei hochladen
+                        <input type="file" hidden onChange={handleGraphicUpload} accept="image/*,application/pdf" />
+                    </Button>
+
+                    <Button
+                        variant="contained"
+                        sx={{
+                            mt: 1.5,
+                            px: 3,
+                            py: 1,
+                            backgroundColor: "#393836",
+                            color: "white",
+                            borderRadius: "8px",
+                            boxShadow: "none",
+                            "&:hover": { backgroundColor: "#2c2b29" },
+                        }}
+                        startIcon={<FiType />}
+                        onClick={addCenteredText}
+                    >
+                        Text hinzufügen
+                    </Button>
+                </div>
             ) : (
-                <div className="hidden lg:block">
-                    <div className="mb-4 lg:mb-2 2xl:mb-4">
-                        <P klasse="!text-xs 2xl:!text-sm !mb-0">X-Achse Position</P>
-                        <div className="flex space-x-4">
-                            <Slider
-                                value={purchaseData.sides[currentSide].xPosition}
-                                min={minX}
-                                max={maxX}
-                                onChange={handleXChange}
-                                aria-labelledby="x-axis-slider"
-                                sx={{
-                                    "& .MuiSlider-thumb": {
-                                        backgroundColor: "#393836",
-                                        width: 20,
-                                        height: 20,
-                                        border: "2px solid white",
-                                        "&:hover, &.Mui-focusVisible": {
-                                            boxShadow: "0px 0px 0px 8px rgba(79, 70, 229, 0.16)",
-                                        },
-                                    },
-                                    "& .MuiSlider-track": {
-                                        backgroundColor: "#e6d1d5",
-                                        height: 6,
-                                        border: "none",
-                                    },
-                                    "& .MuiSlider-rail": {
-                                        backgroundColor: "#EBE0E1",
-                                        height: 6,
-                                    },
-                                    "& .MuiSlider-valueLabel": {
-                                        backgroundColor: "#4f46e5",
-                                        color: "white",
-                                        fontSize: "0.875rem",
-                                    },
-                                }}
-                            />
+                // FREIE PLATZIERUNG: Controls für aktives Element
+                <>
+                    {active?.type === "text" ? (
+                        <TextControls
+                            textObj={activeText}
+                            setTextProp={setTextProp}
+                            xMin={xMinText}
+                            xMax={xMaxText}
+                            yMin={yMinText}
+                            yMax={yMaxText}
+                            sizeMin={fontSizeMin}
+                            sizeMax={fontSizeMax}
+                        />
+                    ) : (
+                        <GraphicControls
+                            activeGraphic={activeGraphic}
+                            minX={minX}
+                            maxX={maxX}
+                            minY={minY}
+                            maxY={maxY}
+                            allowedMaxScale={allowedMaxScale}
+                            onX={handleXChange}
+                            onY={handleYChange}
+                            onRotation={handleRotationChange}
+                            onScale={handleScaleChange}
+                            onCenterX={centerHorizontally && (() => handleCenterX())}
+                            onCenterY={centerVertically && (() => handleCenterY())}
+                            onResetRotation={handleResetRotation}
+                            onResetScale={handleResetScaleBtn}
+                        />
+                    )}
+                </>
+            )}
+
+            {/* Rückseite: Von der Vorderseite übernehmen */}
+            {purchaseData.configurator !== "template" && currentSide === "back" && hasFrontStuff && (
+                <div className="mt-8">
+                    <P klasse="!text-sm 2xl:!text-base !mb-2">Von der Vorderseite übernehmen</P>
+                    <div className="flex flex-wrap gap-4">
+                        {(frontSide.uploadedGraphics || []).map((g) => (
                             <button
-                                className=" bg-textColor text-white p-2 rounded-[10px]"
-                                onClick={() => centerHorizontally({ purchaseData, setPurchaseData, currentSide })}
+                                key={`fg-${g.id}`}
+                                className="flex items-center gap-2 p-2 rounded-2xl border border-[#ececec] bg-white hover:bg-[#f7f2f4] transition"
+                                onClick={() => copyGraphicToCurrent(g)}
+                                title="Grafik auf Rückseite kopieren"
                             >
-                                <FiGitCommit />
+                                <img
+                                    className="max-h-20 max-w-20 rounded-xl border border-[#e0d0d0] object-contain"
+                                    src={g.file instanceof Blob ? URL.createObjectURL(g.file) : g.downloadURL || ""}
+                                    alt="Front-Grafik"
+                                />
+                                <span className="text-xs">Übernehmen</span>
                             </button>
-                        </div>
-                    </div>
-                    <div className="mb-4 lg:mb-2 2xl:mb-4">
-                        <P klasse="!text-xs 2xl:!text-sm !mb-0">Y-Achse Position</P>
-                        <div className="flex space-x-4">
-                            <Slider
-                                value={purchaseData.sides[currentSide].yPosition}
-                                min={minY}
-                                max={maxY}
-                                onChange={handleYChange}
-                                aria-labelledby="y-axis-slider"
-                                sx={{
-                                    "& .MuiSlider-thumb": {
-                                        backgroundColor: "#393836",
-                                        width: 20,
-                                        height: 20,
-                                        border: "2px solid white",
-                                        "&:hover, &.Mui-focusVisible": {
-                                            boxShadow: "0px 0px 0px 8px rgba(79, 70, 229, 0.16)",
-                                        },
-                                    },
-                                    "& .MuiSlider-track": {
-                                        backgroundColor: "#e6d1d5",
-                                        height: 6,
-                                        border: "none",
-                                    },
-                                    "& .MuiSlider-rail": {
-                                        backgroundColor: "#EBE0E1",
-                                        height: 6,
-                                    },
-                                    "& .MuiSlider-valueLabel": {
-                                        backgroundColor: "#EBE0E1",
-                                        color: "white",
-                                        fontSize: "0.875rem",
-                                    },
-                                }}
-                            />
+                        ))}
+
+                        {(frontSide.texts || []).map((t) => (
                             <button
-                                className="rotate-90 bg-textColor text-white p-2 rounded-[10px]"
-                                onClick={() => centerVertically({ purchaseData, setPurchaseData, currentSide })}
+                                key={`ft-${t.id}`}
+                                className="flex items-center gap-2 p-2 rounded-2xl border border-[#ececec] bg-white hover:bg-[#f7f2f4] transition"
+                                onClick={() => copyTextToCurrent(t)}
+                                title={`"${t.value || "Text"}" auf Rückseite kopieren`}
                             >
-                                <FiGitCommit />
+                                <div className="w-20 h-20 rounded-xl border border-[#e0d0d0] grid place-items-center">
+                                    <FiType size={28} />
+                                </div>
+                                <span className="text-xs max-w-[10rem] truncate">{t.value || "Text"}</span>
                             </button>
-                        </div>
+                        ))}
                     </div>
-                    {/* NEW: Rotation Slider */}
-                    <div className="mb-4 lg:mb-2 2xl:mb-4">
-                        <P klasse="!text-xs 2xl:!text-sm !mb-0">Rotation</P>
-                        <div className="flex space-x-4">
-                            {/* Slider now ranges from -180 to 180, centered at 0 (CCW negative, CW positive) */}
-                            <Slider
-                                value={purchaseData.sides[currentSide].rotation || 0}
-                                min={-180}
-                                max={180}
-                                step={1}
-                                onChange={handleRotationChange}
-                                aria-labelledby="rotation-slider"
-                                sx={{
-                                    "& .MuiSlider-thumb": {
-                                        backgroundColor: "#393836",
-                                        width: 20,
-                                        height: 20,
-                                        border: "2px solid white",
-                                        "&:hover, &.Mui-focusVisible": {
-                                            boxShadow: "0px 0px 0px 8px rgba(79, 70, 229, 0.16)",
-                                        },
-                                    },
-                                    "& .MuiSlider-track": { backgroundColor: "#e6d1d5", height: 6, border: "none" },
-                                    "& .MuiSlider-rail": { backgroundColor: "#EBE0E1", height: 6 },
-                                    "& .MuiSlider-valueLabel": {
-                                        backgroundColor: "#4f46e5",
-                                        color: "white",
-                                        fontSize: "0.875rem",
-                                    },
-                                }}
-                            />
-                            <button
-                                className="bg-textColor text-white p-2 rounded-[10px]"
+                </div>
+            )}
+
+            {/* Veredelungstabelle */}
+            <div className="info w-full lg:will-change-auto">
+                {!product?.preisModell?.value.includes("Alles inklusive") && (
+                    <VeredelungTable brustData={veredelungen.front} rueckenData={veredelungen.back} />
+                )}
+            </div>
+
+            {/* Previews der AKTUELLEN Seite (Grafiken + Texte) */}
+            {uploadedGraphics.length > 0 || texts.length > 0 ? (
+                <div className="flex flex-wrap gap-4 mt-6">
+                    {/* Grafiken */}
+                    {uploadedGraphics.map((g) => (
+                        <div
+                            key={g.id}
+                            className={`flex items-top gap-2 p-2 rounded-2xl border border-[#ececec] ${
+                                activeGraphicId === g.id && active?.type !== "text" ? "bg-[#f3e9ec] shadow" : "bg-white"
+                            }`}
+                            style={{ minWidth: 100 }}
+                        >
+                            <img
+                                className="max-h-20 max-w-20 rounded-xl border border-[#e0d0d0] object-contain cursor-pointer"
+                                src={g.file instanceof Blob ? URL.createObjectURL(g.file) : g.downloadURL || ""}
+                                alt="Preview"
                                 onClick={() => {
-                                    // reset rotation to zero
-                                    setPurchaseData({
-                                        ...purchaseData,
+                                    setPurchaseData((prev) => ({
+                                        ...prev,
                                         sides: {
-                                            ...purchaseData.sides,
+                                            ...prev.sides,
                                             [currentSide]: {
-                                                ...purchaseData.sides[currentSide],
-                                                rotation: 0,
+                                                ...prev.sides[currentSide],
+                                                activeGraphicId: g.id,
+                                                activeElement: { type: "graphic", id: g.id },
                                             },
                                         },
-                                    });
+                                    }));
                                 }}
-                            >
-                                <FiRotateCcw />
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="mb-4 lg:mb-2 2xl:mb-4">
-                        <P klasse="!text-xs 2xl:!text-sm !mb-0">Größe</P>
-                        <div className="flex space-x-4">
-                            <Slider
-                                value={purchaseData.sides[currentSide].scale}
-                                min={0.3}
-                                max={allowedMaxScale} // computed above
-                                step={0.01}
-                                onChange={handleScaleChange}
-                                aria-labelledby="scale-slider"
-                                sx={{
-                                    "& .MuiSlider-thumb": {
-                                        backgroundColor: "#393836",
-                                        width: 20,
-                                        height: 20,
-                                        border: "2px solid white",
-                                        "&:hover, &.Mui-focusVisible": {
-                                            boxShadow: "0px 0px 0px 8px rgba(79, 70, 229, 0.16)",
-                                        },
-                                    },
-                                    "& .MuiSlider-track": {
-                                        backgroundColor: "#e6d1d5",
-                                        height: 6,
-                                        border: "none",
-                                    },
-                                    "& .MuiSlider-rail": {
-                                        backgroundColor: "#EBE0E1",
-                                        height: 6,
-                                    },
-                                    "& .MuiSlider-valueLabel": {
-                                        backgroundColor: "#4f46e5",
-                                        color: "white",
-                                        fontSize: "0.875rem",
-                                    },
+                                style={{
+                                    border:
+                                        activeGraphicId === g.id && active?.type !== "text"
+                                            ? "2px solid #ba979d"
+                                            : undefined,
                                 }}
                             />
-                            <button
-                                className=" bg-textColor text-white p-2 rounded-[10px]"
-                                onClick={() => resetScale({ purchaseData, setPurchaseData, currentSide })}
-                            >
-                                <FiMaximize />
-                            </button>{" "}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Copy Front Design to Back */}
-            {tabIndex === 1 && !purchaseData.sides[currentSide].uploadedGraphicFile && (
-                <FormControlLabel
-                    control={<Checkbox checked={copyFrontToBack} onChange={handleCopyFrontToBack} color="primary" />}
-                    label="Vorderseite auf Rückseite kopieren"
-                    className="mt-8 font-body" // Use Tailwind CSS class
-                    sx={{
-                        "& .MuiTypography-root": {
-                            fontFamily: "Montserrat, sans-serif", // Ensure Montserrat font is applied
-                            fontWeight: "400", // Optional: Adjust font weight if needed
-                        },
-                    }}
-                />
-            )}
-
-            {purchaseData.sides[currentSide].uploadedGraphicFile && (
-                <div className="flex items-center space-x-4 flex-wrap justify-between">
-                    <div className="info w-full lg:will-change-auto">
-                        {console.log(product?.preisModell?.value.includes("Alles inklusive"))}
-                        {!product?.preisModell?.value.includes("Alles inklusive") && (
-                            <VeredelungTable brustData={veredelungen.front} rueckenData={veredelungen.back} />
-                        )}
-                    </div>
-                    <div className="flex items-center gap-4 mt-4 font-body text-sm">
-                        {/* {purchaseData.sides[currentSide].isPDF ? (
-                            <img
-                                className="max-h-24 max-w-24 rounded-[20px]"
-                                src={purchaseData.sides[currentSide].preview}
-                                alt="Uploaded Preview"
-                            />
-                        ) : (
-                            <img
-                                className="max-h-24 max-w-36 rounded-[20px]"
-                                src={URL.createObjectURL(purchaseData.sides[currentSide].uploadedGraphicFile)}
-                                alt="Uploaded Preview"
-                            />
-                        )} */}
-
-                        {(() => {
-                            const side = purchaseData.sides[currentSide];
-                            if (side.isPDF) {
-                                return (
-                                    <img
-                                        className="max-h-24 max-w-24 rounded-[20px]"
-                                        src={side.preview}
-                                        alt="Uploaded Preview"
-                                    />
-                                );
-                            }
-
-                            // if it's an actual File/Blob, createObjectURL; otherwise use your saved URL
-                            const fileOrUrl = side.uploadedGraphicFile;
-                            const previewSrc =
-                                fileOrUrl instanceof Blob
-                                    ? URL.createObjectURL(fileOrUrl)
-                                    : side.uploadedGraphic?.downloadURL || "";
-
-                            return (
-                                <img
-                                    className="max-h-24 max-w-36 rounded-[20px]"
-                                    src={previewSrc}
-                                    alt="Uploaded Preview"
+                            <div className="flex flex-col gap-1">
+                                <IconButton
+                                    onClick={() => {
+                                        setPurchaseData((prev) => {
+                                            const next = prev.sides[currentSide].uploadedGraphics.filter(
+                                                (gg) => gg.id !== g.id
+                                            );
+                                            const wasActive =
+                                                prev.sides[currentSide].activeGraphicId === g.id &&
+                                                prev.sides[currentSide].activeElement?.type === "graphic";
+                                            return {
+                                                ...prev,
+                                                sides: {
+                                                    ...prev.sides,
+                                                    [currentSide]: {
+                                                        ...prev.sides[currentSide],
+                                                        uploadedGraphics: next,
+                                                        activeGraphicId: wasActive
+                                                            ? next[0]?.id || null
+                                                            : prev.sides[currentSide].activeGraphicId,
+                                                        activeElement: wasActive
+                                                            ? texts[0]
+                                                                ? { type: "text", id: texts[0].id }
+                                                                : next[0]
+                                                                ? { type: "graphic", id: next[0].id }
+                                                                : null
+                                                            : prev.sides[currentSide].activeElement,
+                                                    },
+                                                },
+                                            };
+                                        });
+                                    }}
+                                    icon={FiX}
+                                    label="Löschen"
+                                    bgColor="bg-errorColor"
+                                    hoverColor="hover:bg-red-600"
+                                    textColor="text-white"
                                 />
-                            );
-                        })()}
-
-                        <div className="flex flex-col gap-2">
-                            <IconButton
-                                onClick={() => {
-                                    handleDeleteUpload({ purchaseData, setPurchaseData, currentSide }),
-                                        setCopyFrontToBack(false);
-                                }}
-                                icon={FiX}
-                                label="Löschen"
-                                bgColor="bg-errorColor"
-                                hoverColor="hover:bg-red-600"
-                                textColor="text-white"
-                            />
-                            <IconButton
-                                onClick={() => {
-                                    handleShowDetails({
-                                        uploadedFile: purchaseData.sides[currentSide].uploadedGraphicFile,
-                                        setModalOpen: setModalOpen,
-                                    });
-                                }}
-                                icon={FiInfo}
-                                label="Details anzeigen"
-                                bgColor="bg-infoColor"
-                                hoverColor="hover:bg-primaryColor-600"
-                                textColor="text-white"
-                            />
+                            </div>
                         </div>
-                    </div>
+                    ))}
+
+                    {/* Texte */}
+                    {texts.map((t) => {
+                        const isActiveText = active?.type === "text" && active.id === t.id;
+                        return (
+                            <div
+                                key={t.id}
+                                className={`flex items-center gap-2 p-2 rounded-2xl border border-[#ececec] ${
+                                    isActiveText ? "bg-[#f3e9ec] shadow" : "bg-white"
+                                }`}
+                                style={{ minWidth: 100 }}
+                            >
+                                <button
+                                    className="w-20 h-20 rounded-xl border border-[#e0d0d0] grid place-items-center cursor-pointer"
+                                    onClick={() => setActiveElement(currentSide, "text", t.id)}
+                                    title={t.value}
+                                    style={{ border: isActiveText ? "2px solid #ba979d" : undefined }}
+                                >
+                                    <FiType size={28} />
+                                </button>
+
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-xs max-w-[10rem] truncate" title={t.value}>
+                                        {t.value || "Text"}
+                                    </span>
+
+                                    <IconButton
+                                        onClick={() => {
+                                            setPurchaseData((prev) => {
+                                                const nextTexts = prev.sides[currentSide].texts.filter(
+                                                    (tt) => tt.id !== t.id
+                                                );
+                                                const wasActiveText =
+                                                    prev.sides[currentSide].activeElement?.type === "text" &&
+                                                    prev.sides[currentSide].activeElement?.id === t.id;
+
+                                                const nextActive = wasActiveText
+                                                    ? nextTexts[0]
+                                                        ? { type: "text", id: nextTexts[0].id }
+                                                        : uploadedGraphics[0]
+                                                        ? { type: "graphic", id: uploadedGraphics[0].id }
+                                                        : null
+                                                    : prev.sides[currentSide].activeElement;
+
+                                                return {
+                                                    ...prev,
+                                                    sides: {
+                                                        ...prev.sides,
+                                                        [currentSide]: {
+                                                            ...prev.sides[currentSide],
+                                                            texts: nextTexts,
+                                                            activeTextId: wasActiveText
+                                                                ? nextTexts[0]?.id || null
+                                                                : prev.sides[currentSide].activeTextId,
+                                                            activeElement: nextActive,
+                                                        },
+                                                    },
+                                                };
+                                            });
+                                        }}
+                                        icon={FiX}
+                                        label="Löschen"
+                                        bgColor="bg-errorColor"
+                                        hoverColor="hover:bg-red-600"
+                                        textColor="text-white"
+                                    />
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
-            )}
+            ) : null}
         </div>
     );
 }

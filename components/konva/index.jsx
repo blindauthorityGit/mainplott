@@ -2,12 +2,17 @@ import React, { useRef, useEffect, useState, forwardRef, useMemo } from "react";
 import { Stage, Layer, Group, Image as KonvaImage, Rect, Transformer, Text } from "react-konva";
 import useStore from "@/store/store";
 import { Button } from "@mui/material";
-import { FiZoomIn, FiZoomOut, FiRefreshCw } from "react-icons/fi";
+import { FiZoomIn, FiZoomOut, FiRefreshCw, FiPlus, FiX, FiType, FiImage } from "react-icons/fi";
 import { exportCanvas } from "@/functions/exportCanvas";
 import MobileSliders from "@/components/productConfigurator/mobile/mobileSliders";
 import getImagePlacement, { getFixedImagePlacement } from "@/functions/getImagePlacement";
 import useIsMobile from "@/hooks/isMobile";
 import Konva from "konva";
+import handleAddGraphicToArray from "@/functions/handleMultiFileUpload";
+import uploadGraphic from "@/functions/uploadGraphic";
+import useImageObjects from "@/hooks/useImageObjects";
+import { v4 as uuidv4 } from "uuid"; // npm i uuid
+import { exportWithHiddenNodes } from "@/functions/exportWithHiddenNodes";
 
 const KonvaLayer = forwardRef(
     (
@@ -34,16 +39,58 @@ const KonvaLayer = forwardRef(
         const transformerRef = useRef(null);
         const boundaryRectRef = useRef(null);
         const tooltipRef = useRef(null);
+        const hiddenFileInputRef = useRef();
+        const textRefs = useRef({});
+        const textTransformerRef = useRef(null);
 
-        const { purchaseData, setPurchaseData, setStageRef, setTransformerRef } = useStore();
+        const stepAhead = true;
+
+        const {
+            purchaseData,
+            setPurchaseData,
+            setStageRef,
+            setTransformerRef,
+            setModalOpen,
+            setShowSpinner,
+            setModalContent,
+            setUploadError,
+            setColorSpace,
+            setDpi,
+            addText,
+            setActiveElement,
+            updateText,
+        } = useStore();
         const { containerWidth, containerHeight } = purchaseData;
+
+        const [uploading, setUploading] = useState(false);
 
         // NEW: Track when the images have loaded
         const [productImageLoaded, setProductImageLoaded] = useState(false);
         const [graphicLoaded, setGraphicLoaded] = useState(false);
 
         // Compute overall loaded state:
-        const isImagesLoaded = productImageLoaded && (!uploadedGraphicFile || graphicLoaded);
+        const currentSide = purchaseData.currentSide || "front";
+        const sideData = purchaseData.sides?.[currentSide] || {};
+        const uploadedGraphics = sideData.uploadedGraphics || [];
+        const activeGraphicId = sideData.activeGraphicId;
+        const graphicRefs = useRef({});
+        const active = purchaseData.sides?.[currentSide]?.activeElement || null;
+
+        // TEXT STATES
+        const sideTexts = sideData.texts || [];
+        const [editingTextId, setEditingTextId] = useState(null);
+        const [inputValue, setInputValue] = useState("");
+        const fontOptions = ["Roboto", "Arial", "Impact", "Comic Sans MS", "Montserrat", "Courier New"];
+
+        const [buttonPos, setButtonPos] = useState({ x: 0, y: 0 });
+
+        const files = useMemo(() => uploadedGraphics.map((g) => g.file), [uploadedGraphics]);
+        console.log("FILES", files);
+        const imageObjs = useImageObjects(files);
+        console.log("imageObjs", imageObjs);
+        const allGraphicsLoaded =
+            uploadedGraphics.length === 0 || (imageObjs.length === uploadedGraphics.length && imageObjs.every(Boolean));
+        const isImagesLoaded = productImageLoaded && allGraphicsLoaded;
 
         const [zoomLevel, setZoomLevel] = useState(1);
         const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
@@ -52,6 +99,39 @@ const KonvaLayer = forwardRef(
 
         const [transformerVisible, setTransformerVisible] = useState(false);
         const [isTemplate, setIsTemplate] = useState(purchaseData.configurator !== "template");
+        useEffect(() => {
+            if (transformerRef.current && activeGraphicId && graphicRefs.current[activeGraphicId]?.current) {
+                transformerRef.current.nodes([graphicRefs.current[activeGraphicId].current]);
+                transformerRef.current.getLayer().batchDraw();
+            }
+        }, [activeGraphicId, uploadedGraphics, imageObjs]);
+
+        // DELETB BUTTONS LOGIK
+        useEffect(() => {
+            if (!activeGraphicId || !graphicRefs.current[activeGraphicId]?.current || !stageRef.current) {
+                setButtonPos(null);
+                return;
+            }
+            const node = graphicRefs.current[activeGraphicId].current;
+            // 1. Canvas-Koordinaten holen
+            let x = node.x();
+            let y = node.y();
+            // 2. Offset beachten (wenn zentriert wird!)
+            x -= node.offsetX() * node.scaleX();
+            y -= node.offsetY() * node.scaleY();
+            // 3. Rechts oben am Bild
+            const btnX = x + node.width() * node.scaleX();
+            const btnY = y;
+            // 4. In Stage-Koordinaten (Zoom/Pos beachten)
+            const scale = zoomLevel;
+            const stageX = stageRef.current.x() || 0;
+            const stageY = stageRef.current.y() || 0;
+            // 5. In den Parent-div umrechnen
+            setButtonPos({
+                left: btnX * scale + stageX,
+                top: btnY * scale + stageY,
+            });
+        }, [activeGraphicId, imageObjs, zoomLevel, stagePosition]);
 
         // --- Hover state for the edit area ---
         const [isEditAreaHovered, setIsEditAreaHovered] = useState(false);
@@ -95,6 +175,50 @@ const KonvaLayer = forwardRef(
         useEffect(() => {
             setIsTemplate(purchaseData.configurator !== "template");
         }, [purchaseData.configurator]);
+
+        // Text-Drag-Bounding: hält den gesamten Text (inkl. Scale/Rotation) im boundingRect
+        const makeTextDragBound = (nodeRef) => (pos) => {
+            const brNode = boundaryRectRef.current;
+            const node = nodeRef?.current;
+            if (!brNode || !node) return pos;
+
+            const br = brNode.getClientRect(); // Bounding-Box (pink)
+            const cr = node.getClientRect(); // aktueller Text-ClientRect (inkl. Rotation/Scale)
+
+            // Vorgeschlagene Verschiebung
+            const dx = pos.x - node.x();
+            const dy = pos.y - node.y();
+
+            // ClientRect nach der Verschiebung
+            const next = {
+                x: cr.x + dx,
+                y: cr.y + dy,
+                width: cr.width,
+                height: cr.height,
+            };
+
+            let fixDx = dx;
+            let fixDy = dy;
+
+            // links
+            if (next.x < br.x) fixDx += br.x - next.x;
+            // oben
+            if (next.y < br.y) fixDy += br.y - next.y;
+            // rechts
+            const brRight = br.x + br.width;
+            const nextRight = next.x + next.width;
+            if (nextRight > brRight) fixDx -= nextRight - brRight;
+            // unten
+            const brBottom = br.y + br.height;
+            const nextBottom = next.y + next.height;
+            if (nextBottom > brBottom) fixDy -= nextBottom - brBottom;
+
+            // Wenn Text größer als Box ist: pinne an den linken/oberen Rand
+            if (cr.width > br.width) fixDx = br.x - cr.x;
+            if (cr.height > br.height) fixDy = br.y - cr.y;
+
+            return { x: node.x() + fixDx, y: node.y() + fixDy };
+        };
 
         // ---------------------------
         // Update config on load
@@ -194,9 +318,12 @@ const KonvaLayer = forwardRef(
         const boundingRect = addPadding(rawRect); // <-- hier Puffer drauf
 
         /* 4) Im State ablegen */
-        setPurchaseData((prev) => ({ ...prev, boundingRect }));
+        // setPurchaseData((prev) => ({ ...prev, boundingRect }));
+        useEffect(() => {
+            setPurchaseData((prev) => ({ ...prev, boundingRect }));
+        }, [boundingRect]);
 
-        console.log("KONFIG BOX:", purchaseData?.product?.konfigBox);
+        // console.log("KONFIG BOX:", purchaseData?.product?.konfigBox);
 
         // if (purchaseData?.product?.konfigBox && purchaseData?.product?.konfigBox?.value) {
         //     try {
@@ -264,7 +391,7 @@ const KonvaLayer = forwardRef(
 
         const printArea = React.useMemo(() => ({ ...boundingRect }), [boundingRect]);
 
-        console.log(boundingRect);
+        // console.log(boundingRect);
 
         useEffect(() => {
             if (uploadedGraphicRef.current) {
@@ -393,7 +520,21 @@ const KonvaLayer = forwardRef(
         // ---------------------------
         const handleExport = () => {
             handleResetZoom();
-            const dataURL = exportCanvas(stageRef, transformerRef, null, 1);
+
+            // Alles, was im Export nicht zu sehen sein soll:
+            const nodesToHide = [
+                transformerRef.current, // Bild-Transformer
+                textTransformerRef.current, // Text-Transformer (dein "Rahmen um den Text")
+                boundaryRectRef.current, // Print-Area-Rahmen
+                tooltipRef.current, // falls vorhanden
+            ];
+
+            // call exportCanvas wie bisher – nur eingewickelt
+            const dataURL = exportWithHiddenNodes({
+                stageRef,
+                nodes: nodesToHide,
+                exportFn: () => exportCanvas(stageRef, transformerRef, null, 2), // pixelRatio 2 empfohlen
+            });
 
             return dataURL;
         };
@@ -415,11 +556,31 @@ const KonvaLayer = forwardRef(
             setIsDraggingGraphic(true);
         };
 
-        const handleGraphicDragEnd = (e) => {
+        // const handleGraphicDragEnd = (e) => {
+        //     setIsDraggingGraphic(false);
+
+        //     if (isGraphicDraggable) {
+        //         setPosition({ x: e.target.x(), y: e.target.y() }, e.target.rotation());
+        //     }
+        // };
+        const handleGraphicDragEnd = (e, id) => {
             setIsDraggingGraphic(false);
             if (isGraphicDraggable) {
-                setPosition({ x: e.target.x(), y: e.target.y() }, e.target.rotation());
+                const { x, y } = e.target.position();
+                setPurchaseData((prev) => ({
+                    ...prev,
+                    sides: {
+                        ...prev.sides,
+                        [currentSide]: {
+                            ...prev.sides[currentSide],
+                            uploadedGraphics: prev.sides[currentSide].uploadedGraphics.map((g) =>
+                                g.id === id ? { ...g, xPosition: x, yPosition: y } : g
+                            ),
+                        },
+                    },
+                }));
             }
+            console.log("DRAG END", purchaseData);
         };
 
         // Update parent's scale continuously so slider stays in sync
@@ -430,15 +591,41 @@ const KonvaLayer = forwardRef(
             }
         };
 
-        const handleGraphicTransformEnd = (e) => {
+        // const handleGraphicTransformEnd = (e) => {
+        //     if (isGraphicDraggable) {
+        //         const newScale = Math.min(e.target.scaleX(), 5.5);
+        //         setScale(newScale);
+        //         e.target.scaleX(newScale);
+        //         e.target.scaleY(newScale);
+        //         const newRotation = e.target.rotation();
+        //         setPosition({ x: e.target.x(), y: e.target.y() }, newRotation);
+        //         e.target.getLayer().batchDraw();
+        //     }
+        // };
+
+        const handleGraphicTransformEnd = (e, id) => {
             if (isGraphicDraggable) {
-                const newScale = Math.min(e.target.scaleX(), 5.5);
-                setScale(newScale);
-                e.target.scaleX(newScale);
-                e.target.scaleY(newScale);
-                const newRotation = e.target.rotation();
-                setPosition({ x: e.target.x(), y: e.target.y() }, newRotation);
-                e.target.getLayer().batchDraw();
+                const node = e.target;
+                setPurchaseData((prev) => ({
+                    ...prev,
+                    sides: {
+                        ...prev.sides,
+                        [currentSide]: {
+                            ...prev.sides[currentSide],
+                            uploadedGraphics: prev.sides[currentSide].uploadedGraphics.map((g) =>
+                                g.id === id
+                                    ? {
+                                          ...g,
+                                          xPosition: node.x(),
+                                          yPosition: node.y(),
+                                          scale: node.scaleX(),
+                                          rotation: node.rotation(),
+                                      }
+                                    : g
+                            ),
+                        },
+                    },
+                }));
             }
         };
 
@@ -458,23 +645,37 @@ const KonvaLayer = forwardRef(
         // ---------------------------
         const dragBoundFunc = (pos) => {
             const boundingRectNode = boundaryRectRef.current;
-            const shapeNode = uploadedGraphicRef.current;
+            const shapeNode = graphicRefs.current[activeGraphicId]?.current;
             if (!boundingRectNode || !shapeNode) return pos;
+
             const boundingRect = boundingRectNode.getClientRect();
-            const shapeRect = shapeNode.getClientRect();
+
+            // WICHTIG: aktuelle scale berücksichtigen!
+            const scaleX = shapeNode.scaleX?.() ?? 1;
+            const scaleY = shapeNode.scaleY?.() ?? 1;
+            const width = (shapeNode.width?.() ?? 0) * scaleX;
+            const height = (shapeNode.height?.() ?? 0) * scaleY;
+            const halfW = width / 2;
+            const halfH = height / 2;
+
             let clampedX = pos.x;
             let clampedY = pos.y;
-            if (pos.x < boundingRect.x) {
-                clampedX = boundingRect.x;
+
+            // Links: Mittelpunkt >= linker Rand + halbe Breite
+            if (clampedX - halfW < boundingRect.x) {
+                clampedX = boundingRect.x + halfW;
             }
-            if (pos.x + shapeRect.width > boundingRect.x + boundingRect.width) {
-                clampedX = boundingRect.x + boundingRect.width - shapeRect.width;
+            // Rechts: Mittelpunkt <= rechter Rand - halbe Breite
+            if (clampedX + halfW > boundingRect.x + boundingRect.width) {
+                clampedX = boundingRect.x + boundingRect.width - halfW;
             }
-            if (pos.y < boundingRect.y) {
-                clampedY = boundingRect.y;
+            // Oben: Mittelpunkt >= oberer Rand + halbe Höhe
+            if (clampedY - halfH < boundingRect.y) {
+                clampedY = boundingRect.y + halfH;
             }
-            if (pos.y + shapeRect.height > boundingRect.y + boundingRect.height) {
-                clampedY = boundingRect.y + boundingRect.height - shapeRect.height;
+            // Unten: Mittelpunkt <= unterer Rand - halbe Höhe
+            if (clampedY + halfH > boundingRect.y + boundingRect.height) {
+                clampedY = boundingRect.y + boundingRect.height - halfH;
             }
 
             return { x: clampedX, y: clampedY };
@@ -567,11 +768,42 @@ const KonvaLayer = forwardRef(
             }, 100);
         };
 
+        function handleAddGraphicClick() {
+            hiddenFileInputRef.current.click();
+        }
+
+        const handleAddGraphic = async (event) => {
+            const newFile = event.target.files[0];
+            console.log("NEW FILE", newFile);
+            if (!newFile) return;
+            await uploadGraphic({
+                newFile,
+                currentSide: purchaseData.currentSide,
+                purchaseData,
+                setPurchaseData,
+                setModalOpen,
+                setShowSpinner,
+                setModalContent,
+                setUploading,
+                setUploadError,
+                setColorSpace,
+                setDpi,
+                setUploading,
+                stepAhead,
+                // steps,
+                // currentStep,
+                // setCurrentStep,
+            });
+        };
+
         return (
             // Wrap the Stage in a container with a fade-in transition.
             <div
+                className="relative"
                 style={{ touchAction: "none", opacity: isImagesLoaded ? 1 : 0, transition: "opacity 0.3s ease-in-out" }}
             >
+                {/* Text Edit Overlay */}
+
                 <Stage
                     ref={stageRef}
                     className="mix-blend-multiply"
@@ -599,46 +831,106 @@ const KonvaLayer = forwardRef(
                             height={boundingRect.height}
                             // stroke="#ff0069"
                         />
-                        {purchaseData.configurator !== "template" && (uploadedGraphicFile || uploadedGraphicURL) && (
-                            <KonvaImage
-                                ref={uploadedGraphicRef}
-                                key={purchaseData.currentSide}
-                                crossOrigin="anonymous"
-                                draggable={isGraphicDraggable}
-                                x={position.x}
-                                y={position.y}
-                                scaleX={scale}
-                                scaleY={scale}
-                                rotation={position.rotation || 0}
-                                onDragStart={handleGraphicDragStart}
-                                onDragEnd={handleGraphicDragEnd}
-                                onTransform={handleGraphicTransform}
-                                onTransformEnd={handleGraphicTransformEnd}
-                                dragBoundFunc={dragBoundFunc}
-                                onMouseEnter={handleEditAreaMouseEnter}
-                                onMouseLeave={handleEditAreaMouseLeave}
-                                hitFunc={(context, shape) => {
-                                    const sideTolerance = 30;
-                                    const topTolerance = 60;
-                                    const bottomTolerance = 30;
-                                    context.beginPath();
-                                    context.rect(
-                                        -sideTolerance,
-                                        -topTolerance,
-                                        shape.width() + sideTolerance * 2,
-                                        shape.height() + topTolerance + bottomTolerance
-                                    );
-                                    context.closePath();
-                                    context.fillStrokeShape(shape);
-                                }}
-                            />
-                        )}
+
+                        {/* Multi-Graphic Render: */}
                         {purchaseData.configurator !== "template" &&
-                            (uploadedGraphicFile || uploadedGraphicURL) &&
+                            uploadedGraphics.map((g, i) => {
+                                if (!graphicRefs.current[g.id]) graphicRefs.current[g.id] = React.createRef();
+                                return imageObjs[i] ? (
+                                    <KonvaImage
+                                        key={g.id}
+                                        image={imageObjs[i]}
+                                        ref={graphicRefs.current[g.id]}
+                                        x={g.xPosition}
+                                        y={g.yPosition}
+                                        scaleX={g.scale}
+                                        scaleY={g.scale}
+                                        width={g.width} // <- WICHTIG!
+                                        height={g.height}
+                                        rotation={g.rotation}
+                                        draggable={isGraphicDraggable}
+                                        offsetX={(g.width ?? 0) / 2}
+                                        offsetY={(g.height ?? 0) / 2}
+                                        onDragStart={handleGraphicDragStart}
+                                        onDragEnd={(e) => handleGraphicDragEnd(e, g.id)}
+                                        onTransform={handleGraphicTransform}
+                                        onTransformEnd={(e) => handleGraphicTransformEnd(e, g.id)}
+                                        dragBoundFunc={dragBoundFunc}
+                                        onMouseEnter={() => {
+                                            setActiveElement(currentSide, "graphic", g.id); // <- wichtig für UI-Switch
+                                            setTransformerVisible(true);
+                                        }}
+                                        onMouseLeave={() => {
+                                            setTransformerVisible(false);
+                                        }}
+                                        hitFunc={(context, shape) => {
+                                            const sideTolerance = 30;
+                                            const topTolerance = 60;
+                                            const bottomTolerance = 30;
+                                            context.beginPath();
+                                            context.rect(
+                                                -sideTolerance,
+                                                -topTolerance,
+                                                shape.width() + sideTolerance * 2,
+                                                shape.height() + topTolerance + bottomTolerance
+                                            );
+                                            context.closePath();
+                                            context.fillStrokeShape(shape);
+                                        }}
+                                    />
+                                ) : null;
+                            })}
+
+                        {/* Transformer ggf. hier auch ans aktive Bild hängen */}
+                        {/* (Je nachdem, wie du das Handling machen willst) */}
+                        {sideTexts.map((t) => {
+                            if (!textRefs.current[t.id]) textRefs.current[t.id] = React.createRef();
+                            return (
+                                <Text
+                                    key={t.id}
+                                    ref={textRefs.current[t.id]}
+                                    text={t.value}
+                                    x={t.x}
+                                    y={t.y}
+                                    fontSize={t.fontSize}
+                                    fontFamily={t.fontFamily}
+                                    fill={t.fill}
+                                    draggable={isGraphicDraggable}
+                                    rotation={t.rotation}
+                                    scaleX={t.scale}
+                                    scaleY={t.scale}
+                                    dragBoundFunc={makeTextDragBound(textRefs.current[t.id])}
+                                    onMouseEnter={() => setActiveElement(currentSide, "text", t.id)}
+                                    onClick={() => setActiveElement(currentSide, "text", t.id)}
+                                    onDragEnd={(e) => {
+                                        const { x, y } = e.target.position();
+                                        updateText(currentSide, t.id, { x, y });
+                                    }}
+                                    onTransformEnd={(e) => {
+                                        const node = e.target;
+                                        updateText(currentSide, t.id, {
+                                            scale: node.scaleX(),
+                                            rotation: node.rotation(),
+                                            x: node.x(),
+                                            y: node.y(),
+                                        });
+                                    }}
+                                    onDblClick={() => {
+                                        setEditingTextId(t.id);
+                                        setInputValue(t.value);
+                                    }}
+                                />
+                            );
+                        })}
+
+                        {purchaseData.configurator !== "template" &&
+                            activeGraphicId &&
+                            graphicRefs.current[activeGraphicId]?.current &&
                             transformerVisible && (
                                 <Transformer
                                     ref={transformerRef}
                                     boundBoxFunc={boundBoxFunc}
+                                    nodes={[graphicRefs.current[activeGraphicId].current]}
                                     onMouseEnter={handleEditAreaMouseEnter}
                                     onMouseLeave={handleEditAreaMouseLeave}
                                     borderStroke="#FFFFFF"
@@ -646,11 +938,24 @@ const KonvaLayer = forwardRef(
                                     anchorFill="#A42CD6"
                                 />
                             )}
+
+                        {active?.type === "text" && textRefs.current[active.id]?.current && (
+                            <Transformer
+                                ref={textTransformerRef}
+                                nodes={[textRefs.current[active.id].current]}
+                                enabledAnchors={[]} // keine Resize-Handles
+                                rotateEnabled={false} // kein Dreh-Handle
+                                padding={6} // etwas Luft um den Text
+                                // borderDash={[6, 4]} // gestrichelter Rahmen
+                                borderStroke="#A42CD6" // deine Brand-Farbe
+                            />
+                        )}
                     </Layer>
                 </Stage>
+
                 {/* Zoom & Reset UI */}
                 <div className="top-8 left-0 flex-col" style={{ position: "absolute", display: "flex", gap: "10px" }}>
-                    <MobileSliders
+                    {/* <MobileSliders
                         containerWidth={containerWidth}
                         containerHeight={containerHeight}
                         zoomLevel={zoomLevel}
@@ -661,7 +966,7 @@ const KonvaLayer = forwardRef(
                                 stageRef.current.batchDraw();
                             }
                         }}
-                    />
+                    /> */}
                     {!isMobile && (
                         <>
                             <Button
@@ -680,7 +985,7 @@ const KonvaLayer = forwardRef(
                                 variant="contained"
                                 color="primary"
                             >
-                                <FiZoomIn size={16} />
+                                <FiZoomIn size={24} />
                             </Button>
                             <Button
                                 sx={{
@@ -699,7 +1004,7 @@ const KonvaLayer = forwardRef(
                                 color="primary"
                                 a
                             >
-                                <FiZoomOut size={16} />
+                                <FiZoomOut size={24} />
                             </Button>
                         </>
                     )}
@@ -713,7 +1018,51 @@ const KonvaLayer = forwardRef(
                         variant="contained"
                         className="!bg-primaryColor-600"
                     >
-                        <FiRefreshCw size={16} />
+                        <FiRefreshCw size={24} />
+                    </Button>
+                    <input
+                        ref={hiddenFileInputRef}
+                        type="file"
+                        hidden
+                        onChange={handleAddGraphic}
+                        accept="image/*,application/pdf"
+                    />
+                    <Button
+                        sx={{ minWidth: "32px", padding: "8px", fontSize: "0.875rem" }}
+                        className="!bg-textColor"
+                        onClick={handleAddGraphicClick}
+                        variant="contained"
+                    >
+                        <FiImage size={24} />
+                    </Button>
+                    <Button
+                        sx={{ minWidth: "32px", padding: "8px", fontSize: "0.875rem" }}
+                        className="!bg-primaryColor"
+                        variant="contained"
+                        // style={{ marginTop: "8px" }}
+                        onClick={() => {
+                            const defaultX = boundingRect.x + boundingRect.width / 2;
+                            const defaultY = boundingRect.y + boundingRect.height / 2;
+
+                            // Fügt Text hinzu *und* setzt activeElement = {type:'text', id}
+                            addText(purchaseData.currentSide || "front", {
+                                value: "Text hier bearbeiten",
+                                x: defaultX / 2,
+                                y: defaultY,
+                                fontSize: 36,
+                                fontFamily: "Roboto",
+                                fill: "#000",
+                                rotation: 0,
+                                scale: 1,
+                            });
+
+                            // OPTIONAL: Wenn du zusätzlich dein Inline-Overlay sofort öffnen willst:
+                            // const side = (useStore.getState().purchaseData.sides || {})[purchaseData.currentSide || "front"];
+                            // const id = side?.activeTextId;
+                            // if (id) { setEditingTextId(id); setInputValue("Text hier bearbeiten"); }
+                        }}
+                    >
+                        <FiType size={24} />
                     </Button>
                 </div>
             </div>

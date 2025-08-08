@@ -47,6 +47,34 @@ const useStore = create((set, get) => ({
                 xPosition: 0,
                 yPosition: 0,
                 scale: 1,
+                uploadedGraphics: [
+                    {
+                        id: null,
+                        file: File, // oder downloadURL etc.
+                        width: 0,
+                        height: 0,
+                        xPosition: 0,
+                        yPosition: 0,
+                        scale: 1,
+                        rotation: 0,
+                    },
+                ],
+                activeGraphicId: null, // <--- HIER hinzufügen!
+                texts: [
+                    {
+                        id: "123",
+                        value: "Dein Text",
+                        x: 400,
+                        y: 100,
+                        fontSize: 36,
+                        fontFamily: "Roboto",
+                        fill: "#333",
+                        scale: 1,
+                        rotation: 0,
+                    },
+                ],
+                activeTextId: "123", // Aktuell ausgewählter Text
+                activeElement: {},
             },
             back: {
                 uploadedGraphic: null,
@@ -54,6 +82,34 @@ const useStore = create((set, get) => ({
                 xPosition: 0,
                 yPosition: 0,
                 scale: 1,
+                uploadedGraphics: [
+                    {
+                        id: null,
+                        file: File, // oder downloadURL etc.
+                        width: 0,
+                        height: 0,
+                        xPosition: 0,
+                        yPosition: 0,
+                        scale: 1,
+                        rotation: 0,
+                    },
+                ],
+                activeGraphicId: null, // <--- HIER hinzufügen!
+                texts: [
+                    {
+                        id: "123",
+                        value: "Dein Text",
+                        x: 400,
+                        y: 100,
+                        fontSize: 36,
+                        fontFamily: "Roboto",
+                        fill: "#333",
+                        scale: 1,
+                        rotation: 0,
+                    },
+                ],
+                activeTextId: "123", // Aktuell ausgewählter Text
+                activeElement: {},
             },
         },
         variants: {
@@ -96,6 +152,8 @@ const useStore = create((set, get) => ({
                         xPosition: 0,
                         yPosition: 0,
                         scale: 1,
+                        uploadedGraphics: [],
+                        activeGraphicId: null, // <--- HIER hinzufügen!
                     },
                     back: {
                         uploadedGraphic: null,
@@ -103,6 +161,8 @@ const useStore = create((set, get) => ({
                         xPosition: 0,
                         yPosition: 0,
                         scale: 1,
+                        uploadedGraphics: [],
+                        activeGraphicId: null, // <--- HIER hinzufügen!
                     },
                 },
                 variants: {
@@ -112,6 +172,91 @@ const useStore = create((set, get) => ({
                 },
                 // ...persistentData, // Preserve specific values if provided
             },
+        }),
+
+    setActiveGraphicId: (side, id) =>
+        set((state) => ({
+            purchaseData: {
+                ...state.purchaseData,
+                sides: {
+                    ...state.purchaseData.sides,
+                    [side]: {
+                        ...state.purchaseData.sides[side],
+                        activeGraphicId: id,
+                    },
+                },
+            },
+        })),
+
+    setActiveElement: (side, type, id) =>
+        set((state) => {
+            const pd = state.purchaseData;
+            const s = pd.sides?.[side] || {};
+            return {
+                purchaseData: {
+                    ...pd,
+                    sides: {
+                        ...pd.sides,
+                        [side]: {
+                            ...s,
+                            activeElement: { type, id },
+                            // Backwards-compat:
+                            activeTextId: type === "text" ? id : s.activeTextId,
+                            activeGraphicId: type === "graphic" ? id : s.activeGraphicId,
+                        },
+                    },
+                },
+            };
+        }),
+
+    addText: (side, props = {}) =>
+        set((state) => {
+            const id = uuidv4();
+            const pd = state.purchaseData;
+            const s = pd.sides?.[side] || {};
+            const base = {
+                id,
+                value: "Dein Text",
+                x: 100,
+                y: 100,
+                fontSize: 36,
+                fontFamily: "Roboto",
+                fill: "#333333",
+                scale: 1,
+                rotation: 0,
+                ...props,
+            };
+            const texts = Array.isArray(s.texts) ? [...s.texts, base] : [base];
+            return {
+                purchaseData: {
+                    ...pd,
+                    sides: {
+                        ...pd.sides,
+                        [side]: {
+                            ...s,
+                            texts,
+                            activeTextId: id,
+                            activeElement: { type: "text", id },
+                        },
+                    },
+                },
+            };
+        }),
+
+    updateText: (side, id, patch) =>
+        set((state) => {
+            const pd = state.purchaseData;
+            const s = pd.sides?.[side] || {};
+            const texts = (s.texts || []).map((t) => (t.id === id ? { ...t, ...patch } : t));
+            return {
+                purchaseData: {
+                    ...pd,
+                    sides: {
+                        ...pd.sides,
+                        [side]: { ...s, texts },
+                    },
+                },
+            };
         }),
 
     // clearPurchaseData: () =>

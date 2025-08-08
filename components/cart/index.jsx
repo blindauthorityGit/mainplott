@@ -4,12 +4,15 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import useStore from "@/store/store";
-import { FiTrash2, FiX, FiEdit2 } from "react-icons/fi";
+import { FiTrash2, FiX, FiEdit2, FiFileText } from "react-icons/fi";
 import Overlay from "../modal/overlay";
 import { H5, P, H3 } from "@/components/typography";
 import { TextField } from "@mui/material";
 import prepareLineItems from "@/functions/prepareLineItems";
 import { createCart } from "@/libs/shopify";
+import dynamic from "next/dynamic";
+const PDFDownloadLink = dynamic(() => import("@react-pdf/renderer").then((m) => m.PDFDownloadLink), { ssr: false });
+import CartOfferPDF from "@/components/pdf/cartOfferPDF";
 
 export default function CartSidebar() {
     const { cartItems, isCartSidebarOpen, closeCartSidebar, removeCartItem, setModalContent, setModalOpen } =
@@ -18,10 +21,15 @@ export default function CartSidebar() {
     const [userNotes, setUserNotes] = useState("");
     const [totalPrice, setTotalPrice] = useState("0.00");
 
+    const [pdfLoading, setPdfLoading] = useState(false);
+
     useEffect(() => {
         const subtotal = cartItems.reduce((sum, item) => sum + Number(item.totalPrice), 0);
         setTotalPrice(subtotal.toFixed(2));
     }, [cartItems]);
+
+    const [isClient, setIsClient] = useState(false);
+    useEffect(() => setIsClient(true), []);
 
     const handleCheckout = async () => {
         try {
@@ -41,6 +49,26 @@ export default function CartSidebar() {
     function closeSideBar() {
         console.log("BUBUBUBU");
         closeCartSidebar();
+    }
+
+    async function handleDownloadPdf() {
+        try {
+            setPdfLoading(true);
+            const { pdf } = await import("@react-pdf/renderer"); // lazy-load lib
+            const { default: CartOfferPDF } = await import("@/components/pdf/cartOfferPDF"); // lazy-load component
+
+            const doc = <CartOfferPDF cartItems={cartItems} totalPrice={totalPrice} userNotes={userNotes} />;
+            const blob = await pdf(doc).toBlob();
+
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Angebot_${new Date().toISOString().slice(0, 10)}.pdf`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } finally {
+            setPdfLoading(false);
+        }
     }
 
     console.log(cartItems);
@@ -190,6 +218,18 @@ export default function CartSidebar() {
                                 <P>Ihr Einkaufswagen ist leer.</P>
                             )}
                         </div>
+                        <button
+                            onClick={handleDownloadPdf}
+                            disabled={pdfLoading}
+                            className="w-full font-body font-semibold mt-2 border flex items-center justify-center border-gray-300 text-gray-800 py-3 rounded-lg text-center"
+                        >
+                            <FiFileText />{" "}
+                            {pdfLoading ? (
+                                <div className="ml-4">PDF wird erstellt …</div>
+                            ) : (
+                                <div className="ml-4">Angebot als PDF herunterladen</div>
+                            )}
+                        </button>
 
                         {/* User notes */}
                         <div className="my-4 bg-[#f3f4f6] ">

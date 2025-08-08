@@ -20,6 +20,7 @@ const handleFileUpload = async ({
     setColorSpace,
     setDpi,
     steps,
+    stepAhead,
 }) => {
     if (newFile) {
         setUploadedFile(newFile);
@@ -61,6 +62,7 @@ const handleFileUpload = async ({
                         dimension={analysisResult.dimension}
                         steps={steps}
                         setModalOpen={setModalOpen}
+                        stepAhead={stepAhead}
                         onNewFileUpload={(file) =>
                             handleFileUpload({
                                 newFile: file,

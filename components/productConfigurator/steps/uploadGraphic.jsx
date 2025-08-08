@@ -1,29 +1,27 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import ContentWrapper from "../components/contentWrapper";
-import { uploadFileToTempFolder } from "@/config/firebase"; // Import the upload function from your firebase configuration
-import { analyzeImage } from "@/functions/analyzeImage"; // Import the analyzeImage function
-import { analyzePdf } from "@/functions/analyzePdf"; // Import the analyzePdf function
+import { uploadFileToTempFolder } from "@/config/firebase";
+import { analyzeImage } from "@/functions/analyzeImage";
+import { analyzePdf } from "@/functions/analyzePdf";
 import PdfPreview from "@/components/pdfPreview";
 import { P, H4 } from "@/components/typography";
-import Link from "next/link"; // Import Next.js Link for navigation
-import GeneralCheckBox from "@/components/inputs/generalCheckbox"; // Import custom checkbox component
-import { motion, AnimatePresence } from "framer-motion"; // Import Framer Motion
+import Link from "next/link";
+import GeneralCheckBox from "@/components/inputs/generalCheckbox";
+import { motion, AnimatePresence } from "framer-motion";
 
-import { GraphicUploadModalContent } from "@/components/modalContent"; // Import the new modal content component
-import LoadingSpinner from "@/components/spinner"; // Import the loading spinner component
+import { GraphicUploadModalContent } from "@/components/modalContent";
+import LoadingSpinner from "@/components/spinner";
 import { H3 } from "@/components/typography";
 import { TbDragDrop } from "react-icons/tb";
 import { FiTrash2, FiChevronDown } from "react-icons/fi";
 
+import uploadAllGraphics from "@/functions/uploadGraphic";
 import analyzeImageWithOpenAI from "@/functions/analyzeImageWithOpenAI";
 import { saveImageToDB, getImagesFromDB, deleteImageFromDB } from "@/indexedDB/graphics";
 
-//IDB
-// import { saveImageToDB, getImageFromDB } from "@/indexedDB";
-
-// STORE
-import useStore from "@/store/store"; // Your Zustand store
+import useStore from "@/store/store";
+import { v4 as uuidv4 } from "uuid"; // NEW
 
 export default function UploadGraphic({ product, setCurrentStep, steps, currentStep }) {
     const {
@@ -38,36 +36,33 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
         showSpinner,
         setShowSpinner,
     } = useStore();
-    const [uploadedFile, setUploadedFile] = useState(null);
-    const [previewUrl, setPreviewUrl] = useState(null); // ⭐ preview
 
+    const [uploadedFile, setUploadedFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
     const [uploading, setUploading] = useState(true);
     const [uploadError, setUploadError] = useState(null);
     const currentSide = purchaseData.currentSide || "front";
-    const [isChecked, setIsChecked] = useState(false); // State for disclaimer acceptance
-    const [acceptedDisclaimer, setAcceptedDisclaimer] = useState(false); // State for disclaimer acceptance
+    const [isChecked, setIsChecked] = useState(false);
+    const [acceptedDisclaimer, setAcceptedDisclaimer] = useState(false);
 
     const [cachedGraphics, setCachedGraphics] = useState([]);
     const [selectedCachedId, setSelectedCachedId] = useState(null);
-    const [showCached, setShowCached] = useState(false); // accordion toggle
+    const [showCached, setShowCached] = useState(false);
 
-    const stepData = {
-        title: "Grafik hochladen",
-    };
+    const stepData = { title: "Grafik hochladen" };
 
     async function handleImageUpload(file) {
         const blob = new Blob([file], { type: file.type });
-        await saveImageToDB(file.name, blob); // Save image to IndexedDB
+        await saveImageToDB(file.name, blob);
     }
 
     useEffect(() => {
         (async () => {
             const imgs = await getImagesFromDB();
-            setCachedGraphics(imgs); // show suggestions
+            setCachedGraphics(imgs);
         })();
     }, []);
 
-    /* ---------------- Preview URL ---------------- */
     useEffect(() => {
         if (uploadedFile) {
             const url = URL.createObjectURL(uploadedFile);
@@ -79,266 +74,84 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
     }, [uploadedFile]);
 
     useEffect(() => {
-        // Set uploaded file from purchaseData when side or purchaseData changes
         setUploadedFile(purchaseData.sides[currentSide]?.uploadedGraphicFile || null);
     }, [currentSide, purchaseData]);
 
-    /* -------------------- helpers & callbacks --------------------- */
     const handleDeleteCached = async (id) => {
         await deleteImageFromDB(id);
         setCachedGraphics((prev) => prev.filter((g) => g.id !== id));
         if (selectedCachedId === id) setSelectedCachedId(null);
     };
 
-    /* ---------------- choose cached and continue --------------- */
     const handleUseSelected = () => {
         if (!selectedCachedId) return;
         const sel = cachedGraphics.find((g) => g.id === selectedCachedId);
         if (!sel) return;
         const file = new File([sel.blob], sel.name, { type: sel.blob.type });
-        handleNewFileUpload(file);
+        // gleiche Logic wie Drop:
+        onDrop([file]);
     };
 
-    // Function to handle new file upload, similar to the initial file drop
-    const handleNewFileUpload = async (newFile) => {
-        if (newFile) {
-            setUploadedFile(newFile);
-            setUploading(true);
-            setShowSpinner(true); // Show spinner when uploading starts
-
-            try {
-                // Upload the new file to Firebase temporary folder
-                const userId = purchaseData?.userId || "anonymous"; // Replace with real user ID if available
-                const fileMetadata = await uploadFileToTempFolder(newFile, userId);
-
-                await saveImageToDB(newFile);
-
-                // Update the purchaseData for the current side
-                setPurchaseData({
-                    ...purchaseData,
-                    sides: {
-                        ...purchaseData.sides,
-                        [currentSide]: {
-                            ...purchaseData.sides[currentSide],
-                            uploadedGraphic: fileMetadata,
-                            uploadedGraphicFile: newFile,
-                        },
-                    },
-                });
-
-                // Analyze the new file
-                if (newFile.type === "image/jpeg" || newFile.type === "image/png") {
-                    const analysisResult = await analyzeImage(newFile);
-                    if (analysisResult) {
-                        setColorSpace(analysisResult.colorSpace);
-                        setDpi(analysisResult.dpi);
-                    }
-                    // Set the updated modal content with the new analysis
-                    setModalContent(
-                        <GraphicUploadModalContent
-                            file={newFile}
-                            dpi={analysisResult.dpi}
-                            colorSpace={analysisResult.colorSpace}
-                            alpha={analysisResult.alpha}
-                            size={analysisResult.size}
-                            format={analysisResult.format}
-                            dimension={analysisResult.dimension}
-                            onNewFileUpload={handleNewFileUpload} // Pass the function here
-                        />
-                    );
-                }
-                setShowSpinner(false);
-                setUploading(false);
-            } catch (error) {
-                console.error("Error uploading new file:", error);
-
-                setUploadError("Fehler beim Hochladen der Datei. Bitte versuchen Sie es erneut.");
-                setShowSpinner(false);
-                setUploading(false);
-            }
-        }
-    };
-
-    // Handle file drop
+    // ---------------- Drop & Select – EINE Logik ----------------
     const onDrop = useCallback(
         async (acceptedFiles) => {
-            if (acceptedFiles.length > 0) {
-                const file = acceptedFiles[0];
-                const validFormats = [
-                    "image/jpeg",
-                    "image/png",
-                    "application/pdf",
-                    "application/postscript",
-                    "application/illustrator",
-                    "image/jp2", // JPEG 2000 (JPF)
-                    "image/tiff", // TIFF
-                ];
-                const maxFileSize = 25 * 1024 * 1024; // 25MB
+            if (!acceptedFiles || !acceptedFiles.length) return;
+            const file = acceptedFiles[0];
 
-                // Check file type
-                if (!validFormats.includes(file.type)) {
-                    setUploadError(
-                        "Ungültiges Dateiformat. Bitte laden Sie eine JPG, PNG, PDF, EPS oder AI Datei hoch."
-                    );
-                    return;
-                }
-
-                // Check file size
-                if (file.size > maxFileSize) {
-                    setUploadError("Die Datei ist zu groß. Die maximale Dateigröße beträgt 25MB.");
-                    return;
-                }
-
-                setUploadError(null); // Clear any previous errors
-                setUploadedFile(file);
-                setUploading(true);
-                setShowSpinner(true); // Show spinner when uploading starts
-
-                try {
-                    // Upload the file to Firebase temporary folder
-                    const userId = purchaseData?.userId || "anonymous"; // Replace with real user ID if available
-                    const fileMetadata = await uploadFileToTempFolder(file, userId);
-
-                    // Save metadata to the store
-
-                    // setPurchaseData({
-                    //     ...purchaseData,
-                    //     sides: {
-                    //         ...purchaseData.sides,
-                    //         [currentSide]: {
-                    //             ...purchaseData.sides[currentSide],
-                    //             uploadedGraphic: fileMetadata,
-                    //             uploadedGraphicFile: file,
-                    //         },
-                    //     },
-                    // });
-
-                    // Determine what kind of analysis is needed based on file type
-                    if (file.type === "image/jpeg" || file.type === "image/png") {
-                        setPurchaseData({
-                            ...purchaseData,
-                            sides: {
-                                ...purchaseData.sides,
-                                [currentSide]: {
-                                    ...purchaseData.sides[currentSide],
-                                    uploadedGraphic: fileMetadata,
-                                    uploadedGraphicFile: file,
-                                },
-                            },
-                        });
-
-                        // Analyze JPEG or PNG with sharp
-                        const analysisResult = await analyzeImage(file);
-                        if (analysisResult) {
-                            setColorSpace(analysisResult.colorSpace);
-                            setDpi(analysisResult.dpi);
-                        }
-                        setModalContent(
-                            <GraphicUploadModalContent
-                                file={file}
-                                dpi={analysisResult.dpi}
-                                colorSpace={analysisResult.colorSpace}
-                                alpha={analysisResult.alpha}
-                                size={analysisResult.size}
-                                format={analysisResult.format}
-                                dimension={analysisResult.dimension}
-                                onNewFileUpload={handleNewFileUpload}
-                                setCurrentStep={setCurrentStep}
-                                setModalOpen={setModalOpen} // Pass the modal control function
-                                steps={steps}
-                                currentStep={currentStep} // Pass the function here
-                            />
-                        );
-                    } else if (file.type === "application/pdf") {
-                        // Handle multi-page PDF analysis
-
-                        const pdfAnalysisResult = await analyzePdf(file);
-
-                        console.log(pdfAnalysisResult);
-
-                        // Call OpenAI with the PDF preview image and a prompt
-                        const openAIResponse = await analyzeImageWithOpenAI(
-                            pdfAnalysisResult.previewImage,
-                            "What do you see?"
-                        );
-
-                        // 2) Convert that previewImage URL to a Blob/File
-                        // const previewUrl = pdfAnalysisResult.previewImage; // e.g. "https://firebasestorage.googleapis.com/..."
-                        // const response = await fetch(previewUrl); // CORS must be allowed in Firebase
-                        // const blob = await response.blob();
-                        // // Construct a File so it looks like a typical "uploaded" image
-                        // const previewFile = new File([blob], "pdf-preview.png", {
-                        //     type: "image/png",
-                        //     lastModified: Date.now(),
-                        // });
-                        //
-                        setPurchaseData({
-                            ...purchaseData,
-                            sides: {
-                                ...purchaseData.sides,
-                                [currentSide]: {
-                                    ...purchaseData.sides[currentSide],
-                                    uploadedGraphic: fileMetadata,
-                                    uploadedGraphicFile: file,
-                                    isPDF: true,
-                                    preview: pdfAnalysisResult.previewImage,
-                                },
-                            },
-                        });
-                        setModalContent(
-                            <GraphicUploadModalContent
-                                file={file}
-                                preview={pdfAnalysisResult.previewImage}
-                                numPages={pdfAnalysisResult.numPages}
-                                colorSpace={pdfAnalysisResult.colorSpace}
-                                alpha={pdfAnalysisResult.alphaChannel}
-                                size={pdfAnalysisResult.fileSize}
-                                previewComponent={<PdfPreview file={file} />}
-                                onNewFileUpload={handleNewFileUpload} // Pass the function here
-                                steps={steps}
-                                setCurrentStep={setCurrentStep}
-                                currentStep={currentStep} // Pass the function here
-                                setModalOpen={setModalOpen} // Pass the modal control function
-                            />
-                        );
-                    }
-
-                    await saveImageToDB(file);
-
-                    // Open modal
-                    setModalOpen(true);
-
-                    setShowSpinner(false); // Hide spinner when uploading is complete
-
-                    setUploading(false);
-                } catch (error) {
-                    console.error("Error uploading file:", error);
-                    setUploadError("Fehler beim Hochladen der Datei. Bitte versuchen Sie es erneut.");
-                    setUploading(false);
-                    setShowSpinner(false);
-                }
-            }
+            uploadAllGraphics({
+                newFile: file,
+                currentSide,
+                purchaseData,
+                setPurchaseData,
+                setModalContent,
+                setModalOpen,
+                setShowSpinner,
+                setUploading,
+                setUploadError,
+                setColorSpace,
+                setDpi,
+                steps,
+                setCurrentStep,
+                stepAhead: true, // direkt weiter wie bisher
+            });
         },
         [
-            setShowSpinner,
+            currentSide,
             purchaseData,
             setPurchaseData,
-            setModalOpen,
             setModalContent,
+            setModalOpen,
+            setShowSpinner,
+            setUploading,
+            setUploadError,
             setColorSpace,
             setDpi,
-            currentSide,
+            steps,
+            setCurrentStep,
         ]
     );
 
-    // Function to show details again by opening the modal
+    // NEW: wir deaktivieren den Auto-Click vom Root und öffnen die File-Dialog
+    //      manuell über open() – das triggert **denselben** onDrop-Flow.
+    const {
+        getRootProps,
+        getInputProps,
+        isDragActive,
+        open, // NEW
+    } = useDropzone({
+        onDrop,
+        multiple: false,
+        noClick: true, // NEW: Root klickt nicht mehr automatisch
+        accept: {
+            "image/*": [".jpg", ".jpeg", ".png"],
+            "application/pdf": [".pdf"],
+        },
+    });
+
     const handleShowDetails = () => {
-        if (uploadedFile) {
-            setModalOpen(true);
-        }
+        if (uploadedFile) setModalOpen(true);
     };
 
-    // Function to handle deleting the uploaded image
     const handleDeleteUpload = () => {
         setUploadedFile(null);
         setPurchaseData({
@@ -354,15 +167,54 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
         });
     };
 
-    // Toggle acceptance of disclaimer
     const handleDisclaimerCheck = () => {
         setIsChecked(true);
-        setTimeout(() => {
-            setAcceptedDisclaimer(!acceptedDisclaimer);
-        }, 400);
+        setTimeout(() => setAcceptedDisclaimer((v) => !v), 400);
     };
 
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
+    // NEW: „Text statt Grafik“ – legt Text an & geht weiter
+    const handleChooseText = () => {
+        const rect = purchaseData.boundingRect || {
+            x: 0,
+            y: 0,
+            width: purchaseData.containerWidth || 500,
+            height: purchaseData.containerHeight || 500,
+        };
+        const cx = rect.x + rect.width / 2;
+        const cy = rect.y + rect.height / 2;
+
+        const id = uuidv4();
+        setPurchaseData((prev) => ({
+            ...prev,
+            sides: {
+                ...prev.sides,
+                [currentSide]: {
+                    ...prev.sides[currentSide],
+                    texts: [
+                        ...(prev.sides[currentSide].texts || []),
+                        {
+                            id,
+                            value: "Text hier bearbeiten",
+                            x: cx,
+                            y: cy,
+                            fontSize: 36,
+                            fontFamily: "Roboto",
+                            fill: "#000",
+                            scale: 1,
+                            rotation: 0,
+                        },
+                    ],
+                    activeTextId: id,
+                    activeElement: { type: "text", id },
+                },
+            },
+        }));
+
+        // gleich weiter zum nächsten Step (wie stepAhead)
+        if (steps[currentStep] === "Upload") {
+            setTimeout(() => setCurrentStep(Math.min(currentStep + 1, steps.length - 1)), 50);
+        }
+    };
 
     return (
         <div className="lg:px-16 lg:mt-4 2xl:mt-8">
@@ -379,9 +231,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                             >
                                 <P klasse="text-lg text-errorColor font-semibold mb-2">ZUERST LESEN, DANN UPLOADEN</P>
                                 <P klasse="mb-4 !text-xs text-gray-700">
-                                    Bitte beachten Sie, dass Sie nur Grafiken hochladen dürfen, die Ihnen gehören oder
-                                    für deren Nutzung Sie die Erlaubnis haben. Weitere Informationen finden Sie auf
-                                    unserer{" "}
+                                    Bitte beachten Sie, dass Sie nur Grafiken hochladen dürfen, die Ihnen gehören…
                                     <Link href="/datenschutz">
                                         <span className="text-primaryColor underline">Datenschutz-Seite</span>
                                     </Link>
@@ -409,7 +259,9 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                     {...getRootProps()}
                                     className="flex flex-col items-center justify-center bg-primaryColor-100 rounded-[20px] border-dashed border-2 p-8 lg:p-12 border-gray-400"
                                 >
+                                    {/* dropzone input – triggert onDrop */}
                                     <input {...getInputProps()} />
+
                                     <div className="text-center">
                                         {isDragActive ? (
                                             <p className="font-body font-semibold text-xl text-primaryColor">
@@ -418,42 +270,56 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                         ) : (
                                             <>
                                                 <p className="font-body hidden lg:block font-semibold 2xl:text-xl text-textColor">
-                                                    Ziehen Sie Ihre Grafik hierher oder klicken Sie, um eine Datei
-                                                    hochzuladen.
+                                                    Ziehen Sie Ihre Grafik hierher oder wählen Sie eine Datei.
                                                 </p>
                                                 <p className="font-body lg:hidden font-semibold text-lg text-textColor">
                                                     Wählen Sie Ihre Grafik
-                                                </p>{" "}
+                                                </p>
                                             </>
                                         )}
+
                                         <div className="flex justify-center text-6xl p-6 text-textColor">
-                                            <TbDragDrop></TbDragDrop>
+                                            <TbDragDrop />
                                         </div>
-                                        <button
-                                            type="button"
-                                            className="px-6 py-2 !font-semibold bg-primaryColor font-body text-white rounded-lg hover:bg-primaryColor-600"
-                                        >
-                                            Datei auswählen
-                                        </button>
+
+                                        <div className="flex gap-3 justify-center">
+                                            {/* Datei auswählen → nutzt dropzone.open() → ruft onDrop → uploadAllGraphics */}
+                                            <button
+                                                type="button"
+                                                onClick={open} // NEW: gleiche Logik wie Drop
+                                                className="px-6 py-2 !font-semibold bg-primaryColor font-body text-white rounded-lg hover:bg-primaryColor-600"
+                                            >
+                                                Datei auswählen
+                                            </button>
+
+                                            {/* NEW: Alternative – direkt Text anlegen */}
+                                            <button
+                                                type="button"
+                                                onClick={handleChooseText}
+                                                className="px-6 py-2 !font-semibold bg-gray-800 font-body text-white rounded-lg hover:bg-gray-900"
+                                            >
+                                                Text statt Grafik
+                                            </button>
+                                        </div>
                                     </div>
+
                                     {uploadError && (
                                         <div className="mt-4 text-center">
                                             <p className="font-body text-red-600">{uploadError}</p>
                                         </div>
                                     )}
+
                                     {uploadedFile && !uploading && (
                                         <div className="mt-4 text-center flex flex-col items-center">
-                                            {" "}
                                             <img src={previewUrl} className="max-h-24" alt="" />
                                             <p className="font-body text-gray-700">
-                                                {" "}
                                                 Hochgeladene Datei: {uploadedFile.name}
                                             </p>
                                         </div>
                                     )}
                                 </motion.div>
 
-                                {/* Accordion for cached graphics */}
+                                {/* Zuletzt benutzte Grafiken */}
                                 {!uploadedFile && cachedGraphics.length > 0 && (
                                     <div className="mb-6">
                                         <button
@@ -483,7 +349,6 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                                             const isSelected = id === selectedCachedId;
                                                             return (
                                                                 <div key={id} className="relative group">
-                                                                    {/* Delete */}
                                                                     <button
                                                                         type="button"
                                                                         onClick={(e) => {
@@ -494,7 +359,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                                                     >
                                                                         <FiTrash2 size={14} />
                                                                     </button>
-                                                                    {/* Select */}
+
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => {
@@ -502,18 +367,17 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                                                             const file = new File([blob], name, {
                                                                                 type: blob.type,
                                                                             });
-                                                                            handleNewFileUpload(file);
+                                                                            onDrop([file]); // gleiche Pipeline
                                                                         }}
                                                                         className={`rounded-lg overflow-hidden shadow focus:outline-none ${
                                                                             isSelected ? "ring-4 ring-primaryColor" : ""
                                                                         }`}
                                                                     >
-                                                                        {" "}
                                                                         <img
                                                                             src={URL.createObjectURL(blob)}
                                                                             alt={name}
                                                                             className="h-24 w-24 object-contain"
-                                                                        />{" "}
+                                                                        />
                                                                     </button>
                                                                 </div>
                                                             );

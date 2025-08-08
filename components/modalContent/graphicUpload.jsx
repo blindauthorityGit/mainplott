@@ -30,6 +30,7 @@ const GraphicUploadModalContent = ({
     setModalOpen,
     currentStep,
     steps,
+    stepAhead,
 }) => {
     // Reference for the hidden file input element
     const fileInputRef = useRef(null);
@@ -207,13 +208,15 @@ const GraphicUploadModalContent = ({
                 </button>
             </div>
             <div className="col-span-6 mt-2 lg:mt-0 pl-1 lg:pl-0">
-                <StepButton
-                    onClick={handleNextStep}
-                    className="px-4 py-2 bg-textColor text-white rounded !text-sm lg:text-base"
-                    klasse="bg-textColor"
-                >
-                    {hasErrors ? "Trotzdem weiter" : "Weiter"}
-                </StepButton>
+                {stepAhead ? null : (
+                    <StepButton
+                        onClick={handleNextStep}
+                        className="px-4 py-2 bg-textColor text-white rounded !text-sm lg:text-base"
+                        klasse="bg-textColor"
+                    >
+                        {hasErrors ? "Trotzdem weiter" : "Weiter"}
+                    </StepButton>
+                )}
             </div>
         </div>
     );

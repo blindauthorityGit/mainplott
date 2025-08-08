@@ -393,20 +393,21 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
     // Determine if "Next" button should be disabled
     const isNextDisabled = () => {
-        if (steps[currentStep] === "Konfigurator" && !purchaseData.configurator) {
-            return true;
+        if (steps[currentStep] === "Konfigurator" && !purchaseData.configurator) return true;
+        if (steps[currentStep] === "Layout" && !purchaseData.layoutServiceSelected) return true;
+
+        if (steps[currentStep] === "Upload") {
+            const front = purchaseData.sides?.front || {};
+            const hasGraphics =
+                (front.uploadedGraphics?.length || 0) > 0 ||
+                !!front.uploadedGraphic || // falls noch alte Single-Property irgendwo gesetzt wird
+                !!front.uploadedGraphicFile; // fallback
+            const hasTexts = (front.texts?.length || 0) > 0;
+
+            if (!hasGraphics && !hasTexts) return true; // ← jetzt auch Text gültig
         }
 
-        if (steps[currentStep] === "Layout" && !purchaseData.layoutServiceSelected) {
-            return true;
-        }
-
-        if (steps[currentStep] === "Upload" && !purchaseData.sides["front"].uploadedGraphic) {
-            return true;
-        }
-        if (currentStep === steps.length - 1) {
-            return true;
-        }
+        if (currentStep === steps.length - 1) return true;
         return false;
     };
 
@@ -619,20 +620,20 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                             y: purchaseData.sides[purchaseData.currentSide].yPosition,
                                             rotation: purchaseData.sides[purchaseData.currentSide].rotation || 0,
                                         }}
-                                        setPosition={(newPos, newRotation) =>
-                                            setPurchaseData({
-                                                ...purchaseData,
-                                                sides: {
-                                                    ...purchaseData.sides,
-                                                    [purchaseData.currentSide]: {
-                                                        ...purchaseData.sides[purchaseData.currentSide],
-                                                        xPosition: newPos.x,
-                                                        yPosition: newPos.y,
-                                                        rotation: newRotation,
-                                                    },
-                                                },
-                                            })
-                                        }
+                                        // setPosition={(newPos, newRotation) =>
+                                        //     setPurchaseData({
+                                        //         ...purchaseData,
+                                        //         sides: {
+                                        //             ...purchaseData.sides,
+                                        //             [purchaseData.currentSide]: {
+                                        //                 ...purchaseData.sides[purchaseData.currentSide],
+                                        //                 xPosition: newPos.x,
+                                        //                 yPosition: newPos.y,
+                                        //                 rotation: newRotation,
+                                        //             },
+                                        //         },
+                                        //     })
+                                        // }
                                         scale={purchaseData.sides[purchaseData.currentSide].scale}
                                         setScale={(newScale) =>
                                             setPurchaseData({
@@ -730,7 +731,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 </div>
 
                 {/* Navigation Buttons - Positioned at the bottom */}
-                <div className="mt-auto flex gap-2 lg:gap-4 justify-end 2xl:justify-between">
+                <div className="mt-auto hidden lg:flex gap-2 lg:gap-4 justify-end 2xl:justify-between">
                     <div className="w-1/2 lg:w-auto">
                         <StepButton
                             onClick={() => handlePrevStep(currentStep, steps, setCurrentStep, isMobile)}
