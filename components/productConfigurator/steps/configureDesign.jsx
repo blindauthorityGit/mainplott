@@ -7,8 +7,8 @@ import { FiX, FiType, FiImage } from "react-icons/fi";
 import { IconButton } from "@/components/buttons";
 import CustomRadioButton from "@/components/inputs/customRadioButton";
 import VeredelungTable from "@/components/infoTable/veredlungsTable";
-import GraphicControls from "@/components/productConfigurator/controls/GraphicControls";
-import TextControls from "@/components/productConfigurator/controls/TextControls";
+import GraphicControls from "@/components/productConfigurator/controls/graphicControls";
+import TextControls from "@/components/productConfigurator/controls/textControls";
 
 // FUNCTIONS
 import handleFileUpload from "@/functions/handleFileUpload";
