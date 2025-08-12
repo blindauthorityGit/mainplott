@@ -38,6 +38,9 @@ export default function CartSidebar() {
             console.log(lineItems);
             console.log(checkoutUrl);
             if (!checkoutUrl) throw new Error("Checkout URL missing");
+            if (process.env.NEXT_PUBLIC_DEV || process.env.NEXT_DEV) {
+                return;
+            }
             window.location.href = checkoutUrl;
         } catch (err) {
             console.error("❌ createCart failed:", err);

@@ -553,7 +553,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
             {/* Left - Product Image / Konva Layer with fade in/out animation */}
             <div className="col-span-12 lg:col-span-6 2xl:col-span-6 relative mb-4 lg:mb-0" ref={containerRef}>
                 <div
-                    style={{ minHeight: stableHeight }}
+                    style={{ minHeight: stableHeight - 80 }}
                     className="w-full flex items-center justify-center xl:min-h-[600px] 2xl:min-h-[800px] lg:max-h-[760px] relative overflow-hidden"
                 >
                     <AnimatePresence mode="wait">
