@@ -23,7 +23,7 @@ const CustomCheckbox = ({
 
     return (
         <motion.div
-            className={`relative  ${klasse} border border-textColor inline-flex items-center justify-center w-8 h-8 lg:w-8 lg:h-8 2xl:w-10 2xl:h-10 rounded-md cursor-pointer`}
+            className={`relative  ${klasse} border border-textColor inline-flex items-start justify-center w-8 h-8 lg:w-8 lg:h-8 2xl:w-10 2xl:h-10 rounded-md cursor-pointer`}
             onClick={onClick}
             initial="rest"
             animate={isChecked ? "active" : "rest"}

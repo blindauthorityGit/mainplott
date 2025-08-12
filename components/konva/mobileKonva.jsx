@@ -47,8 +47,16 @@ const MobileKonvaLayer = forwardRef(function MobileKonvaLayer({ onExportReady, p
     const active = sideData.activeElement || null;
     const sideTexts = sideData.texts || [];
 
-    const files = useMemo(() => uploadedGraphics.map((g) => g.file), [uploadedGraphics]);
-    const imageObjs = useImageObjects(files);
+    const imageSources = useMemo(() => {
+        return uploadedGraphics.map((g) => {
+            if (g.isPDF && g.preview) return g.preview;
+            if (g.file instanceof Blob) return URL.createObjectURL(g.file);
+            return g.downloadURL || null;
+        });
+    }, [uploadedGraphics]);
+
+    const imageObjs = useImageObjects(imageSources);
+
     const [productImageLoaded, setProductImageLoaded] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [zoomLevel, setZoomLevel] = useState(1);

@@ -3,9 +3,11 @@ import { v4 as uuidv4 } from "uuid";
 import { uploadFileToTempFolder } from "@/config/firebase";
 import { analyzeImage } from "@/functions/analyzeImage";
 import { analyzePdf } from "@/functions/analyzePdf";
-import { GraphicUploadModalContent } from "@/components/modalContent"; // Import the new modal content component
+import { GraphicUploadModalContent } from "@/components/modalContent";
 import PdfPreview from "@/components/pdfPreview";
 import getImagePlacement, { getFixedImagePlacement } from "@/functions/getImagePlacement";
+import dataURLToBlob from "@/functions/dataURLToBlob";
+import { saveGraphicToDB } from "@/indexedDB/graphics";
 
 export default async function uploadAllGraphics({
     newFile,
@@ -64,27 +66,58 @@ export default async function uploadAllGraphics({
             imgType = "image",
             analysisResult = {};
 
+        // Diese Variable halten wir für Konva bereit:
+        // - bei Images: original File
+        // - bei PDFs: Preview-Blob als File
+        let konvaRenderableFile = newFile;
+
         if (newFile.type.startsWith("image/")) {
             imgType = "image";
-            // Bildmaße holen
+
+            // Maße aus dem lokalen File (kein CORS)
             const img = new window.Image();
             img.src = URL.createObjectURL(newFile);
             await new Promise((res) => (img.onload = res));
             width = img.width;
             height = img.height;
-            // Analyse (z.B. für Modal-Content)
+
+            // Analyse
             analysisResult = await analyzeImage(newFile);
             setColorSpace?.(analysisResult.colorSpace);
             setDpi?.(analysisResult.dpi);
         } else if (newFile.type === "application/pdf") {
             imgType = "pdf";
+
+            // PDF analysieren -> previewImage (DataURL oder URL) + numPages etc.
             analysisResult = await analyzePdf(newFile);
-            // Optional: width, height aus Preview holen (falls nötig)
+
+            // Preview in einen Blob/File verwandeln, damit Konva lokal rendert (kein CORS)
+            let previewBlob;
+            const src = analysisResult.previewImage;
+
+            if (src.startsWith("data:")) {
+                previewBlob = dataURLToBlob(src);
+            } else {
+                // Falls die Analyse ein remote-URL liefert, hole sie als Blob
+                const resp = await fetch(src, { mode: "cors" }); // i.d.R. erlaubt; landet trotzdem lokal als Blob
+                previewBlob = await resp.blob();
+            }
+
+            // Als File "verpacken", damit dein useImageObjects sauber arbeitet
+            konvaRenderableFile = new File([previewBlob], `${newFile.name.replace(/\.pdf$/i, "")}-preview.png`, {
+                type: previewBlob.type || "image/png",
+            });
+
+            // Dimensionen für Placement aus dem Preview ermitteln
+            const tmpImg = new window.Image();
+            tmpImg.src = URL.createObjectURL(konvaRenderableFile);
+            await new Promise((res) => (tmpImg.onload = res));
+            width = tmpImg.width;
+            height = tmpImg.height;
         }
 
         // =============== PLACEMENT-BERECHNUNG ===============
         let placement;
-        // Hole boundingRect, falls vorhanden (wie in deiner Konva-Komponente)
         let boundingRect = null;
         if (purchaseData?.product?.konfigBox && purchaseData.product.konfigBox.value) {
             try {
@@ -95,14 +128,13 @@ export default async function uploadAllGraphics({
                 const heightBox = konfig.height * containerHeight;
                 const x = konfig.x != null ? konfig.x * containerWidth : (containerWidth - widthBox) / 2;
                 const y = konfig.y != null ? konfig.y * containerHeight : (containerHeight - heightBox) / 2;
-                // Du kannst auch hier addPadding nutzen, falls du es willst.
                 boundingRect = { x, y, width: widthBox, height: heightBox };
             } catch (e) {
-                // Fallback falls Fehler
+                // ignore
             }
         }
 
-        if (imgType === "image" && width && height) {
+        if (width && height) {
             if (boundingRect) {
                 placement = getFixedImagePlacement({
                     imageNaturalWidth: width,
@@ -119,24 +151,21 @@ export default async function uploadAllGraphics({
                 });
             }
         } else {
-            // PDFs und andere, ohne Platzierung, Standardwerte nehmen
-            placement = {
-                x: 100,
-                y: 100,
-                scale: 1,
-            };
+            // Fallback
+            placement = { x: 100, y: 100, scale: 1, finalWidth: 100, finalHeight: 100 };
         }
 
         const centeredX = printRect.x + printRect.width / 2;
         const centeredY = printRect.y + printRect.height / 2;
 
-        console.log(placement);
-
-        // Grafik-Objekt für Array
+        // Grafik-Objekt fürs Array
         const newGraphic = {
             id: uuidv4(),
-            file: newFile,
+            // Wichtig: für Konva immer ein lokales File/Blob
+            file: konvaRenderableFile,
+            // Optional weiterhin Metadaten der Original-Upload-URL etc.
             ...fileMetadata,
+            originalFileType: newFile.type,
             width: placement.finalWidth,
             height: placement.finalHeight,
             xPosition: centeredX,
@@ -147,15 +176,30 @@ export default async function uploadAllGraphics({
             isActive: true,
             ...(imgType === "pdf" && {
                 isPDF: true,
-                preview: analysisResult.previewImage,
+                // Für UI/Modals kannst du trotzdem die Preview weiterreichen (wir rendern sie dort ebenfalls lokal)
+                preview:
+                    konvaRenderableFile instanceof File
+                        ? URL.createObjectURL(konvaRenderableFile)
+                        : analysisResult.previewImage,
             }),
         };
+
+        try {
+            await saveGraphicToDB({
+                name: newFile.name,
+                fileOrBlob: newFile,
+                preview: analysisResult?.previewImage || null, // dataURL bei PDFs? passt
+                isPDF: imgType === "pdf",
+                userId: purchaseData?.userId || "anonymous",
+            });
+        } catch (e) {
+            console.warn("IndexedDB cache save failed:", e);
+        }
 
         // --- 2. In Array pushen ---
         setPurchaseData((prev) => {
             const prevSide = prev.sides?.[currentSide] || {};
             const prevGraphics = prevSide.uploadedGraphics || [];
-            // Alle vorherigen auf inactive setzen
             const updatedGraphics = prevGraphics.map((g) => ({ ...g, isActive: false }));
             return {
                 ...prev,
@@ -166,7 +210,7 @@ export default async function uploadAllGraphics({
                         uploadedGraphics: [...updatedGraphics, newGraphic],
                         activeGraphicId: newGraphic.id,
                         uploadedGraphic: fileMetadata,
-                        uploadedGraphicFile: newFile,
+                        uploadedGraphicFile: newFile, // Original-Upload (nur zur Info/Auswertung)
                     },
                 },
             };
@@ -175,7 +219,7 @@ export default async function uploadAllGraphics({
         setUploading?.(false);
         setShowSpinner?.(false);
 
-        // --- 3. ModalContent setzen, wenn gewünscht ---
+        // --- 3. ModalContent (Preview lokal anzeigen) ---
         if (imgType === "image") {
             setModalContent?.(
                 <GraphicUploadModalContent
@@ -189,7 +233,7 @@ export default async function uploadAllGraphics({
                     steps={steps}
                     setModalOpen={setModalOpen}
                     onNewFileUpload={(file) =>
-                        uploadGraphicToArray({
+                        uploadAllGraphics({
                             newFile: file,
                             currentSide,
                             purchaseData,
@@ -209,14 +253,21 @@ export default async function uploadAllGraphics({
                 />
             );
         } else if (imgType === "pdf") {
+            const modalPreview =
+                konvaRenderableFile instanceof File
+                    ? URL.createObjectURL(konvaRenderableFile)
+                    : analysisResult.previewImage;
+
             setModalContent?.(
                 <GraphicUploadModalContent
                     file={newFile}
-                    preview={analysisResult.previewImage}
+                    preview={modalPreview}
                     numPages={analysisResult.numPages}
+                    steps={steps}
+                    setModalOpen={setModalOpen}
                     previewComponent={<PdfPreview file={newFile} />}
                     onNewFileUpload={(file) =>
-                        uploadGraphicToArray({
+                        uploadAllGraphics({
                             newFile: file,
                             currentSide,
                             purchaseData,

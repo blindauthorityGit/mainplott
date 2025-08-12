@@ -1,42 +1,65 @@
 // src/hooks/useImageObjects.js
 import { useEffect, useState } from "react";
 
-export default function useImageObjects(files) {
+export default function useImageObjects(sources) {
     const [images, setImages] = useState([]);
 
     useEffect(() => {
         let isActive = true;
-        const loadImages = async () => {
-            const imagePromises = files.map((file) => {
-                return new Promise((resolve) => {
-                    if (!file) return resolve(null);
-                    const img = new window.Image();
-                    if (typeof file === "string") {
-                        // Already a URL
-                        img.src = file;
-                        img.onload = () => resolve(img);
-                        img.onerror = () => resolve(null);
-                    } else {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            img.src = e.target.result;
-                            img.onload = () => resolve(img);
-                            img.onerror = () => resolve(null);
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
-            });
-            const loaded = await Promise.all(imagePromises);
+        const objectURLs = [];
+
+        const load = async () => {
+            const promises = (sources || []).map(
+                (src) =>
+                    new Promise((resolve) => {
+                        if (!src) return resolve(null);
+
+                        const img = new window.Image(); // kein crossOrigin nötig für blob:/data:
+                        const done = () => resolve(img);
+                        const fail = () => resolve(null);
+
+                        if (src instanceof Blob || src instanceof File) {
+                            const url = URL.createObjectURL(src);
+                            objectURLs.push(url);
+                            img.onload = () => {
+                                URL.revokeObjectURL(url);
+                                done();
+                            };
+                            img.onerror = () => {
+                                URL.revokeObjectURL(url);
+                                fail();
+                            };
+                            img.src = url;
+                            return;
+                        }
+
+                        if (typeof src === "string") {
+                            // nur sichere Quellen zulassen
+                            if (src.startsWith("data:") || src.startsWith("blob:")) {
+                                img.onload = done;
+                                img.onerror = fail;
+                                img.src = src;
+                                return;
+                            }
+                            // Harte Abweisung für http(s), damit kein Tainting passiert
+                            console.warn("Ignored remote image URL to avoid CORS taint:", src);
+                            return resolve(null);
+                        }
+
+                        resolve(null);
+                    })
+            );
+
+            const loaded = await Promise.all(promises);
             if (isActive) setImages(loaded);
         };
-        loadImages();
+
+        load();
         return () => {
             isActive = false;
+            objectURLs.forEach((u) => URL.revokeObjectURL(u));
         };
-    }, [files]);
-
-    console.log(images);
+    }, [sources]);
 
     return images;
 }

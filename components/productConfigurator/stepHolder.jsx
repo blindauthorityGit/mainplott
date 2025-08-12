@@ -84,6 +84,10 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     const existingItem = isEditing ? cartItems[parseInt(editIndex, 10)] : null;
     const existingItemId = existingItem?.id;
 
+    const [stableHeight, setStableHeight] = useState(700); // Fallback-Höhe
+    const [activeSrc, setActiveSrc] = useState(null); // aktuell gerendert
+    const [isImgReady, setIsImgReady] = useState(false);
+
     // our extracted handler
     function handleSave() {
         saveCartItem({
@@ -391,6 +395,24 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         };
     }, [selectedImage, isMobile]);
 
+    // wenn displayedImage wechselt: erst vorladen, dann umschalten (kein Flicker)
+    useEffect(() => {
+        if (!displayedImage) return;
+        const img = new Image();
+        img.src = displayedImage;
+        img.onload = () => {
+            setActiveSrc(displayedImage); // erst jetzt sichtbar machen
+            setIsImgReady(true);
+        };
+        // währenddessen bleibt altes Bild stehen
+    }, [displayedImage]);
+
+    // beim Laden Höhe messen und als stabile min-height merken
+    const handleMeasuredLoad = () => {
+        const h = imageRef.current?.clientHeight;
+        if (h) setStableHeight(h); // hält den Container stabil für künftige Wechsel
+    };
+
     // Determine if "Next" button should be disabled
     const isNextDisabled = () => {
         if (steps[currentStep] === "Konfigurator" && !purchaseData.configurator) return true;
@@ -530,7 +552,10 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
             {/* Left - Product Image / Konva Layer with fade in/out animation */}
             <div className="col-span-12 lg:col-span-6 2xl:col-span-6 relative mb-4 lg:mb-0" ref={containerRef}>
-                <div className="w-full flex items-center justify-center xl:min-h-[600px] 2xl:min-h-[800px] lg:max-h-[760px] relative">
+                <div
+                    style={{ minHeight: stableHeight }}
+                    className="w-full flex items-center justify-center xl:min-h-[600px] 2xl:min-h-[800px] lg:max-h-[760px] relative overflow-hidden"
+                >
                     <AnimatePresence mode="wait">
                         {steps[currentStep] === "Design" && purchaseData.configurator !== "template" ? (
                             <div
@@ -658,26 +683,20 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     steps[currentStep] !== "Optionen" &&
                                     steps[currentStep] !== "Zusammenfassung")) && (
                                 <motion.div
-                                    className="relative mix-blend-multiply"
-                                    key={displayedImage}
+                                    className="relative mix-blend-multiply max-w-full max-h-full xl:p-12"
+                                    key={activeSrc} // crossfade nur nach Preload
                                     ref={imageRef}
-                                    style={{
-                                        maxHeight: isMobile ? "auto" : "760px",
-                                        width: isMobile ? "" : imageSize.width ? `${imageSize.width}px` : "auto",
-                                        height: isMobile ? "" : imageSize.height ? `auto` : "auto",
-                                        objectFit: "contain",
-                                    }}
                                     variants={fadeAnimationVariants}
                                     initial="initial"
                                     animate="animate"
                                     exit="exit"
-                                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                                    transition={{ duration: 0.1, ease: "easeInOut" }}
                                 >
                                     <img
                                         src={displayedImage ?? ""}
                                         alt="Product Step Image"
-                                        className="w-full mix-blend-multiply p-4 lg:max-h-[none]"
-                                        onLoad={() => setImageHeight(imageRef.current?.clientHeight)}
+                                        className="block max-w-full max-h-full w-auto h-auto object-contain mix-blend-multiply"
+                                        onLoad={handleMeasuredLoad}
                                     />
                                 </motion.div>
                             )

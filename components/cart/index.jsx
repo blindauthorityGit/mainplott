@@ -218,18 +218,21 @@ export default function CartSidebar() {
                                 <P>Ihr Einkaufswagen ist leer.</P>
                             )}
                         </div>
-                        <button
-                            onClick={handleDownloadPdf}
-                            disabled={pdfLoading}
-                            className="w-full font-body font-semibold mt-2 border flex items-center justify-center border-gray-300 text-gray-800 py-3 rounded-lg text-center"
-                        >
-                            <FiFileText />{" "}
-                            {pdfLoading ? (
-                                <div className="ml-4">PDF wird erstellt …</div>
-                            ) : (
-                                <div className="ml-4">Angebot als PDF herunterladen</div>
-                            )}
-                        </button>
+
+                        {cartItems.length > 0 ? (
+                            <button
+                                onClick={handleDownloadPdf}
+                                disabled={pdfLoading}
+                                className="w-full font-body font-semibold mt-2 border flex items-center justify-center border-gray-300 text-gray-800 py-3 rounded-lg text-center"
+                            >
+                                <FiFileText />{" "}
+                                {pdfLoading ? (
+                                    <div className="ml-4">PDF wird erstellt …</div>
+                                ) : (
+                                    <div className="ml-4">Angebot als PDF herunterladen</div>
+                                )}
+                            </button>
+                        ) : null}
 
                         {/* User notes */}
                         <div className="my-4 bg-[#f3f4f6] ">
@@ -259,12 +262,14 @@ export default function CartSidebar() {
                                 </button>
                             </Link>
                         </div>
-                        <button
-                            onClick={handleCheckout}
-                            className="w-full mt-6 bg-primaryColor font-bold text-white py-3 rounded-lg"
-                        >
-                            ZUR KASSE
-                        </button>
+                        {cartItems.length > 0 && (
+                            <button
+                                onClick={handleCheckout}
+                                className="w-full mt-6 bg-primaryColor font-bold text-white py-3 rounded-lg"
+                            >
+                                ZUR KASSE
+                            </button>
+                        )}
                     </motion.div>
                 </>
             )}

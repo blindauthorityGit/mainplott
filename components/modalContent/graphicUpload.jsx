@@ -42,6 +42,8 @@ const GraphicUploadModalContent = ({
     const errors = {};
     const warnings = {};
 
+    console.log("STEPS", steps);
+
     if (isPDF) {
         // PDF-specific error handling
         if (!alpha || alpha === "unknown") {

@@ -65,7 +65,8 @@ export const uploadFileToStorage = async (file, path) => {
 
 export const uploadFileToTempFolder = async (file, userId) => {
     const uniqueId = uuidv4();
-    const filePath = `temp/${userId}/${uniqueId}-${file.name}`;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const filePath = `temp/${timestamp}/${userId}/${uniqueId}-${file.name}`;
 
     // Firebase storage reference
     const storageRef = ref(storage, filePath);
@@ -97,7 +98,8 @@ export const uploadFileToTempFolder = async (file, userId) => {
 export const uploadLayoutFile = async (file, userId) => {
     const uniqueId = uuidv4();
     // Save files under the layoutFiles folder
-    const filePath = `layoutFiles/${userId}/${uniqueId}-${file.name}`;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const filePath = `layoutFiles/${timestamp}/${userId}/${uniqueId}-${file.name}`;
 
     // Create a Firebase storage reference
     const storageRef = ref(storage, filePath);
@@ -131,7 +133,8 @@ export const uploadLayoutFile = async (file, userId) => {
 export const uploadPreviewToStorage = async (previewFileBuffer, fileName) => {
     try {
         const uniqueId = uuidv4();
-        const filePath = `pdfpreviews/${uniqueId}-${fileName}`;
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        const filePath = `pdfpreviews/${timestamp}/${uniqueId}-${fileName}`;
 
         // Firebase storage reference
         const storageRef = ref(storage, filePath);

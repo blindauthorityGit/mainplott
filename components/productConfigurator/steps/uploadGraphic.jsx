@@ -1,27 +1,23 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import ContentWrapper from "../components/contentWrapper";
-import { uploadFileToTempFolder } from "@/config/firebase";
-import { analyzeImage } from "@/functions/analyzeImage";
-import { analyzePdf } from "@/functions/analyzePdf";
 import PdfPreview from "@/components/pdfPreview";
-import { P, H4 } from "@/components/typography";
+import { P } from "@/components/typography";
 import Link from "next/link";
 import GeneralCheckBox from "@/components/inputs/generalCheckbox";
 import { motion, AnimatePresence } from "framer-motion";
-
 import { GraphicUploadModalContent } from "@/components/modalContent";
-import LoadingSpinner from "@/components/spinner";
-import { H3 } from "@/components/typography";
 import { TbDragDrop } from "react-icons/tb";
 import { FiTrash2, FiChevronDown } from "react-icons/fi";
 
 import uploadAllGraphics from "@/functions/uploadGraphic";
 import analyzeImageWithOpenAI from "@/functions/analyzeImageWithOpenAI";
-import { saveImageToDB, getImagesFromDB, deleteImageFromDB } from "@/indexedDB/graphics";
+
+// ✅ neue IndexedDB-Helpers (Multi-Graphic kompatibel)
+import { getRecentGraphics, deleteGraphicFromDB } from "@/indexedDB/graphics";
 
 import useStore from "@/store/store";
-import { v4 as uuidv4 } from "uuid"; // NEW
+import { v4 as uuidv4 } from "uuid";
 
 export default function UploadGraphic({ product, setCurrentStep, steps, currentStep }) {
     const {
@@ -37,11 +33,12 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
         setShowSpinner,
     } = useStore();
 
+    const currentSide = purchaseData.currentSide || "front";
+
     const [uploadedFile, setUploadedFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
     const [uploading, setUploading] = useState(true);
     const [uploadError, setUploadError] = useState(null);
-    const currentSide = purchaseData.currentSide || "front";
     const [isChecked, setIsChecked] = useState(false);
     const [acceptedDisclaimer, setAcceptedDisclaimer] = useState(false);
 
@@ -51,48 +48,50 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
 
     const stepData = { title: "Grafik hochladen" };
 
-    async function handleImageUpload(file) {
-        const blob = new Blob([file], { type: file.type });
-        await saveImageToDB(file.name, blob);
-    }
+    // aktives Element (Multi-Graphic)
+    const activeGraphic = purchaseData.sides[currentSide]?.uploadedGraphics?.find(
+        (g) => g.id === purchaseData.sides[currentSide]?.activeGraphicId
+    );
 
+    // Cached Grafiken aus IndexedDB holen (per UserId + TTL)
     useEffect(() => {
         (async () => {
-            const imgs = await getImagesFromDB();
+            const userId = purchaseData?.userId || "anonymous";
+            const imgs = await getRecentGraphics({ userId, ttlHours: 48, limit: 24 });
             setCachedGraphics(imgs);
         })();
-    }, []);
+    }, [purchaseData?.userId]);
 
+    // Preview-Quelle bestimmen (PDF → Preview, Image → ObjectURL)
     useEffect(() => {
+        // PDF → nimm das generierte Preview (String/dataURL)
+        if (activeGraphic?.isPDF && activeGraphic.preview) {
+            setPreviewUrl(activeGraphic.preview);
+            return;
+        }
+
+        // Image → Objekt-URL
         if (uploadedFile) {
             const url = URL.createObjectURL(uploadedFile);
             setPreviewUrl(url);
             return () => URL.revokeObjectURL(url);
-        } else {
-            setPreviewUrl(null);
         }
-    }, [uploadedFile]);
 
+        setPreviewUrl(null);
+    }, [uploadedFile, activeGraphic]);
+
+    // lokaler UI-State für „zuletzt hochgeladen“
     useEffect(() => {
         setUploadedFile(purchaseData.sides[currentSide]?.uploadedGraphicFile || null);
     }, [currentSide, purchaseData]);
 
     const handleDeleteCached = async (id) => {
-        await deleteImageFromDB(id);
+        await deleteGraphicFromDB(id); // ✅ neu
         setCachedGraphics((prev) => prev.filter((g) => g.id !== id));
         if (selectedCachedId === id) setSelectedCachedId(null);
     };
 
-    const handleUseSelected = () => {
-        if (!selectedCachedId) return;
-        const sel = cachedGraphics.find((g) => g.id === selectedCachedId);
-        if (!sel) return;
-        const file = new File([sel.blob], sel.name, { type: sel.blob.type });
-        // gleiche Logic wie Drop:
-        onDrop([file]);
-    };
-
-    // ---------------- Drop & Select – EINE Logik ----------------
+    // Dateien fallen lassen ODER aus Cache anklicken → gleicher Flow
     const onDrop = useCallback(
         async (acceptedFiles) => {
             if (!acceptedFiles || !acceptedFiles.length) return;
@@ -112,7 +111,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                 setDpi,
                 steps,
                 setCurrentStep,
-                stepAhead: true, // direkt weiter wie bisher
+                stepAhead: true,
             });
         },
         [
@@ -131,26 +130,16 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
         ]
     );
 
-    // NEW: wir deaktivieren den Auto-Click vom Root und öffnen die File-Dialog
-    //      manuell über open() – das triggert **denselben** onDrop-Flow.
-    const {
-        getRootProps,
-        getInputProps,
-        isDragActive,
-        open, // NEW
-    } = useDropzone({
+    // Dropzone: öffnet File-Dialog manuell (noClick)
+    const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
         onDrop,
         multiple: false,
-        noClick: true, // NEW: Root klickt nicht mehr automatisch
+        noClick: true,
         accept: {
             "image/*": [".jpg", ".jpeg", ".png"],
             "application/pdf": [".pdf"],
         },
     });
-
-    const handleShowDetails = () => {
-        if (uploadedFile) setModalOpen(true);
-    };
 
     const handleDeleteUpload = () => {
         setUploadedFile(null);
@@ -172,7 +161,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
         setTimeout(() => setAcceptedDisclaimer((v) => !v), 400);
     };
 
-    // NEW: „Text statt Grafik“ – legt Text an & geht weiter
+    // „Text statt Grafik“ – fügt Text als Element hinzu (Multi-Flow bleibt unberührt)
     const handleChooseText = () => {
         const rect = purchaseData.boundingRect || {
             x: 0,
@@ -210,7 +199,6 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
             },
         }));
 
-        // gleich weiter zum nächsten Step (wie stepAhead)
         if (steps[currentStep] === "Upload") {
             setTimeout(() => setCurrentStep(Math.min(currentStep + 1, steps.length - 1)), 50);
         }
@@ -218,7 +206,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
 
     return (
         <div className="lg:px-16 lg:mt-4 2xl:mt-8">
-            <ContentWrapper data={stepData}>
+            <ContentWrapper data={{ title: "Grafik hochladen" }}>
                 <>
                     <AnimatePresence>
                         {!acceptedDisclaimer && (
@@ -227,7 +215,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: 20 }}
                                 transition={{ duration: 0.3, ease: "easeInOut" }}
-                                className="mb-4 p-4 bg-accentColor border border-gray-300 rounded-lg"
+                                className="mb-4 p-4 bg-accentColor/70 border border-gray-300 rounded-lg"
                             >
                                 <P klasse="text-lg text-errorColor font-semibold mb-2">ZUERST LESEN, DANN UPLOADEN</P>
                                 <P klasse="mb-4 !text-xs text-gray-700">
@@ -255,85 +243,143 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                     initial={{ opacity: 0, y: -20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: 20 }}
-                                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                                    transition={{ duration: 0.25, ease: "easeInOut" }}
                                     {...getRootProps()}
-                                    className="flex flex-col items-center justify-center bg-primaryColor-100 rounded-[20px] border-dashed border-2 p-8 lg:p-12 border-gray-400"
+                                    className={[
+                                        "relative w-full overflow-hidden",
+                                        // Card
+                                        "rounded-2xl border bg-gradient-to-b from-primaryColor-50/70 to-primaryColor-100/60",
+                                        "border-primaryColor-200/60 shadow-sm",
+                                        // Layout
+                                        "px-5 py-6 lg:px-10 lg:py-10",
+                                        "min-h-[220px] grid place-items-center text-center",
+                                        // Interaktion
+                                        "transition-all duration-200",
+                                        isDragActive
+                                            ? "ring-2 ring-primaryColor-400/80 border-primaryColor-400/50 shadow-md scale-[0.998]"
+                                            : "hover:shadow-md hover:border-primaryColor-300/60",
+                                    ].join(" ")}
                                 >
-                                    {/* dropzone input – triggert onDrop */}
                                     <input {...getInputProps()} />
 
-                                    <div className="text-center">
-                                        {isDragActive ? (
-                                            <p className="font-body font-semibold text-xl text-primaryColor">
-                                                Lassen Sie los, um die Grafik hochzuladen!
-                                            </p>
-                                        ) : (
-                                            <>
-                                                <p className="font-body hidden lg:block font-semibold 2xl:text-xl text-textColor">
-                                                    Ziehen Sie Ihre Grafik hierher oder wählen Sie eine Datei.
-                                                </p>
-                                                <p className="font-body lg:hidden font-semibold text-lg text-textColor">
-                                                    Wählen Sie Ihre Grafik
-                                                </p>
-                                            </>
-                                        )}
+                                    {/* dezentes Deko-Pattern */}
+                                    <div className="pointer-events-none absolute inset-0 opacity-[0.06] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primaryColor-700 via-transparent to-transparent" />
 
-                                        <div className="flex justify-center text-6xl p-6 text-textColor">
-                                            <TbDragDrop />
+                                    <div className="relative z-10 flex flex-col items-center gap-4 lg:gap-6 max-w-[720px]">
+                                        {/* Icon */}
+                                        <div
+                                            className={[
+                                                "flex items-center justify-center rounded-full",
+                                                "h-14 w-14 lg:h-16 lg:w-16",
+                                                "bg-white/80 border border-primaryColor-200 text-primaryColor-700",
+                                            ].join(" ")}
+                                        >
+                                            <TbDragDrop className="text-3xl lg:text-4xl" />
                                         </div>
 
-                                        <div className="flex gap-3 justify-center">
-                                            {/* Datei auswählen → nutzt dropzone.open() → ruft onDrop → uploadAllGraphics */}
+                                        {/* Headline */}
+                                        {isDragActive ? (
+                                            <p className="font-body font-semibold text-base lg:text-xl text-primaryColor-700">
+                                                Loslassen zum Hochladen
+                                            </p>
+                                        ) : (
+                                            <div className="space-y-1">
+                                                <p className="font-body font-semibold text-[15px] lg:text-xl text-textColor">
+                                                    Datei hierher ziehen <span className="opacity-50">oder</span>{" "}
+                                                    auswählen
+                                                </p>
+                                                <p className="text-xs lg:text-sm text-textColor/70">
+                                                    Unterstützt: JPG, PNG, PDF • bis 25&nbsp;MB
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {/* Actions */}
+                                        <div className="flex flex-col sm:flex-row gap-3 mt-1">
                                             <button
                                                 type="button"
-                                                onClick={open} // NEW: gleiche Logik wie Drop
-                                                className="px-6 py-2 !font-semibold bg-primaryColor font-body text-white rounded-lg hover:bg-primaryColor-600"
+                                                onClick={open}
+                                                className={[
+                                                    "inline-flex items-center justify-center",
+                                                    "px-5 py-2.5 lg:px-6 lg:py-3 rounded-xl",
+                                                    "font-body font-semibold text-white",
+                                                    "bg-primaryColor hover:bg-primaryColor-600",
+                                                    "transition-colors",
+                                                ].join(" ")}
                                             >
                                                 Datei auswählen
                                             </button>
 
-                                            {/* NEW: Alternative – direkt Text anlegen */}
                                             <button
                                                 type="button"
                                                 onClick={handleChooseText}
-                                                className="px-6 py-2 !font-semibold bg-gray-800 font-body text-white rounded-lg hover:bg-gray-900"
+                                                className={[
+                                                    "inline-flex items-center justify-center",
+                                                    "px-5 py-2.5 lg:px-6 lg:py-3 rounded-xl",
+                                                    "font-body font-semibold",
+                                                    "bg-white/90 text-gray-900 border border-gray-300",
+                                                    "hover:bg-white",
+                                                ].join(" ")}
                                             >
                                                 Text statt Grafik
                                             </button>
                                         </div>
+
+                                        {/* kleine Chips */}
+                                        <div className="hidden lg:flex flex-wrap justify-center gap-2 mt-1">
+                                            {["JPG", "PNG", "PDF", "≤ 25 MB"].map((t) => (
+                                                <span
+                                                    key={t}
+                                                    className="px-2.5 py-1 rounded-full text-xs bg-white/70 border border-gray-200 text-gray-700"
+                                                >
+                                                    {t}
+                                                </span>
+                                            ))}
+                                        </div>
+
+                                        {/* Fehler */}
+                                        {uploadError && <p className="text-sm text-red-600 mt-1">{uploadError}</p>}
+
+                                        {/* kurze Vorschau nach Upload */}
+                                        {uploadedFile && !uploading && (
+                                            <div className="mt-1 flex flex-col items-center gap-2">
+                                                {previewUrl ? (
+                                                    <img
+                                                        src={previewUrl}
+                                                        alt=""
+                                                        className="h-20 lg:h-24 w-auto object-contain rounded-md shadow-sm border border-gray-200 bg-white"
+                                                    />
+                                                ) : null}
+                                                <p className="text-xs lg:text-sm text-gray-600">{uploadedFile?.name}</p>
+                                            </div>
+                                        )}
                                     </div>
-
-                                    {uploadError && (
-                                        <div className="mt-4 text-center">
-                                            <p className="font-body text-red-600">{uploadError}</p>
-                                        </div>
-                                    )}
-
-                                    {uploadedFile && !uploading && (
-                                        <div className="mt-4 text-center flex flex-col items-center">
-                                            <img src={previewUrl} className="max-h-24" alt="" />
-                                            <p className="font-body text-gray-700">
-                                                Hochgeladene Datei: {uploadedFile.name}
-                                            </p>
-                                        </div>
-                                    )}
                                 </motion.div>
 
-                                {/* Zuletzt benutzte Grafiken */}
+                                {/* Zuletzt benutzte Grafiken (aus IndexedDB, Multi-Flow-kompatibel) */}
+                                {/* Zuletzt benutzte Grafiken (aus IndexedDB, Multi-Flow-kompatibel) */}
                                 {!uploadedFile && cachedGraphics.length > 0 && (
                                     <div className="mb-6">
                                         <button
                                             type="button"
                                             onClick={() => setShowCached((p) => !p)}
-                                            className="w-full flex items-center justify-between bg-accentColor mt-4 px-4 py-3 rounded-lg shadow font-semibold"
+                                            className={[
+                                                "w-full flex items-center justify-between",
+                                                "bg-accentColor/70 border border-accentColor/50",
+                                                "mt-4 px-4 py-3 rounded-2xl shadow-sm",
+                                                "font-semibold text-[15px]",
+                                                "transition-all hover:shadow-md",
+                                            ].join(" ")}
                                         >
                                             <span>Zuletzt benutzte Grafiken</span>
                                             <FiChevronDown
-                                                className={`transition-transform ${
-                                                    showCached ? "rotate-180" : "rotate-0"
-                                                }`}
+                                                className={[
+                                                    "transition-transform duration-200",
+                                                    showCached ? "rotate-180" : "rotate-0",
+                                                ].join(" ")}
                                             />
                                         </button>
+
                                         <AnimatePresence initial={false}>
                                             {showCached && (
                                                 <motion.div
@@ -342,46 +388,90 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                                     animate={{ height: "auto", opacity: 1 }}
                                                     exit={{ height: 0, opacity: 0 }}
                                                     transition={{ duration: 0.25, ease: "easeInOut" }}
-                                                    className="overflow-hidden bg-accentColor/50 px-4 pb-4 rounded-b-lg"
+                                                    className="overflow-hidden"
                                                 >
-                                                    <div className="pt-4 flex flex-wrap gap-4">
-                                                        {cachedGraphics.map(({ id, name, blob }) => {
-                                                            const isSelected = id === selectedCachedId;
-                                                            return (
-                                                                <div key={id} className="relative group">
+                                                    <div
+                                                        className={[
+                                                            "bg-accentColor/40 border border-accentColor/40",
+                                                            "rounded-2xl mt-2 px-4 pb-4 pt-3",
+                                                        ].join(" ")}
+                                                    >
+                                                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                                                            {cachedGraphics.map(({ id, name, blob, preview }) => {
+                                                                const isSelected = id === selectedCachedId;
+                                                                const thumbSrc =
+                                                                    preview || (blob ? URL.createObjectURL(blob) : "");
+                                                                return (
                                                                     <button
-                                                                        type="button"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            handleDeleteCached(id);
-                                                                        }}
-                                                                        className="absolute -top-2 -right-2 bg-red-600 p-1.5 rounded-full text-white shadow hover:bg-red-700"
-                                                                    >
-                                                                        <FiTrash2 size={14} />
-                                                                    </button>
-
-                                                                    <button
+                                                                        key={id}
                                                                         type="button"
                                                                         onClick={() => {
                                                                             setSelectedCachedId(id);
-                                                                            const file = new File([blob], name, {
-                                                                                type: blob.type,
-                                                                            });
-                                                                            onDrop([file]); // gleiche Pipeline
+                                                                            if (!blob) return;
+                                                                            const file = new File(
+                                                                                [blob],
+                                                                                name || "grafik",
+                                                                                {
+                                                                                    type:
+                                                                                        blob.type ||
+                                                                                        "application/octet-stream",
+                                                                                }
+                                                                            );
+                                                                            onDrop([file]); // Multi-Upload-Flow
+                                                                            // Optional: nach kurzer Zeit URL wieder freigeben
+                                                                            setTimeout(() => {
+                                                                                try {
+                                                                                    URL.revokeObjectURL(thumbSrc);
+                                                                                } catch {}
+                                                                            }, 2000);
                                                                         }}
-                                                                        className={`rounded-lg overflow-hidden shadow focus:outline-none ${
-                                                                            isSelected ? "ring-4 ring-primaryColor" : ""
-                                                                        }`}
+                                                                        className={[
+                                                                            "group relative overflow-hidden rounded-xl",
+                                                                            "bg-white border border-gray-200 shadow-sm",
+                                                                            "aspect-square grid place-items-center",
+                                                                            "transition-all hover:shadow-md hover:border-primaryColor-300/70",
+                                                                            isSelected
+                                                                                ? "ring-4 ring-primaryColor/60"
+                                                                                : "",
+                                                                        ].join(" ")}
+                                                                        title={name || "Grafik"}
                                                                     >
-                                                                        <img
-                                                                            src={URL.createObjectURL(blob)}
-                                                                            alt={name}
-                                                                            className="h-24 w-24 object-contain"
-                                                                        />
+                                                                        {/* Delete */}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleDeleteCached(id);
+                                                                            }}
+                                                                            className="absolute top-2 right-2 z-10 rounded-full p-1.5 text-white bg-red-600/90 hover:bg-red-700 shadow"
+                                                                            aria-label="Grafik löschen"
+                                                                        >
+                                                                            <FiTrash2 size={14} />
+                                                                        </button>
+
+                                                                        {/* Thumb */}
+                                                                        {thumbSrc ? (
+                                                                            <img
+                                                                                src={thumbSrc}
+                                                                                alt={name || "Grafik"}
+                                                                                className="h-[78%] w-[78%] object-contain pointer-events-none"
+                                                                            />
+                                                                        ) : (
+                                                                            <div className="h-[78%] w-[78%] grid place-items-center text-[11px] text-gray-600">
+                                                                                Vorschau fehlt
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Caption */}
+                                                                        <div className="absolute bottom-0 left-0 right-0 bg-white/85 backdrop-blur-sm border-t border-gray-200 px-2 py-1">
+                                                                            <p className="text-[11px] text-gray-700 truncate">
+                                                                                {name || "Unbenannte Grafik"}
+                                                                            </p>
+                                                                        </div>
                                                                     </button>
-                                                                </div>
-                                                            );
-                                                        })}
+                                                                );
+                                                            })}
+                                                        </div>
                                                     </div>
                                                 </motion.div>
                                             )}

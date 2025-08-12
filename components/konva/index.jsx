@@ -1,5 +1,14 @@
 import React, { useRef, useEffect, useState, forwardRef, useMemo } from "react";
-import { Stage, Layer, Group, Image as KonvaImage, Rect, Transformer, Text } from "react-konva";
+import {
+    Stage,
+    Layer,
+    Group,
+    Image as KonvaImage,
+    Rect,
+    Transformer,
+    Text,
+    TextPath as KonvaTextPath,
+} from "react-konva";
 import useStore from "@/store/store";
 import { Button } from "@mui/material";
 import { FiZoomIn, FiZoomOut, FiRefreshCw, FiPlus, FiX, FiType, FiImage } from "react-icons/fi";
@@ -13,6 +22,7 @@ import uploadGraphic from "@/functions/uploadGraphic";
 import useImageObjects from "@/hooks/useImageObjects";
 import { v4 as uuidv4 } from "uuid"; // npm i uuid
 import { exportWithHiddenNodes } from "@/functions/exportWithHiddenNodes";
+import { describeArc, clamp, centeredTextPath } from "@/functions/archPath";
 
 const KonvaLayer = forwardRef(
     (
@@ -83,11 +93,24 @@ const KonvaLayer = forwardRef(
         const fontOptions = ["Roboto", "Arial", "Impact", "Comic Sans MS", "Montserrat", "Courier New"];
 
         const [buttonPos, setButtonPos] = useState({ x: 0, y: 0 });
+        const imageSources = useMemo(() => {
+            return uploadedGraphics.map((g) => {
+                if (g.isPDF && g.preview) return g.preview; // PNG-Preview nutzen
+                if (g.file instanceof Blob) return URL.createObjectURL(g.file);
+                return g.downloadURL || null;
+            });
+        }, [uploadedGraphics]);
 
-        const files = useMemo(() => uploadedGraphics.map((g) => g.file), [uploadedGraphics]);
-        console.log("FILES", files);
-        const imageObjs = useImageObjects(files);
-        console.log("imageObjs", imageObjs);
+        const imageObjs = useImageObjects(imageSources);
+
+        // Objekt-URLs wieder freigeben
+        useEffect(() => {
+            const urlsToRevoke = uploadedGraphics
+                .map((g) => (g.isPDF ? null : g.file instanceof Blob ? URL.createObjectURL(g.file) : null))
+                .filter(Boolean);
+            return () => urlsToRevoke.forEach((u) => URL.revokeObjectURL(u));
+        }, [uploadedGraphics]);
+
         const allGraphicsLoaded =
             uploadedGraphics.length === 0 || (imageObjs.length === uploadedGraphics.length && imageObjs.every(Boolean));
         const isImagesLoaded = productImageLoaded && allGraphicsLoaded;
@@ -137,6 +160,47 @@ const KonvaLayer = forwardRef(
         const [isEditAreaHovered, setIsEditAreaHovered] = useState(false);
         const fadeOutTimeoutRef = useRef(null);
         const hoveredRef = useRef(false);
+        const fadeTimerRef = useRef(null);
+
+        const textHoverTransformerRef = useRef(null);
+        const [hoveredTextId, setHoveredTextId] = useState(null);
+
+        function showTransformerFor(seconds = 4) {
+            setTransformerVisible(true);
+            transformerRef.current?.opacity(1);
+            if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+            fadeTimerRef.current = setTimeout(() => {
+                if (!hoveredRef.current && transformerRef.current) {
+                    new Konva.Tween({
+                        node: transformerRef.current,
+                        duration: 0.35,
+                        opacity: 0,
+                        onFinish: () => setTransformerVisible(false),
+                    }).play();
+                }
+            }, seconds * 1000);
+        }
+
+        useEffect(() => {
+            if (active?.type !== "graphic") return;
+            const node = graphicRefs.current[active.id]?.current;
+            if (!node) return;
+            transformerRef.current?.nodes([node]);
+            transformerRef.current?.getLayer().batchDraw();
+            // nach dem Render sicher ein Frame warten
+            requestAnimationFrame(() => showTransformerFor(4));
+        }, [active, imageObjs]);
+
+        useEffect(() => () => clearTimeout(fadeTimerRef.current), []);
+
+        useEffect(() => {
+            if (activeGraphicId && graphicRefs.current[activeGraphicId]?.current) {
+                // auf das neue Node hängen
+                transformerRef.current?.nodes([graphicRefs.current[activeGraphicId].current]);
+                transformerRef.current?.getLayer().batchDraw();
+                showTransformerFor(4);
+            }
+        }, [activeGraphicId]);
 
         const PADDING_RATIO = 0.08;
 
@@ -856,12 +920,38 @@ const KonvaLayer = forwardRef(
                                         onTransform={handleGraphicTransform}
                                         onTransformEnd={(e) => handleGraphicTransformEnd(e, g.id)}
                                         dragBoundFunc={dragBoundFunc}
+                                        // onMouseEnter={() => {
+                                        //     setActiveElement(currentSide, "graphic", g.id); // <- wichtig für UI-Switch
+                                        //     setTransformerVisible(true);
+                                        // }}
+                                        // onMouseLeave={() => {
+                                        //     setTransformerVisible(false);
+                                        // }}
                                         onMouseEnter={() => {
-                                            setActiveElement(currentSide, "graphic", g.id); // <- wichtig für UI-Switch
+                                            hoveredRef.current = true;
                                             setTransformerVisible(true);
+                                            transformerRef.current?.opacity(1);
                                         }}
                                         onMouseLeave={() => {
-                                            setTransformerVisible(false);
+                                            hoveredRef.current = false;
+                                            // kurzer Delay, damit man nicht flackert, wenn man knapp außerhalb fährt
+                                            setTimeout(() => {
+                                                if (!hoveredRef.current) {
+                                                    new Konva.Tween({
+                                                        node: transformerRef.current,
+                                                        duration: 0.2,
+                                                        opacity: 0,
+                                                        onFinish: () => setTransformerVisible(false),
+                                                    }).play();
+                                                }
+                                            }, 120);
+                                        }}
+                                        onClick={() => {
+                                            setActiveElement(currentSide, "graphic", g.id);
+                                            // sicherstellen, dass der Transformer auf genau diesem Node sitzt
+                                            transformerRef.current?.nodes([graphicRefs.current[g.id].current]);
+                                            transformerRef.current?.getLayer().batchDraw();
+                                            showTransformerFor(4);
                                         }}
                                         hitFunc={(context, shape) => {
                                             const sideTolerance = 30;
@@ -885,23 +975,34 @@ const KonvaLayer = forwardRef(
                         {/* (Je nachdem, wie du das Handling machen willst) */}
                         {sideTexts.map((t) => {
                             if (!textRefs.current[t.id]) textRefs.current[t.id] = React.createRef();
+
+                            // Breite schätzen (einmal pro Render ok)
+                            const probe = new Konva.Text({
+                                text: t.value || "",
+                                fontSize: t.fontSize || 36,
+                                fontFamily: t.fontFamily || "Roboto",
+                            });
+                            const extra = 1; // 15% länger
+                            const textLength = Math.max(1, probe.width() * extra);
+
+                            // Pfad mit Mittelpunkt (0,0) und stabiler Richtung
+                            const pathD = centeredTextPath(textLength, t.curvature ?? 0);
+
                             return (
-                                <Text
+                                <Group
                                     key={t.id}
                                     ref={textRefs.current[t.id]}
-                                    text={t.value}
                                     x={t.x}
                                     y={t.y}
-                                    fontSize={t.fontSize}
-                                    fontFamily={t.fontFamily}
-                                    fill={t.fill}
+                                    rotation={t.rotation || 0}
+                                    scaleX={t.scale || 1}
+                                    scaleY={t.scale || 1}
                                     draggable={isGraphicDraggable}
-                                    rotation={t.rotation}
-                                    scaleX={t.scale}
-                                    scaleY={t.scale}
                                     dragBoundFunc={makeTextDragBound(textRefs.current[t.id])}
-                                    onMouseEnter={() => setActiveElement(currentSide, "text", t.id)}
-                                    onClick={() => setActiveElement(currentSide, "text", t.id)}
+                                    // onMouseEnter={() => setActiveElement(currentSide, "text", t.id)}
+                                    onMouseEnter={() => setHoveredTextId(t.id)} // nur Hover-Marker
+                                    onMouseLeave={() => setHoveredTextId((id) => (id === t.id ? null : id))}
+                                    onClick={() => setActiveElement(currentSide, "text", t.id)} // Aktivierung nur per Klick
                                     onDragEnd={(e) => {
                                         const { x, y } = e.target.position();
                                         updateText(currentSide, t.id, { x, y });
@@ -915,11 +1016,16 @@ const KonvaLayer = forwardRef(
                                             y: node.y(),
                                         });
                                     }}
-                                    onDblClick={() => {
-                                        setEditingTextId(t.id);
-                                        setInputValue(t.value);
-                                    }}
-                                />
+                                >
+                                    <KonvaTextPath
+                                        data={pathD}
+                                        text={t.value}
+                                        fontSize={t.fontSize || 36}
+                                        fontFamily={t.fontFamily || "Roboto"}
+                                        fill={t.fill || "#000"}
+                                        listening={true}
+                                    />
+                                </Group>
                             );
                         })}
 
@@ -948,6 +1054,18 @@ const KonvaLayer = forwardRef(
                                 padding={6} // etwas Luft um den Text
                                 // borderDash={[6, 4]} // gestrichelter Rahmen
                                 borderStroke="#A42CD6" // deine Brand-Farbe
+                            />
+                        )}
+                        {hoveredTextId && hoveredTextId !== active?.id && textRefs.current[hoveredTextId]?.current && (
+                            <Transformer
+                                ref={textHoverTransformerRef}
+                                nodes={[textRefs.current[hoveredTextId].current]}
+                                enabledAnchors={[]}
+                                rotateEnabled={false}
+                                padding={4}
+                                borderStroke="#A42CD6"
+                                borderDash={[5, 4]} // gestrichelt = „nur Hover“
+                                opacity={0.5}
                             />
                         )}
                     </Layer>
@@ -1047,7 +1165,7 @@ const KonvaLayer = forwardRef(
                             // Fügt Text hinzu *und* setzt activeElement = {type:'text', id}
                             addText(purchaseData.currentSide || "front", {
                                 value: "Text hier bearbeiten",
-                                x: defaultX / 2,
+                                x: defaultX,
                                 y: defaultY,
                                 fontSize: 36,
                                 fontFamily: "Roboto",

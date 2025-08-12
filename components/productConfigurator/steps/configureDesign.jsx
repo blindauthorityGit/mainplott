@@ -59,7 +59,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
 
     const printRect = purchaseData.boundingRect || { x: 0, y: 0, width: 0, height: 0 };
     const fontSizeMin = 10;
-    const fontSizeMax = Math.round(printRect.height * 0.6);
+    const fontSizeMax = Math.round(printRect.height * 0.1);
     const xMinText = printRect.x;
     const xMaxText = printRect.x + printRect.width;
     const yMinText = printRect.y;
@@ -526,22 +526,24 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
             </div>
 
             {/* Previews der AKTUELLEN Seite (Grafiken + Texte) */}
+            {/* Previews der aktuellen Seite (Grafiken + Texte) */}
             {uploadedGraphics.length > 0 || texts.length > 0 ? (
-                <div className="flex flex-wrap gap-4 mt-6">
+                <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 lg:gap-4">
                     {/* Grafiken */}
-                    {uploadedGraphics.map((g) => (
-                        <div
-                            key={g.id}
-                            className={`flex items-top gap-2 p-2 rounded-2xl border border-[#ececec] ${
-                                activeGraphicId === g.id && active?.type !== "text" ? "bg-[#f3e9ec] shadow" : "bg-white"
-                            }`}
-                            style={{ minWidth: 100 }}
-                        >
-                            <img
-                                className="max-h-20 max-w-20 rounded-xl border border-[#e0d0d0] object-contain cursor-pointer"
-                                src={g.file instanceof Blob ? URL.createObjectURL(g.file) : g.downloadURL || ""}
-                                alt="Preview"
-                                onClick={() => {
+                    {uploadedGraphics.map((g) => {
+                        const isActiveGraphic = activeGraphicId === g.id && active?.type !== "text";
+                        const thumbSrc =
+                            g.isPDF && g.preview
+                                ? g.preview
+                                : g.file instanceof Blob
+                                ? URL.createObjectURL(g.file)
+                                : g.downloadURL || "";
+
+                        return (
+                            <button
+                                key={g.id}
+                                type="button"
+                                onClick={() =>
                                     setPurchaseData((prev) => ({
                                         ...prev,
                                         sides: {
@@ -552,18 +554,23 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                                 activeElement: { type: "graphic", id: g.id },
                                             },
                                         },
-                                    }));
-                                }}
-                                style={{
-                                    border:
-                                        activeGraphicId === g.id && active?.type !== "text"
-                                            ? "2px solid #ba979d"
-                                            : undefined,
-                                }}
-                            />
-                            <div className="flex flex-col gap-1">
-                                <IconButton
-                                    onClick={() => {
+                                    }))
+                                }
+                                className={[
+                                    "group relative overflow-hidden rounded-2xl border bg-white shadow-sm",
+                                    "aspect-square grid place-items-center transition-all",
+                                    "hover:shadow-md hover:border-primaryColor-300/70",
+                                    isActiveGraphic
+                                        ? "ring-4 ring-primaryColor/60 border-primaryColor"
+                                        : "border-gray-200",
+                                ].join(" ")}
+                                title={g.file?.name || "Grafik"}
+                            >
+                                {/* Delete */}
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
                                         setPurchaseData((prev) => {
                                             const next = prev.sides[currentSide].uploadedGraphics.filter(
                                                 (gg) => gg.id !== g.id
@@ -592,84 +599,121 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                                 },
                                             };
                                         });
+                                        // ObjectURL aufräumen
+                                        if (g.file instanceof Blob && thumbSrc?.startsWith("blob:")) {
+                                            setTimeout(() => {
+                                                try {
+                                                    URL.revokeObjectURL(thumbSrc);
+                                                } catch {}
+                                            }, 1500);
+                                        }
                                     }}
-                                    icon={FiX}
-                                    label="Löschen"
-                                    bgColor="bg-errorColor"
-                                    hoverColor="hover:bg-red-600"
-                                    textColor="text-white"
-                                />
-                            </div>
-                        </div>
-                    ))}
+                                    className="absolute top-2 right-2 z-10 rounded-full p-1.5 text-white bg-red-600/90 hover:bg-red-700 shadow"
+                                    aria-label="Grafik löschen"
+                                >
+                                    <FiX size={14} />
+                                </button>
+
+                                {/* Thumb */}
+                                {thumbSrc ? (
+                                    <img
+                                        src={thumbSrc}
+                                        alt="Preview"
+                                        className="pointer-events-none h-[78%] w-[78%] object-contain rounded-md"
+                                    />
+                                ) : (
+                                    <div className="h-[78%] w-[78%] grid place-items-center text-xs text-gray-600">
+                                        Vorschau fehlt
+                                    </div>
+                                )}
+
+                                {/* Caption */}
+                                <div className="absolute bottom-0 left-0 right-0 bg-white/85 backdrop-blur-sm border-t border-gray-200 px-2 py-1">
+                                    <p className="text-[11px] text-gray-700 truncate">{g.file?.name || "Grafik"}</p>
+                                </div>
+                            </button>
+                        );
+                    })}
 
                     {/* Texte */}
                     {texts.map((t) => {
                         const isActiveText = active?.type === "text" && active.id === t.id;
                         return (
-                            <div
+                            <button
                                 key={t.id}
-                                className={`flex items-center gap-2 p-2 rounded-2xl border border-[#ececec] ${
-                                    isActiveText ? "bg-[#f3e9ec] shadow" : "bg-white"
-                                }`}
-                                style={{ minWidth: 100 }}
+                                type="button"
+                                onClick={() => setActiveElement(currentSide, "text", t.id)}
+                                className={[
+                                    "group relative overflow-hidden rounded-2xl border bg-white shadow-sm",
+                                    "aspect-square grid place-items-center transition-all",
+                                    "hover:shadow-md hover:border-primaryColor-300/70",
+                                    isActiveText
+                                        ? "ring-4 ring-primaryColor/60 border-primaryColor"
+                                        : "border-gray-200",
+                                ].join(" ")}
+                                title={t.value || "Text"}
                             >
+                                {/* Delete */}
                                 <button
-                                    className="w-20 h-20 rounded-xl border border-[#e0d0d0] grid place-items-center cursor-pointer"
-                                    onClick={() => setActiveElement(currentSide, "text", t.id)}
-                                    title={t.value}
-                                    style={{ border: isActiveText ? "2px solid #ba979d" : undefined }}
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPurchaseData((prev) => {
+                                            const nextTexts = prev.sides[currentSide].texts.filter(
+                                                (tt) => tt.id !== t.id
+                                            );
+                                            const wasActiveText =
+                                                prev.sides[currentSide].activeElement?.type === "text" &&
+                                                prev.sides[currentSide].activeElement?.id === t.id;
+
+                                            const nextActive = wasActiveText
+                                                ? nextTexts[0]
+                                                    ? { type: "text", id: nextTexts[0].id }
+                                                    : uploadedGraphics[0]
+                                                    ? { type: "graphic", id: uploadedGraphics[0].id }
+                                                    : null
+                                                : prev.sides[currentSide].activeElement;
+
+                                            return {
+                                                ...prev,
+                                                sides: {
+                                                    ...prev.sides,
+                                                    [currentSide]: {
+                                                        ...prev.sides[currentSide],
+                                                        texts: nextTexts,
+                                                        activeTextId: wasActiveText
+                                                            ? nextTexts[0]?.id || null
+                                                            : prev.sides[currentSide].activeTextId,
+                                                        activeElement: nextActive,
+                                                    },
+                                                },
+                                            };
+                                        });
+                                    }}
+                                    className="absolute top-2 right-2 z-10 rounded-full p-1.5 text-white bg-red-600/90 hover:bg-red-700 shadow"
+                                    aria-label="Text löschen"
                                 >
-                                    <FiType size={28} />
+                                    <FiX size={14} />
                                 </button>
 
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-xs max-w-[10rem] truncate" title={t.value}>
+                                {/* Text-Thumb */}
+                                <div
+                                    className={[
+                                        "h-[78%] w-[78%] rounded-md border grid place-items-center",
+                                        "bg-white text-gray-900",
+                                        "border-gray-200 group-hover:border-primaryColor-300/70",
+                                    ].join(" ")}
+                                >
+                                    <span className="px-2 text-sm text-center line-clamp-3 leading-snug">
                                         {t.value || "Text"}
                                     </span>
-
-                                    <IconButton
-                                        onClick={() => {
-                                            setPurchaseData((prev) => {
-                                                const nextTexts = prev.sides[currentSide].texts.filter(
-                                                    (tt) => tt.id !== t.id
-                                                );
-                                                const wasActiveText =
-                                                    prev.sides[currentSide].activeElement?.type === "text" &&
-                                                    prev.sides[currentSide].activeElement?.id === t.id;
-
-                                                const nextActive = wasActiveText
-                                                    ? nextTexts[0]
-                                                        ? { type: "text", id: nextTexts[0].id }
-                                                        : uploadedGraphics[0]
-                                                        ? { type: "graphic", id: uploadedGraphics[0].id }
-                                                        : null
-                                                    : prev.sides[currentSide].activeElement;
-
-                                                return {
-                                                    ...prev,
-                                                    sides: {
-                                                        ...prev.sides,
-                                                        [currentSide]: {
-                                                            ...prev.sides[currentSide],
-                                                            texts: nextTexts,
-                                                            activeTextId: wasActiveText
-                                                                ? nextTexts[0]?.id || null
-                                                                : prev.sides[currentSide].activeTextId,
-                                                            activeElement: nextActive,
-                                                        },
-                                                    },
-                                                };
-                                            });
-                                        }}
-                                        icon={FiX}
-                                        label="Löschen"
-                                        bgColor="bg-errorColor"
-                                        hoverColor="hover:bg-red-600"
-                                        textColor="text-white"
-                                    />
                                 </div>
-                            </div>
+
+                                {/* Caption */}
+                                <div className="absolute bottom-0 left-0 right-0 bg-white/85 backdrop-blur-sm border-t border-gray-200 px-2 py-1">
+                                    <p className="text-[11px] text-gray-700 truncate">{t.value || "Text"}</p>
+                                </div>
+                            </button>
                         );
                     })}
                 </div>

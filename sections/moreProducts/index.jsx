@@ -63,7 +63,7 @@ export default function MoreProducts({ relatedProducts, currentProductHandle }) 
                 <div className="flex justify-center mt-8">
                     <button
                         onClick={handleShowMore}
-                        className="px-6 py-2 bg-primaryColor text-white rounded-md hover:bg-primaryColor-700 transition"
+                        className="px-6 py-2 font-semibold underline  text-textColor rounded-md hover:bg-primaryColor-700 transition"
                     >
                         Mehr anzeigen
                     </button>
