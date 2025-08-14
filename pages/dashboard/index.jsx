@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { useShopifyCustomer } from "@/hooks/useShopifyCustomer";
-import { auth } from "@/config/firebase";
+import { auth, fetchDashboardData } from "@/config/firebase"; // <— fetchDashboardData hierher
 import { FiHome, FiShoppingBag, FiUploadCloud, FiFileText, FiMapPin, FiLogOut } from "react-icons/fi";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function DashboardHome() {
     const [devEmail, setDevEmail] = useState("");
@@ -10,10 +10,43 @@ export default function DashboardHome() {
         process.env.NEXT_PUBLIC_DEV && devEmail ? devEmail : null
     );
 
+    const [dashboardData, setDashboardData] = useState(null);
+
+    // >>> hier wird geladen & geloggt
+    useEffect(() => {
+        // bevorzugt E‑Mail (DEV‑Override), sonst UID
+        const email = process.env.NEXT_PUBLIC_DEV && devEmail ? devEmail : customer?.email || null;
+        const uid = auth.currentUser?.uid || null;
+
+        if (!email && !uid) return; // warten bis eins da ist
+
+        (async () => {
+            try {
+                const data = await fetchDashboardData({ email, uid, maxPending: 50 });
+                console.log("[Dashboard] Firebase:", data); // <-- dein Log
+                setDashboardData(data);
+            } catch (e) {
+                console.error("[Dashboard] Firebase Fehler:", e);
+            }
+        })();
+    }, [customer, devEmail]); // triggert nach Login & bei DEV‑Wechsel
+
     const name =
         customer?.firstName || customer?.lastName
             ? `${customer?.firstName || ""} ${customer?.lastName || ""}`.trim()
             : customer?.email || "";
+
+    // Optionaler Test‑Button nur zum erneuten Loggen
+    async function logNow() {
+        const email = process.env.NEXT_PUBLIC_DEV && devEmail ? devEmail : customer?.email || null;
+        const uid = auth.currentUser?.uid || null;
+        try {
+            const data = await fetchDashboardData({ email, uid, maxPending: 50 });
+            console.log("[Dashboard] Manual fetch:", data);
+        } catch (e) {
+            console.error("[Dashboard] Manual fetch error:", e);
+        }
+    }
     return (
         <div className="min-h-screen font-body bg-[#f8f7f5]">
             <div className="mx-auto max-w-7xl px-4 py-6 lg:px-6">
@@ -66,7 +99,7 @@ export default function DashboardHome() {
                             <h1 className="mt-1 text-3xl font-extrabold tracking-tight">
                                 <span className="text-gray-900">Hi, </span>
                                 <span className="bg-gradient-to-r from-primaryColor to-pink-400 bg-clip-text text-transparent">
-                                    {loading ? "lädt…" : name || "User"}
+                                    {loading ? "lädt…" : (dashboardData && dashboardData.profile.email) || "User"}
                                 </span>
                             </h1>
                             <p className="mt-2 text-gray-600">

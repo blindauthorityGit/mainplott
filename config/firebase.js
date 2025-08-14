@@ -12,6 +12,8 @@ import {
     deleteDoc,
     updateDoc,
     serverTimestamp,
+    orderBy,
+    limit,
 } from "firebase/firestore/lite";
 import { getStorage, ref, uploadBytes, listAll, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
@@ -35,6 +37,9 @@ const storage = getStorage(app);
 const auth = getAuth(app);
 
 const firestore = getFirestore(app);
+
+// --- Helpers & Konstanten ---
+const isDevMode = () => String(process.env.NEXT_PUBLIC_DEV) === "true";
 
 export { app, db, storage, auth, firestore };
 // export const auth = getAuth(app);
@@ -296,4 +301,88 @@ export async function createPendingOrder({ items, uploads, address, note, extra,
 
     const ref = await addDoc(collection(db, `${basePath}/pendingOrders`), payload);
     return { pendingId: ref.id, scope: payload.scope, ownerId: uid || anonId };
+}
+
+const COLL = {
+    company: () => (isDevMode() ? "dev_firmenUsers" : "firmenUsers"),
+    private: () => (isDevMode() ? "dev_privatUsers" : "privatUsers"),
+};
+
+// Sucht ein einzelnes Doc in einer Collection per UID
+async function _getDocByUid(collName, uid) {
+    const snap = await getDoc(doc(db, collName, uid));
+    return snap.exists() ? { id: snap.id, ...snap.data(), _collection: collName } : null;
+}
+
+// Sucht per Email (lowercased) in einer Collection
+async function _getDocByEmail(collName, email) {
+    const q = query(collection(db, collName), where("email", "==", String(email).toLowerCase()));
+    const snap = await getDocs(q);
+    if (snap.empty) return null;
+    const d = snap.docs[0];
+    return { id: d.id, ...d.data(), _collection: collName };
+}
+
+/**
+ * Profil holen (Firmen/Privat), erst Firmen dann Privat.
+ * Du kannst per uid ODER email suchen (email bevorzugt, wenn beides gegeben).
+ */
+export async function fetchUserProfile({ uid = null, email = null } = {}) {
+    if (!uid && !email) throw new Error("fetchUserProfile: uid ODER email erforderlich.");
+
+    // Firmenkunde zuerst
+    if (email) {
+        const byEmailCompany = await _getDocByEmail(COLL.company(), email);
+        if (byEmailCompany) return byEmailCompany;
+        const byEmailPrivate = await _getDocByEmail(COLL.private(), email);
+        if (byEmailPrivate) return byEmailPrivate;
+    }
+
+    if (uid) {
+        const byUidCompany = await _getDocByUid(COLL.company(), uid);
+        if (byUidCompany) return byUidCompany;
+        const byUidPrivate = await _getDocByUid(COLL.private(), uid);
+        if (byUidPrivate) return byUidPrivate;
+    }
+
+    return null;
+}
+
+/**
+ * Pending Orders aus users/{uid}/pendingOrders holen.
+ * Standard: neueste zuerst, max N.
+ */
+export async function fetchPendingOrders(uid, maxItems = 50) {
+    if (!uid) throw new Error("fetchPendingOrders: uid fehlt.");
+    const sub = collection(db, `users/${uid}/pendingOrders`);
+    const qy = query(sub, orderBy("createdAt", "desc"), limit(maxItems));
+    const snap = await getDocs(qy);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+/**
+ * Komfort‑Fetcher für’s Dashboard:
+ *  - Sucht Profil (per email→uid oder direkt uid)
+ *  - Holt danach pendingOrders
+ *  - Gibt beides zusammen zurück
+ */
+export async function fetchDashboardData({ email = null, uid = null, maxPending = 50 } = {}) {
+    // 1) Profil holen
+    const profile = await fetchUserProfile({ uid, email });
+
+    // 2) UID bestimmen (wenn wir via Email gesucht haben)
+    const resolvedUid = uid || profile?.id || null;
+
+    // 3) Pending holen (nur wenn wir eine UID sicher haben)
+    const pending = resolvedUid ? await fetchPendingOrders(resolvedUid, maxPending) : [];
+
+    return { profile, pending, uid: resolvedUid };
+}
+
+// pending order löschen (auth- oder anon-Scope)
+export async function deletePendingOrder({ uid, pendingId }) {
+    if (!uid || !pendingId) throw new Error("uid oder pendingId fehlt");
+    const ref = doc(db, "users", uid, "pendingOrders", pendingId); // << segmentiert
+    await deleteDoc(ref);
+    return true;
 }

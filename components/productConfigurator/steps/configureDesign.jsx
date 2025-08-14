@@ -160,8 +160,37 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         }));
     };
 
+    // const handleTabChange = (_event, newIndex) => {
+    //     setPurchaseData({ ...purchaseData, currentSide: newIndex === 0 ? "front" : "back" });
+    // };
     const handleTabChange = (_event, newIndex) => {
-        setPurchaseData({ ...purchaseData, currentSide: newIndex === 0 ? "front" : "back" });
+        const nextSide = newIndex === 0 ? "front" : "back";
+        console.log("TAB CHANGE");
+        setPurchaseData((prev) => {
+            const sideData = prev.sides?.[nextSide] || {};
+            // aktives Element für die neue Seite sauber setzen/clearen
+            const firstGraphicId = sideData.uploadedGraphics?.[0]?.id ?? null;
+            const firstTextId = sideData.texts?.[0]?.id ?? null;
+            const nextActive = firstGraphicId
+                ? { type: "graphic", id: firstGraphicId }
+                : firstTextId
+                ? { type: "text", id: firstTextId }
+                : null;
+            return {
+                ...prev,
+                currentSide: nextSide,
+                sides: {
+                    ...prev.sides,
+                    [nextSide]: {
+                        ...sideData,
+                        activeGraphicId:
+                            nextActive?.type === "graphic" ? nextActive.id : sideData.activeGraphicId ?? null,
+                        activeTextId: nextActive?.type === "text" ? nextActive.id : sideData.activeTextId ?? null,
+                        activeElement: nextActive,
+                    },
+                },
+            };
+        });
     };
 
     const handleGraphicUpload = async (event) => {

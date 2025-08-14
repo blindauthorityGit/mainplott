@@ -19,6 +19,8 @@ import { isNextDisabled, isPrevDisabled, handlePrevStep, handleNextStep } from "
 import exportAllSides from "@/functions/exportAllSides";
 import { calculateNetPrice } from "@/functions/calculateNetPrice"; // Import your net price function
 import { saveCartItem, cacheCartBlob } from "@/functions/saveCartItem";
+import { buildDecorationVariants, DECORATION_MODE } from "@/functions/decorations";
+
 import { v4 as uuidv4 } from "uuid";
 // Dynamically import the KonvaLayer component with no SSR
 // Provide a fallback
@@ -453,62 +455,26 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
     const handleAddToCart = () => {
         const updatedPurchaseData = { ...purchaseData };
-        const { sides, variants } = updatedPurchaseData;
 
-        // 1) Copy `variants` and remove "Standard"
-        const updatedVariants = { ...variants };
+        // 1) Varianten kopieren, "Standard" entfernen (wie gehabt)
+        const baseVariants = { ...(updatedPurchaseData.variants || {}) };
+        if (baseVariants.Standard) delete baseVariants.Standard;
+        updatedPurchaseData.variants = baseVariants;
 
-        if (updatedVariants.Standard) {
-            delete updatedVariants.Standard;
-        }
-
-        const totalQuantity = Object.values(updatedVariants).reduce((sum, variant) => sum + (variant.quantity || 0), 0);
-
-        const sidesToProcess = ["front", "back"];
-        sidesToProcess.forEach((sideKey) => {
-            const side = sides?.[sideKey];
-
-            if (side?.uploadedGraphic || side?.uploadedGraphicFile) {
-                const veredelungDetail = veredelungen?.[sideKey];
-
-                if (veredelungDetail) {
-                    const matchedDiscount = veredelungDetail.preisReduktion.discounts.find(
-                        (discount) =>
-                            totalQuantity >= discount.minQuantity &&
-                            (discount.maxQuantity === null || totalQuantity <= discount.maxQuantity)
-                    );
-
-                    if (matchedDiscount) {
-                        const variantIndex = veredelungDetail.preisReduktion.discounts.indexOf(matchedDiscount);
-
-                        const selectedVariant = veredelungDetail.variants.edges[variantIndex];
-
-                        if (selectedVariant) {
-                            updatedVariants[`${sideKey}Veredelung`] = {
-                                id: selectedVariant.node.id,
-                                size: null,
-                                quantity: totalQuantity,
-                                price: calculateNetPrice(parseFloat(matchedDiscount.price)),
-                                title: `${veredelungDetail.title} ${
-                                    sideKey.charAt(0).toUpperCase() + sideKey.slice(1)
-                                }`,
-                                currency: veredelungDetail.currency,
-                            };
-                        } else {
-                            console.error(`No matching variant found for ${sideKey}.`);
-                        }
-                    } else {
-                        console.error(`No matching discount for ${sideKey}.`);
-                    }
-                } else {
-                    console.error(`No veredelung detail found for side: ${sideKey}`);
-                }
-            } else {
-            }
+        // 2) Veredelungs-Variants anhand von Text/Grafik ermitteln
+        const { variantsPatch, perPiece, totalPerAll } = buildDecorationVariants({
+            purchaseData: updatedPurchaseData,
+            veredelungen, // kommt bei dir bereits aus den Props/State
+            calculateNetPrice, // deine vorhandene Netto-Helferfunktion
+            mode: DECORATION_MODE.PER_SIDE, // <— jetzt 1x pro Seite (Text ODER Grafik). Später PER_ELEMENT möglich.
         });
 
-        updatedPurchaseData.variants = updatedVariants;
-
+        // 3) Varianten mergen + Preise in purchaseData ablegen (damit Summary/Optionen/Cart stimmen)
+        updatedPurchaseData.variants = { ...baseVariants, ...variantsPatch };
+        updatedPurchaseData.veredelungPerPiece = perPiece; // { front, back }
+        updatedPurchaseData.veredelungTotal = totalPerAll; // Summe für Anzeige
+        console.log("UPDATES PÖRTSCHESE", updatedPurchaseData);
+        // 4) in den Warenkorb und UI
         addCartItem(updatedPurchaseData);
         openCartSidebar();
         hideMobileSteps();

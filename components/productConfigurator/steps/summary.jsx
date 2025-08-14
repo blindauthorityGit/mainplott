@@ -3,6 +3,7 @@ import useStore from "@/store/store"; // Zustand store
 import { ListElement } from "@/components/list";
 import { H2, H3, P } from "@/components/typography";
 import { calculateNetPrice } from "@/functions/calculateNetPrice"; // Import your net price function
+import { getDecorationSummary } from "@/functions/decorationMode";
 
 export default function OrderSummary({ product }) {
     const { purchaseData } = useStore();
@@ -11,15 +12,14 @@ export default function OrderSummary({ product }) {
     const sizeOrder = ["XS", "S", "M", "L", "XL", "2XL", "3XL"];
 
     console.log(purchaseData);
+    const deco = getDecorationSummary(purchaseData);
 
     // Relevant data mapping for display
     const summaryData = [
         { label: "Produkt Name", value: purchaseData.productName },
         { label: "Farbe", value: purchaseData.selectedColor || "Nicht ausgewählt" },
-        {
-            label: "Design",
-            value: `${Object.values(purchaseData.sides).filter((e) => e.uploadedGraphic).length} Motive (Seiten)`,
-        },
+        { label: "Design", value: `${deco.sidesWithContent} Motive (Seiten)` },
+
         // { label: "Veredelungen", value: purchaseData.veredelungen || "Keine" },
         { label: "Profi Datencheck", value: purchaseData.profiDatenCheck ? "Ja" : "Nein" },
         { label: "Layout Service", value: purchaseData.layoutServiceSelected ? "Ja" : "Nein" },
