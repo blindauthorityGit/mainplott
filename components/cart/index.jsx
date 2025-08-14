@@ -11,6 +11,8 @@ import { TextField } from "@mui/material";
 import prepareLineItems from "@/functions/prepareLineItems";
 import { createCart } from "@/libs/shopify";
 import dynamic from "next/dynamic";
+import { auth, createPendingOrder } from "@/config/firebase";
+
 const PDFDownloadLink = dynamic(() => import("@react-pdf/renderer").then((m) => m.PDFDownloadLink), { ssr: false });
 import CartOfferPDF from "@/components/pdf/cartOfferPDF";
 
@@ -31,20 +33,185 @@ export default function CartSidebar() {
     const [isClient, setIsClient] = useState(false);
     useEffect(() => setIsClient(true), []);
 
+    function buildSideSnapshot(item, side) {
+        const s = item?.sides?.[side] || {};
+        const designURL = item?.design?.[side]?.downloadURL || null;
+
+        const images = [];
+        // Array-Uploads
+        if (Array.isArray(s.uploadedGraphics)) {
+            s.uploadedGraphics.forEach((g) => {
+                const url = g?.downloadURL || g?.url || null;
+                if (url) images.push({ id: g.id || null, url, name: g.name || null, type: "upload" });
+            });
+        }
+        // Single-Upload
+        if (s.uploadedGraphic?.downloadURL) {
+            images.push({
+                id: s.uploadedGraphic.id || null,
+                url: s.uploadedGraphic.downloadURL,
+                name: s.uploadedGraphic.name || null,
+                type: "upload",
+            });
+        }
+        // Design-Preview
+        if (designURL) images.push({ id: null, url: designURL, name: "designPreview", type: "design" });
+
+        // Texte
+        const texts = Array.isArray(s.texts)
+            ? s.texts.map((t) => ({
+                  id: t.id,
+                  value: t.value,
+                  fontFamily: t.fontFamily,
+                  fontSize: t.fontSize,
+                  fill: t.fill,
+                  rotation: t.rotation,
+                  scale: t.scale,
+                  x: t.x,
+                  y: t.y,
+                  letterSpacing: t.letterSpacing,
+                  lineHeight: t.lineHeight,
+              }))
+            : [];
+
+        return { images, texts };
+    }
+
+    // ⬇️ NEU: Rich-Snapshot eines Cart-Items für Firestore
+    function buildItemSnapshot(srcItem, lineItemForThis) {
+        const layoutInfo = srcItem?.layout
+            ? {
+                  instructions: srcItem.layout.instructions || null,
+                  // *nur* URL/Name mitgeben – NIEMALS das File-Objekt
+                  uploadedFileUrl: srcItem.layout.uploadedFile?.downloadURL || null,
+                  uploadedFileName: srcItem.layout.uploadedFile?.name || null,
+              }
+            : null;
+
+        return {
+            productHandle: srcItem?.product?.handle || null,
+            productTitle: srcItem?.productName || srcItem?.product?.title || null,
+            selectedColor: srcItem?.selectedColor || null,
+            selectedSize: srcItem?.selectedSize || null,
+            totalPrice: Number(srcItem?.totalPrice || 0),
+
+            variants: srcItem?.variants
+                ? Object.entries(srcItem.variants).reduce((acc, [k, v]) => {
+                      acc[k] = {
+                          id: v?.id || null,
+                          quantity: Number(v?.quantity ?? 0),
+                          price: Number(v?.price ?? 0),
+                      };
+                      return acc;
+                  }, {})
+                : {},
+
+            sides: {
+                front: buildSideSnapshot(srcItem, "front"),
+                back: buildSideSnapshot(srcItem, "back"),
+            },
+
+            lineItemConfig: lineItemForThis?.customAttributes || null,
+            personalisierungsText: srcItem?.personalisierungsText || null,
+
+            // ⬇️ sicherer Layout-Block (keine Files)
+            layout: layoutInfo,
+        };
+    }
+
+    // ⬇️ NEU: erzeugt die Pending-Items 1:1 aus cartItems + den Shopify lineItems (gleiche Reihenfolge)
+    function buildItemsForPending(cartItems, lineItems) {
+        // Wir ordnen über itemIndex (falls im Attribut vorhanden), sonst über Reihenfolge
+        return cartItems.map((src, idx) => {
+            const li =
+                lineItems.find((li) =>
+                    (li.customAttributes || []).some((a) => a.key === "itemIndex" && Number(a.value) === idx)
+                ) ||
+                lineItems[idx] ||
+                null;
+            return {
+                variantId: li?.variantId || li?.merchandiseId || null,
+                quantity: Number(li?.quantity || 0),
+                config: li?.customAttributes || li?.attributes || null,
+                snapshot: buildItemSnapshot(src, li),
+            };
+        });
+    }
+
+    function getAnonId() {
+        if (typeof window === "undefined") return null;
+        let v = localStorage.getItem("anonId");
+        if (!v) {
+            v = Math.random().toString(36).slice(2) + Date.now().toString(36);
+            localStorage.setItem("anonId", v);
+        }
+        return v;
+    }
+
+    // sammelt mögliche Upload-IDs aus den Cart-Items
+    function collectUploadIds(items) {
+        const ids = [];
+        for (const it of items) {
+            if (it.uploadId) ids.push(it.uploadId);
+            if (it.design?.front?.id) ids.push(it.design.front.id);
+            if (it.design?.back?.id) ids.push(it.design.back.id);
+            if (it.design?.front?.uploadId) ids.push(it.design.front.uploadId);
+            if (it.design?.back?.uploadId) ids.push(it.design.back.uploadId);
+        }
+        return Array.from(new Set(ids)).slice(0, 25);
+    }
+
+    // baut ein schlankes Pending-Item-Array aus deinen lineItems
+    function compactItemsForPending(lineItems) {
+        return lineItems.map((li) => ({
+            variantId: li.variantId || li.merchandiseId,
+            quantity: Number(li.quantity || 0),
+            // falls du Custom-Attributes/Config mitschickst:
+            config: li.customAttributes || li.attributes || null,
+        }));
+    }
     const handleCheckout = async () => {
         try {
             const lineItems = prepareLineItems(cartItems);
-            const checkoutUrl = await createCart(lineItems, [], userNotes);
+            const uploads = collectUploadIds(cartItems);
+
+            const uid = auth.currentUser?.uid || null;
+            const anonId = uid ? null : getAnonId();
+
+            // ⬇️ REICHERE Items für Firestore (mit Sides)
+            const itemsForPending = buildItemsForPending(cartItems, lineItems);
+
+            const { pendingId, scope, ownerId } = await createPendingOrder({
+                items: itemsForPending,
+                uploads,
+                address: null, // TODO: falls vorhanden, hier setzen
+                note: userNotes || null,
+                extra: { userType: "firmenkunde" },
+                context: { uid, anonId },
+            });
+
+            const cartAttributes = [
+                { key: "pendingId", value: pendingId },
+                { key: "portalType", value: scope }, // "auth" | "anon"
+                { key: scope === "auth" ? "portalUid" : "anonId", value: ownerId },
+                { key: "uploadIds", value: JSON.stringify(uploads) },
+            ];
+
             console.log(lineItems);
-            console.log(checkoutUrl);
+            const checkoutUrl = await createCart(lineItems, cartAttributes, userNotes);
             if (!checkoutUrl) throw new Error("Checkout URL missing");
-            if (process.env.NEXT_PUBLIC_DEV || process.env.NEXT_DEV) {
+
+            // DEV: KEIN Redirect (sowohl "1" als auch "true" akzeptieren)
+            const dev = [process.env.NEXT_PUBLIC_DEV, process.env.NEXT_DEV].some((v) => v === "1" || v === "true");
+            if (dev) {
+                console.log("DEV MODE – checkoutUrl:", checkoutUrl);
                 return;
             }
+
             window.location.href = checkoutUrl;
         } catch (err) {
-            console.error("❌ createCart failed:", err);
-            setModalContent("Fehler beim Erstellen des Warenkorbs:\n" + err.message);
+            console.error("❌ handleCheckout failed:", err);
+            setModalContent("Fehler beim Erstellen des Warenkorbs:\n" + (err.message || String(err)));
             setModalOpen(true);
         }
     };

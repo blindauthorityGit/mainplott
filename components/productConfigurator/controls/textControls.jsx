@@ -11,7 +11,7 @@ export default function TextControls({
     yMin,
     yMax,
     sizeMin = 10,
-    sizeMax = 100,
+    sizeMax = 200,
     defaultFontSize = 36, // <- anpassbar
     fontOptions = ["Roboto", "Arial", "Impact", "Comic Sans MS", "Montserrat", "Courier New"],
 }) {

@@ -630,79 +630,145 @@ export async function fetchMetaobjects(metaobjectGids) {
 
 // libs/shopify.js
 
-export async function createCart(lineItems, cartAttributes, note) {
-    // Prepare the note field if provided.
-    const noteField = note && note.trim() !== "" ? `, note: ${JSON.stringify(note)}` : "";
+// export async function createCart(lineItems, cartAttributes, note) {
+//     // Prepare the note field if provided.
+//     const noteField = note && note.trim() !== "" ? `, note: ${JSON.stringify(note)}` : "";
 
-    // Construct the query dynamically with inlined lineItems and note (if any)
+//     // Construct the query dynamically with inlined lineItems and note (if any)
+//     const query = `
+//         mutation {
+//             cartCreate(input: {
+//                 lines: [
+//                     ${lineItems
+//                         .map(
+//                             (item) => `{
+//                         merchandiseId: "${item.variantId}",
+//                         quantity: ${item.quantity},
+//                         attributes: [
+//                             ${
+//                                 item.customAttributes
+//                                     ?.map((attr) => `{ key: "${attr.key}", value: "${attr.value}" }`)
+//                                     .join(", ") || ""
+//                             }
+//                         ]
+//                     }`
+//                         )
+//                         .join(", ")}
+//                 ],
+//                      buyerIdentity: {
+//         countryCode: DE
+//       }
+//                 attributes: [
+//                     ${cartAttributes.map((attr) => `{ key: "${attr.key}", value: "${attr.value}" }`).join(", ")}
+//                 ]
+//                 ${noteField}
+
+//             }) {
+//                 cart {
+//                     id
+//                     checkoutUrl
+//                     cost {
+//                     subtotalAmount { amount currencyCode }
+//                     totalTaxAmount { amount currencyCode }
+//                     totalAmount { amount currencyCode }
+//                     }
+//                 }
+//                 userErrors {
+//                     field
+//                     message
+//                 }
+//             }
+//         }
+//     `;
+
+//     try {
+//         const response = await callShopify(query);
+
+//         if (response.errors) {
+//             console.error("Shopify API Errors:", response.errors);
+//             throw new Error("Invalid input for Shopify cartCreate mutation.");
+//         }
+
+//         const userErrors = response?.data?.cartCreate?.userErrors || [];
+//         if (userErrors.length > 0) {
+//             console.error("Shopify User Errors:", userErrors);
+//             throw new Error(userErrors.map((error) => error.message).join(", "));
+//         }
+
+//         const cart = response?.data?.cartCreate?.cart;
+//         if (cart?.checkoutUrl) {
+//             return cart.checkoutUrl; // Return the checkout URL
+//         } else {
+//             throw new Error("No checkout URL returned!");
+//         }
+//     } catch (error) {
+//         console.error("Shopify createCart Error:", error.message);
+//         throw new Error("Could not create cart");
+//     }
+// }
+export async function createCart(lineItems = [], cartAttributes = [], note) {
+    const maxVal = (v) => String(v ?? "").slice(0, 240); // < 255 chars
+    const esc = (v) => JSON.stringify(maxVal(v)); // → korrekt gequotet
+    const keySan = (k) =>
+        String(k ?? "")
+            .replace(/[^\w-]/g, "_")
+            .slice(0, 30);
+
+    const linesStr = (lineItems || [])
+        .map((item) => {
+            const attrs = (item.customAttributes || [])
+                .map((a) => `{ key: ${JSON.stringify(keySan(a.key))}, value: ${esc(a.value)} }`)
+                .join(", ");
+
+            return `{
+      merchandiseId: ${JSON.stringify(item.variantId || item.merchandiseId)},
+      quantity: ${Number(item.quantity || 1)},
+      attributes: [${attrs}]
+    }`;
+        })
+        .join(", ");
+
+    const cartAttrsStr = (cartAttributes || [])
+        .map((a) => `{ key: ${JSON.stringify(keySan(a.key))}, value: ${esc(a.value)} }`)
+        .join(", ");
+
+    const noteField = note && String(note).trim() ? `, note: ${JSON.stringify(String(note))}` : "";
+
     const query = `
-        mutation {
-            cartCreate(input: {
-                lines: [
-                    ${lineItems
-                        .map(
-                            (item) => `{
-                        merchandiseId: "${item.variantId}",
-                        quantity: ${item.quantity},
-                        attributes: [
-                            ${
-                                item.customAttributes
-                                    ?.map((attr) => `{ key: "${attr.key}", value: "${attr.value}" }`)
-                                    .join(", ") || ""
-                            }
-                        ]
-                    }`
-                        )
-                        .join(", ")}
-                ],  
-                     buyerIdentity: {
-        countryCode: DE
-      }
-                attributes: [
-                    ${cartAttributes.map((attr) => `{ key: "${attr.key}", value: "${attr.value}" }`).join(", ")}
-                ]
-                ${noteField}
- 
-            }) {
-                cart {
-                    id
-                    checkoutUrl
-                    cost {
-                    subtotalAmount { amount currencyCode }
-                    totalTaxAmount { amount currencyCode }
-                    totalAmount { amount currencyCode }
-                    }
-                }
-                userErrors {
-                    field
-                    message
-                }
-            }
+    mutation {
+      cartCreate(input: {
+        lines: [ ${linesStr} ],
+        buyerIdentity: { countryCode: DE }
+        attributes: [ ${cartAttrsStr} ]
+        ${noteField}
+      }) {
+        cart { id checkoutUrl
+          cost { subtotalAmount { amount currencyCode } totalTaxAmount { amount currencyCode } totalAmount { amount currencyCode } }
         }
-    `;
+        userErrors { field message }
+      }
+    }
+  `;
 
     try {
         const response = await callShopify(query);
 
-        if (response.errors) {
-            console.error("Shopify API Errors:", response.errors);
+        if (response?.errors?.length) {
+            console.error("Shopify GraphQL errors:", response.errors);
             throw new Error("Invalid input for Shopify cartCreate mutation.");
         }
 
         const userErrors = response?.data?.cartCreate?.userErrors || [];
-        if (userErrors.length > 0) {
-            console.error("Shopify User Errors:", userErrors);
-            throw new Error(userErrors.map((error) => error.message).join(", "));
+        if (userErrors.length) {
+            console.error("Shopify User Errors:", userErrors, { lineItems, cartAttributes });
+            throw new Error(userErrors.map((e) => e.message).join("; "));
         }
 
-        const cart = response?.data?.cartCreate?.cart;
-        if (cart?.checkoutUrl) {
-            return cart.checkoutUrl; // Return the checkout URL
-        } else {
-            throw new Error("No checkout URL returned!");
-        }
-    } catch (error) {
-        console.error("Shopify createCart Error:", error.message);
+        const url = response?.data?.cartCreate?.cart?.checkoutUrl;
+        if (!url) throw new Error("No checkout URL returned!");
+        return url;
+    } catch (err) {
+        console.error("Shopify createCart Error:", err);
         throw new Error("Could not create cart");
     }
 }

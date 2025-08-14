@@ -12,7 +12,7 @@ import { FiTrash2, FiChevronDown } from "react-icons/fi";
 
 import uploadAllGraphics from "@/functions/uploadGraphic";
 import analyzeImageWithOpenAI from "@/functions/analyzeImageWithOpenAI";
-
+import syncDecorations from "@/functions/syncDecorations";
 // ✅ neue IndexedDB-Helpers (Multi-Graphic kompatibel)
 import { getRecentGraphics, deleteGraphicFromDB } from "@/indexedDB/graphics";
 
@@ -94,25 +94,36 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
     // Dateien fallen lassen ODER aus Cache anklicken → gleicher Flow
     const onDrop = useCallback(
         async (acceptedFiles) => {
-            if (!acceptedFiles || !acceptedFiles.length) return;
+            if (!acceptedFiles?.length) return;
             const file = acceptedFiles[0];
 
-            uploadAllGraphics({
-                newFile: file,
-                currentSide,
-                purchaseData,
-                setPurchaseData,
-                setModalContent,
-                setModalOpen,
-                setShowSpinner,
-                setUploading,
-                setUploadError,
-                setColorSpace,
-                setDpi,
-                steps,
-                setCurrentStep,
-                stepAhead: true,
-            });
+            try {
+                await uploadAllGraphics({
+                    newFile: file,
+                    currentSide,
+                    purchaseData,
+                    setPurchaseData,
+                    setModalContent,
+                    setModalOpen,
+                    setShowSpinner,
+                    setUploading,
+                    setUploadError,
+                    setColorSpace,
+                    setDpi,
+                    steps,
+                    setCurrentStep,
+                    stepAhead: true,
+                });
+            } catch (e) {
+                setUploadError(e?.message || String(e));
+            } finally {
+                // IMPORTANT: run after upload, using the newest state
+                syncDecorations({
+                    purchaseData: { ...purchaseData, variants: updatedVariants },
+                    setPurchaseData,
+                    product,
+                });
+            }
         },
         [
             currentSide,
@@ -127,6 +138,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
             setDpi,
             steps,
             setCurrentStep,
+            product,
         ]
     );
 
@@ -171,33 +183,41 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
         };
         const cx = rect.x + rect.width / 2;
         const cy = rect.y + rect.height / 2;
-
         const id = uuidv4();
-        setPurchaseData((prev) => ({
-            ...prev,
-            sides: {
-                ...prev.sides,
-                [currentSide]: {
-                    ...prev.sides[currentSide],
-                    texts: [
-                        ...(prev.sides[currentSide].texts || []),
-                        {
-                            id,
-                            value: "Text hier bearbeiten",
-                            x: cx,
-                            y: cy,
-                            fontSize: 36,
-                            fontFamily: "Roboto",
-                            fill: "#000",
-                            scale: 1,
-                            rotation: 0,
-                        },
-                    ],
-                    activeTextId: id,
-                    activeElement: { type: "text", id },
+
+        setPurchaseData((prev) => {
+            const next = {
+                ...prev,
+                sides: {
+                    ...prev.sides,
+                    [currentSide]: {
+                        ...prev.sides[currentSide],
+                        texts: [
+                            ...(prev.sides[currentSide].texts || []),
+                            {
+                                id,
+                                value: "Text hier bearbeiten",
+                                x: cx,
+                                y: cy,
+                                fontSize: 36,
+                                fontFamily: "Roboto",
+                                fill: "#000",
+                                scale: 1,
+                                rotation: 0,
+                            },
+                        ],
+                        activeTextId: id,
+                        activeElement: { type: "text", id },
+                    },
                 },
-            },
-        }));
+            };
+            // run after state flush (no setState nesting)
+            queueMicrotask(() => {
+                const latest = getState().purchaseData || next;
+                syncDecorations({ purchaseData: latest, setPurchaseData, product: latest?.product || product });
+            });
+            return next;
+        });
 
         if (steps[currentStep] === "Upload") {
             setTimeout(() => setCurrentStep(Math.min(currentStep + 1, steps.length - 1)), 50);

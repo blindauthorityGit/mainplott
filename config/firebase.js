@@ -11,6 +11,7 @@ import {
     where,
     deleteDoc,
     updateDoc,
+    serverTimestamp,
 } from "firebase/firestore/lite";
 import { getStorage, ref, uploadBytes, listAll, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
@@ -241,3 +242,58 @@ export const getUserData = async (uid, isDev = false) => {
 
     return null;
 };
+
+function deepSanitize(value) {
+    if (value === undefined) return null;
+    if (value === null) return null;
+
+    // Dateien abfangen (nur im Browser vorhanden)
+    const isFile = typeof File !== "undefined" && value instanceof File;
+    const isBlob = typeof Blob !== "undefined" && value instanceof Blob;
+    if (isFile || isBlob) {
+        return {
+            _type: isFile ? "file" : "blob",
+            name: value.name || null,
+            size: value.size || null,
+            type: value.type || null,
+        };
+    }
+
+    if (Array.isArray(value)) return value.map(deepSanitize);
+
+    if (typeof value === "object") {
+        const out = {};
+        for (const [k, v] of Object.entries(value)) {
+            out[k] = deepSanitize(v);
+        }
+        return out;
+    }
+    return value; // string/number/bool
+}
+
+export async function createPendingOrder({ items, uploads, address, note, extra, context }) {
+    const uid = context?.uid || auth.currentUser?.uid || null;
+    const anonId = uid ? null : context?.anonId || null;
+    if (!uid && !anonId) throw new Error("no uid/anonId");
+
+    const basePath = uid ? `users/${uid}` : `anonUsers/${anonId}`;
+
+    const payload = deepSanitize({
+        createdAt: serverTimestamp(),
+        status: "pending",
+        items,
+        uploads,
+        address: address || null,
+        note: note || null,
+        extra: extra || null,
+        scope: uid ? "auth" : "anon",
+        uid: uid || null,
+        anonId: anonId || null,
+    });
+
+    // Debug (kannst du nach Testen wieder rausnehmen)
+    // console.log("pending payload", payload);
+
+    const ref = await addDoc(collection(db, `${basePath}/pendingOrders`), payload);
+    return { pendingId: ref.id, scope: payload.scope, ownerId: uid || anonId };
+}
