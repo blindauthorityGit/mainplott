@@ -310,6 +310,17 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         return isFront ? frontOrig : backOrig;
     }, [selectedVariant, purchaseData.design, purchaseData.currentSide, currentStep, isPostDesign]);
 
+    // preload and then switch:
+    useEffect(() => {
+        if (!displayedImage) return;
+        setIsImgReady(false);
+        const img = new Image();
+        img.src = displayedImage;
+        img.onload = () => {
+            setActiveSrc(displayedImage);
+            setIsImgReady(true);
+        };
+    }, [displayedImage]);
     // SET VIEW TO FRONMT WHEN NAVIGATING
     // useEffect(() => {
     //
@@ -333,14 +344,14 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         }
     }, [containerRef.current]);
 
-    useEffect(() => {
-        if (!selectedVariant) return;
-        setSelectedImage(
-            purchaseData.currentSide !== "front" && selectedVariant.backImageUrl
-                ? selectedVariant.backImageUrl
-                : selectedVariant.image.originalSrc
-        );
-    }, [purchaseData.currentSide, selectedVariant]);
+    // useEffect(() => {
+    //     if (!selectedVariant) return;
+    //     setSelectedImage(
+    //         purchaseData.currentSide !== "front" && selectedVariant.backImageUrl
+    //             ? selectedVariant.backImageUrl
+    //             : selectedVariant.image.originalSrc
+    //     );
+    // }, [purchaseData.currentSide, selectedVariant]);
 
     // Handle rotate button click
     // Toggles between front/back in the store
@@ -365,10 +376,10 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     // Adjust image dimensions dynamically to maintain aspect ratio and fill the container up to 860px height
     useEffect(() => {
         // skip until we actually have a URL
-        if (!selectedImage || !imageRef.current) return;
+        if (!activeSrc || !imageRef.current) return;
 
         const img = new Image();
-        img.src = selectedImage;
+        img.src = activeSrc;
 
         img.onload = () => {
             let { width, height } = img;
@@ -395,7 +406,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
             setImageSize({ width, height });
         };
-    }, [selectedImage, isMobile]);
+    }, [activeSrc, isMobile]);
 
     // wenn displayedImage wechselt: erst vorladen, dann umschalten (kein Flicker)
     useEffect(() => {
@@ -589,7 +600,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     />
                                 ) : (
                                     <KonvaLayer
-                                        key={purchaseData.currentSide}
+                                        key={`${purchaseData.currentSide}-${isPostDesign ? "post" : "pre"}`}
                                         onExportReady={(fn) => (exportCanvasRef.current = fn)}
                                         ref={konvaLayerRef}
                                         uploadedGraphicFile={
@@ -600,7 +611,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                         }
                                         isPDF={purchaseData.sides[purchaseData.currentSide].isPDF}
                                         pdfPreview={purchaseData.sides[purchaseData.currentSide].preview}
-                                        productImage={selectedVariant?.configImage || selectedImage}
+                                        productImage={activeSrc || displayedImage}
                                         boundaries={
                                             {
                                                 /* ... */
@@ -650,7 +661,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     steps[currentStep] !== "Zusammenfassung")) && (
                                 <motion.div
                                     className="relative mix-blend-multiply max-w-full max-h-full xl:p-12"
-                                    key={activeSrc} // crossfade nur nach Preload
+                                    key={`${purchaseData.currentSide}-${isPostDesign ? "post" : "pre"}-${activeSrc}`}
                                     ref={imageRef}
                                     variants={fadeAnimationVariants}
                                     initial="initial"
@@ -659,7 +670,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     transition={{ duration: 0.1, ease: "easeInOut" }}
                                 >
                                     <img
-                                        src={displayedImage ?? ""}
+                                        src={activeSrc ?? ""}
                                         alt="Product Step Image"
                                         className="block max-w-full max-h-full w-auto h-auto object-contain mix-blend-multiply"
                                         onLoad={handleMeasuredLoad}

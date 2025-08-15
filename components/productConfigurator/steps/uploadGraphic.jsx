@@ -3,6 +3,8 @@ import { useDropzone } from "react-dropzone";
 import ContentWrapper from "../components/contentWrapper";
 import PdfPreview from "@/components/pdfPreview";
 import { P } from "@/components/typography";
+import LibraryPanel from "../libraryPanel"; // dein Panel
+
 import Link from "next/link";
 import GeneralCheckBox from "@/components/inputs/generalCheckbox";
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,6 +43,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
     const [uploadError, setUploadError] = useState(null);
     const [isChecked, setIsChecked] = useState(false);
     const [acceptedDisclaimer, setAcceptedDisclaimer] = useState(false);
+    const [showLibrary, setShowLibrary] = useState(false);
 
     const [cachedGraphics, setCachedGraphics] = useState([]);
     const [selectedCachedId, setSelectedCachedId] = useState(null);
@@ -63,14 +66,20 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
     }, [purchaseData?.userId]);
 
     // Preview-Quelle bestimmen (PDF → Preview, Image → ObjectURL)
+    // 👇 ersetzt deinen bisherigen Preview-Effect
     useEffect(() => {
-        // PDF → nimm das generierte Preview (String/dataURL)
-        if (activeGraphic?.isPDF && activeGraphic.preview) {
-            setPreviewUrl(activeGraphic.preview);
+        // Library-Asset aktiv?
+        if (activeGraphic) {
+            if (activeGraphic.isPDF && activeGraphic.preview) {
+                setPreviewUrl(activeGraphic.preview);
+            } else if (activeGraphic.downloadURL || activeGraphic.url) {
+                setPreviewUrl(activeGraphic.downloadURL || activeGraphic.url);
+            }
+            setUploading(false);
             return;
         }
 
-        // Image → Objekt-URL
+        // Fallback: lokales File
         if (uploadedFile) {
             const url = URL.createObjectURL(uploadedFile);
             setPreviewUrl(url);
@@ -78,7 +87,7 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
         }
 
         setPreviewUrl(null);
-    }, [uploadedFile, activeGraphic]);
+    }, [activeGraphic, uploadedFile]);
 
     // lokaler UI-State für „zuletzt hochgeladen“
     useEffect(() => {
@@ -112,17 +121,10 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                     setDpi,
                     steps,
                     setCurrentStep,
-                    stepAhead: true,
+                    stepAhead: false,
                 });
             } catch (e) {
                 setUploadError(e?.message || String(e));
-            } finally {
-                // IMPORTANT: run after upload, using the newest state
-                syncDecorations({
-                    purchaseData: { ...purchaseData, variants: updatedVariants },
-                    setPurchaseData,
-                    product,
-                });
             }
         },
         [
@@ -222,6 +224,112 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
         if (steps[currentStep] === "Upload") {
             setTimeout(() => setCurrentStep(Math.min(currentStep + 1, steps.length - 1)), 50);
         }
+    };
+
+    // Canvas-Zielgröße aus deinem State ableiten (Fallbacks ok)
+    const getDstCanvas = () => ({
+        width: purchaseData?.containerWidth || 800,
+        height: purchaseData?.containerHeight || 800,
+    });
+
+    // Quelle -> Ziel skalieren (wenn asset.canvas existiert)
+    function normalizePlacement(placement, srcCanvas, dstCanvas) {
+        const p = placement || { x: 300, y: 200, scale: 1, rotation: 0 };
+        if (!srcCanvas?.width || !srcCanvas?.height || !dstCanvas?.width || !dstCanvas?.height) return p;
+        const sx = dstCanvas.width / srcCanvas.width;
+        const sy = dstCanvas.height / srcCanvas.height;
+        const s = Math.min(sx, sy);
+        return { x: p.x * sx, y: p.y * sy, scale: p.scale * s, rotation: p.rotation };
+    }
+
+    // === Bild aus Library einfügen — exakt wie Cached ===
+    const insertImageFromLibrary = async (asset) => {
+        try {
+            // Sofort eine Vorschau zeigen (wie beim Cached-Klick fühlt es sich reaktiv an)
+            if (asset?.preview || asset?.url) {
+                setPreviewUrl(asset.preview || asset.url);
+                setUploading(false);
+            }
+
+            setShowSpinner?.(true);
+
+            // 1) Bild von der URL holen
+            //    (bei Firebase-/GCS-Download-Links passt CORS; alt=media wird unten ggf. ergänzt)
+            let res = await fetch(asset.url, { mode: "cors" });
+            if (!res.ok && asset.url && !asset.url.includes("alt=media")) {
+                // sanfter Fallback für Firebase-URLs
+                const u = asset.url + (asset.url.includes("?") ? "&" : "?") + "alt=media";
+                res = await fetch(u, { mode: "cors" });
+            }
+            if (!res.ok) throw new Error("Bild konnte nicht geladen werden.");
+
+            // 2) Blob -> File (wie aus dem Dateidialog)
+            const blob = await res.blob();
+            const ext =
+                blob.type === "image/png"
+                    ? "png"
+                    : blob.type === "image/jpeg"
+                    ? "jpg"
+                    : blob.type === "application/pdf"
+                    ? "pdf"
+                    : "bin";
+
+            const filename = (asset.name || "library-asset") + "." + ext;
+            const file = new File([blob], filename, { type: blob.type || "application/octet-stream" });
+
+            // 3) exakten Upload-Flow der Cached-Grafiken nutzen
+            //    -> Placement/State/Preview macht dein bestehendes uploadAllGraphics
+            await onDrop([file]); // stepAhead: false (siehe onDrop)
+
+            // optional: Library direkt zuklappen
+            // setShowLibrary(false);
+        } catch (err) {
+            console.error("Library → Upload fehlgeschlagen:", err);
+            setUploadError(err?.message || "Fehler beim Übernehmen des Library-Bildes.");
+        } finally {
+            setShowSpinner?.(false);
+        }
+    };
+
+    // === Text aus Library einfügen ===
+    const insertTextFromLibrary = (asset) => {
+        const side = asset.side || currentSide;
+        const pl = normalizePlacement(asset.placement, asset.canvas, getDstCanvas());
+        const id = uuidv4();
+
+        setPurchaseData((prev) => {
+            const next = { ...prev, sides: { ...prev.sides } };
+            const sideObj = { ...(next.sides[side] || {}) };
+
+            const texts = Array.isArray(sideObj.texts) ? [...sideObj.texts] : [];
+            texts.push({
+                id,
+                value: asset.value,
+                fontFamily: asset.fontFamily,
+                fontSize: asset.fontSize,
+                fill: asset.fill,
+                x: pl.x,
+                y: pl.y,
+                scale: pl.scale,
+                rotation: pl.rotation,
+                letterSpacing: asset.letterSpacing ?? null,
+                lineHeight: asset.lineHeight ?? null,
+            });
+
+            sideObj.texts = texts;
+            sideObj.activeTextId = id;
+            sideObj.activeElement = { type: "text", id };
+
+            next.sides[side] = sideObj;
+            return next;
+        });
+
+        if (steps[currentStep] === "Upload") {
+            setTimeout(() => setCurrentStep(Math.min(currentStep + 1, steps.length - 1)), 50);
+        }
+
+        const latest = { ...purchaseData };
+        syncDecorations({ purchaseData: latest, setPurchaseData, product });
     };
 
     return (
@@ -361,16 +469,15 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                         {uploadError && <p className="text-sm text-red-600 mt-1">{uploadError}</p>}
 
                                         {/* kurze Vorschau nach Upload */}
-                                        {uploadedFile && !uploading && (
+                                        {/* kurze Vorschau nach Upload/Library */}
+                                        {previewUrl && !uploading && (
                                             <div className="mt-1 flex flex-col items-center gap-2">
-                                                {previewUrl ? (
-                                                    <img
-                                                        src={previewUrl}
-                                                        alt=""
-                                                        className="h-20 lg:h-24 w-auto object-contain rounded-md shadow-sm border border-gray-200 bg-white"
-                                                    />
-                                                ) : null}
-                                                <p className="text-xs lg:text-sm text-gray-600">{uploadedFile?.name}</p>
+                                                <img
+                                                    src={previewUrl}
+                                                    alt=""
+                                                    className="h-20 lg:h-24 w-auto object-contain rounded-md shadow-sm border border-gray-200 bg-white"
+                                                />
+                                                {/* optional: Dateiname */}
                                             </div>
                                         )}
                                     </div>
@@ -498,6 +605,89 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                                         </AnimatePresence>
                                     </div>
                                 )}
+
+                                {/* Meine Bibliothek (aus Firestore Library/Pending) */}
+                                <div className="mb-6">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowLibrary((p) => !p)}
+                                        className={[
+                                            "w-full flex items-center justify-between",
+                                            "bg-accentColor/70 border border-accentColor/50",
+                                            "mt-4 px-4 py-3 rounded-2xl shadow-sm",
+                                            "font-semibold text-[15px]",
+                                            "transition-all hover:shadow-md",
+                                        ].join(" ")}
+                                    >
+                                        <span>Meine Bibliothek (frühere Uploads & Texte)</span>
+                                        <FiChevronDown
+                                            className={[
+                                                "transition-transform duration-200",
+                                                showLibrary ? "rotate-180" : "rotate-0",
+                                            ].join(" ")}
+                                        />
+                                    </button>
+
+                                    <AnimatePresence initial={false}>
+                                        {showLibrary && (
+                                            <motion.div
+                                                key="lib-panel"
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: "auto", opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                transition={{ duration: 0.25, ease: "easeInOut" }}
+                                                className="overflow-hidden"
+                                            >
+                                                <div className="bg-accentColor/40 border border-accentColor/40 rounded-2xl mt-2 px-4 pb-4 pt-3">
+                                                    {/* Variante A: Dein LibraryPanel liefert onInsert(asset) */}
+                                                    <LibraryPanel
+                                                        activeSide={currentSide}
+                                                        getCanvasSize={() => ({
+                                                            width: purchaseData?.containerWidth || 800,
+                                                            height: purchaseData?.containerHeight || 800,
+                                                        })}
+                                                        insertImage={({ url, side, x, y, scale, rotation }) =>
+                                                            insertImageFromLibrary({
+                                                                url,
+                                                                side,
+                                                                placement: { x, y, scale, rotation },
+                                                            })
+                                                        }
+                                                        insertText={(t) =>
+                                                            insertTextFromLibrary({
+                                                                value: t.value,
+                                                                fontFamily: t.fontFamily,
+                                                                fontSize: t.fontSize,
+                                                                fill: t.fill,
+                                                                side: t.side,
+                                                                placement: {
+                                                                    x: t.x,
+                                                                    y: t.y,
+                                                                    scale: t.scale,
+                                                                    rotation: t.rotation,
+                                                                },
+                                                                letterSpacing: t.letterSpacing,
+                                                                lineHeight: t.lineHeight,
+                                                            })
+                                                        }
+                                                    />
+
+                                                    {/* 
+            Variante B (falls dein LibraryPanel stattdessen onInsert(asset) hat):
+            <LibraryPanel
+              activeSide={currentSide}
+              getCanvasSize={() => getDstCanvas()}
+              onInsert={(asset) => {
+                if (asset.kind === "image") insertImageFromLibrary(asset);
+                else insertTextFromLibrary(asset);
+              }}
+            />
+          */}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
                             </>
                         )}
                     </AnimatePresence>

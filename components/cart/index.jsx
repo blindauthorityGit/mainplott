@@ -11,7 +11,7 @@ import { TextField } from "@mui/material";
 import prepareLineItems from "@/functions/prepareLineItems";
 import { createCart } from "@/libs/shopify";
 import dynamic from "next/dynamic";
-import { auth, createPendingOrder } from "@/config/firebase";
+import { auth, createPendingOrder, upsertLibraryAsset } from "@/config/firebase";
 
 const PDFDownloadLink = dynamic(() => import("@react-pdf/renderer").then((m) => m.PDFDownloadLink), { ssr: false });
 import CartOfferPDF from "@/components/pdf/cartOfferPDF";
@@ -32,7 +32,6 @@ export default function CartSidebar() {
 
     const [isClient, setIsClient] = useState(false);
     useEffect(() => setIsClient(true), []);
-
     function buildSideSnapshot(item, side) {
         const s = item?.sides?.[side] || {};
         const designURL = item?.design?.[side]?.downloadURL || null;
@@ -42,22 +41,38 @@ export default function CartSidebar() {
         if (Array.isArray(s.uploadedGraphics)) {
             s.uploadedGraphics.forEach((g) => {
                 const url = g?.downloadURL || g?.url || null;
-                if (url) images.push({ id: g.id || null, url, name: g.name || null, type: "upload" });
+                if (url)
+                    images.push({
+                        id: g.id || null,
+                        url,
+                        name: g.name || null,
+                        type: "upload",
+                        // ⬇️ NEU: mögliche Transforms aus deinem Konfigurator-Objekt mit übernehmen
+                        x: g.x ?? g.position?.x ?? null,
+                        y: g.y ?? g.position?.y ?? null,
+                        scale: g.scale ?? g.s ?? 1,
+                        rotation: g.rotation ?? g.r ?? 0,
+                    });
             });
         }
         // Single-Upload
         if (s.uploadedGraphic?.downloadURL) {
+            const g = s.uploadedGraphic;
             images.push({
-                id: s.uploadedGraphic.id || null,
-                url: s.uploadedGraphic.downloadURL,
-                name: s.uploadedGraphic.name || null,
+                id: g.id || null,
+                url: g.downloadURL,
+                name: g.name || null,
                 type: "upload",
+                x: g.x ?? g.position?.x ?? null,
+                y: g.y ?? g.position?.y ?? null,
+                scale: g.scale ?? g.s ?? 1,
+                rotation: g.rotation ?? g.r ?? 0,
             });
         }
         // Design-Preview
         if (designURL) images.push({ id: null, url: designURL, name: "designPreview", type: "design" });
 
-        // Texte
+        // Texte (du hast hier schon alle Transforms drin – passt)
         const texts = Array.isArray(s.texts)
             ? s.texts.map((t) => ({
                   id: t.id,
@@ -170,44 +185,132 @@ export default function CartSidebar() {
             config: li.customAttributes || li.attributes || null,
         }));
     }
+
+    // stabile ID per Mini-Hash (für Bilder/Textkombis)
+    function hash(s) {
+        let h = 0,
+            i,
+            chr;
+        if (!s) return "0";
+        for (i = 0; i < s.length; i++) {
+            chr = s.charCodeAt(i);
+            h = (h << 5) - h + chr;
+            h |= 0;
+        }
+        return String(h);
+    }
+
+    // zieht aus den Items (mit snapshot) alle Bilder/Texte für die Library
+    function collectAssetsFromPendingItems(items) {
+        const imagesMap = new Map(); // per URL deduplizieren
+        const textsMap = new Map(); // per (value|font|size|fill) deduplizieren
+        const now = new Date();
+
+        (items || []).forEach((it) => {
+            const snap = it?.snapshot || {};
+            const title = snap?.productTitle || "Artikel";
+
+            ["front", "back"].forEach((side) => {
+                const st = snap?.sides?.[side] || {};
+                // Upload-Bilder
+                (st.images || [])
+                    .filter((img) => img?.type === "upload" && img?.url)
+                    .forEach((img) => {
+                        const id = "img_" + hash(img.url);
+                        if (!imagesMap.has(id)) {
+                            imagesMap.set(id, {
+                                id,
+                                kind: "image",
+                                side,
+                                url: img.url,
+                                placement: {
+                                    x: img.x ?? 300,
+                                    y: img.y ?? 200,
+                                    scale: img.scale ?? 1,
+                                    rotation: img.rotation ?? 0,
+                                },
+                                productTitle: title,
+                                lastUsedAt: now,
+                            });
+                        }
+                    });
+
+                // Texte
+                (st.texts || []).forEach((t) => {
+                    const sig = [t.value, t.fontFamily, t.fontSize, t.fill].join("|");
+                    const id = "txt_" + hash(sig);
+                    if (!textsMap.has(id)) {
+                        textsMap.set(id, {
+                            id,
+                            kind: "text",
+                            side,
+                            value: t.value,
+                            fontFamily: t.fontFamily,
+                            fontSize: t.fontSize,
+                            fill: t.fill,
+                            letterSpacing: t.letterSpacing ?? null,
+                            lineHeight: t.lineHeight ?? null,
+                            placement: {
+                                x: t.x ?? 300,
+                                y: t.y ?? 200,
+                                scale: t.scale ?? 1,
+                                rotation: t.rotation ?? 0,
+                            },
+                            productTitle: title,
+                            lastUsedAt: now,
+                        });
+                    }
+                });
+            });
+        });
+
+        return {
+            images: Array.from(imagesMap.values()),
+            texts: Array.from(textsMap.values()),
+        };
+    }
     const handleCheckout = async () => {
         try {
             const lineItems = prepareLineItems(cartItems);
             const uploads = collectUploadIds(cartItems);
-
             const uid = auth.currentUser?.uid || null;
             const anonId = uid ? null : getAnonId();
 
-            // ⬇️ REICHERE Items für Firestore (mit Sides)
             const itemsForPending = buildItemsForPending(cartItems, lineItems);
 
             const { pendingId, scope, ownerId } = await createPendingOrder({
                 items: itemsForPending,
                 uploads,
-                address: null, // TODO: falls vorhanden, hier setzen
+                address: null,
                 note: userNotes || null,
                 extra: { userType: "firmenkunde" },
                 context: { uid, anonId },
             });
 
+            // ⬇️ N E U  –  Library updaten (nur wenn eingeloggt)
+            if (uid) {
+                const { images, texts } = collectAssetsFromPendingItems(itemsForPending);
+                // orderId anreichern (praktisch für spätere Referenz)
+                const toSave = [...images, ...texts].map((a) => ({ ...a, orderId: pendingId }));
+                // bewusst seriell/Promise.all – wenige Writes pro Checkout
+                await Promise.all(toSave.map((asset) => upsertLibraryAsset(uid, asset)));
+            }
+
             const cartAttributes = [
                 { key: "pendingId", value: pendingId },
-                { key: "portalType", value: scope }, // "auth" | "anon"
+                { key: "portalType", value: scope },
                 { key: scope === "auth" ? "portalUid" : "anonId", value: ownerId },
                 { key: "uploadIds", value: JSON.stringify(uploads) },
             ];
 
-            console.log(lineItems);
             const checkoutUrl = await createCart(lineItems, cartAttributes, userNotes);
             if (!checkoutUrl) throw new Error("Checkout URL missing");
 
-            // DEV: KEIN Redirect (sowohl "1" als auch "true" akzeptieren)
             const dev = [process.env.NEXT_PUBLIC_DEV, process.env.NEXT_DEV].some((v) => v === "1" || v === "true");
             if (dev) {
                 console.log("DEV MODE – checkoutUrl:", checkoutUrl);
                 return;
             }
-
             window.location.href = checkoutUrl;
         } catch (err) {
             console.error("❌ handleCheckout failed:", err);

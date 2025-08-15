@@ -386,3 +386,110 @@ export async function deletePendingOrder({ uid, pendingId }) {
     await deleteDoc(ref);
     return true;
 }
+
+// ---- Utils
+const hash = (s) => {
+    let h = 0,
+        i,
+        chr;
+    if (!s) return "0";
+    for (i = 0; i < s.length; i++) {
+        chr = s.charCodeAt(i);
+        h = (h << 5) - h + chr;
+        h |= 0;
+    }
+    return String(h);
+};
+
+// Baut eine flache Liste an Assets aus pendingOrders
+export async function fetchUserAssetsFromPending(uid, take = 100) {
+    const orders = await fetchPendingOrders(uid, take); // hast du schon
+    const imagesMap = new Map(); // url -> asset
+    const texts = [];
+
+    orders.forEach((entry) => {
+        const orderId = entry.id;
+        (entry.items || []).forEach((it) => {
+            const snap = it?.snapshot || {};
+            const productTitle = snap?.productTitle || "Artikel";
+            const canvas = snap?.canvas || null; // falls du das speicherst
+
+            const frontImgs = (snap?.sides?.front?.images || []).map((x) => ({ ...x, side: "front" }));
+            const backImgs = (snap?.sides?.back?.images || []).map((x) => ({ ...x, side: "back" }));
+
+            // Upload-Images
+            [...frontImgs, ...backImgs]
+                .filter((i) => i?.type === "upload" && i?.url)
+                .forEach((img) => {
+                    const id = "img_" + hash(img.url);
+                    if (!imagesMap.has(img.url)) {
+                        imagesMap.set(img.url, {
+                            id,
+                            kind: "image",
+                            url: img.url,
+                            side: img.side || null,
+                            placement: {
+                                x: img.x ?? 300,
+                                y: img.y ?? 200,
+                                scale: img.scale ?? 1,
+                                rotation: img.rotation ?? 0,
+                            },
+                            productTitle,
+                            orderId,
+                            canvas: canvas || null,
+                            lastUsedAt: entry.createdAt?.toDate ? entry.createdAt.toDate() : null,
+                        });
+                    }
+                });
+
+            // Textlayer
+            const frontTxts = snap?.sides?.front?.texts || [];
+            const backTxts = snap?.sides?.back?.texts || [];
+            [
+                ...frontTxts.map((t) => ({ ...t, side: "front" })),
+                ...backTxts.map((t) => ({ ...t, side: "back" })),
+            ].forEach((t) => {
+                const id = "txt_" + hash([t.value, t.fontFamily, t.fontSize, t.fill].join("|"));
+                texts.push({
+                    id,
+                    kind: "text",
+                    side: t.side,
+                    value: t.value,
+                    fontFamily: t.fontFamily,
+                    fontSize: t.fontSize,
+                    fill: t.fill,
+                    letterSpacing: t.letterSpacing ?? null,
+                    lineHeight: t.lineHeight ?? null,
+                    placement: { x: t.x || 300, y: t.y || 200, scale: t.scale || 1, rotation: t.rotation || 0 },
+                    productTitle,
+                    orderId,
+                    canvas: canvas || null,
+                    lastUsedAt: entry.createdAt?.toDate ? entry.createdAt.toDate() : null,
+                });
+            });
+        });
+    });
+
+    const images = Array.from(imagesMap.values());
+    // optional sort
+    images.sort((a, b) => (b.lastUsedAt?.getTime?.() || 0) - (a.lastUsedAt?.getTime?.() || 0));
+    texts.sort((a, b) => (b.lastUsedAt?.getTime?.() || 0) - (a.lastUsedAt?.getTime?.() || 0));
+    return { images, texts };
+}
+
+// Speichert/aktualisiert ein Asset in users/{uid}/library/{assetId}
+export async function upsertLibraryAsset(uid, asset) {
+    const ref = doc(db, "users", uid, "library", asset.id);
+    await setDoc(ref, { ...asset, lastUsedAt: new Date() }, { merge: true });
+}
+
+// Liest Library
+export async function fetchLibrary(uid, take = 200) {
+    const sub = collection(db, "users", uid, "library");
+    const qy = query(sub, orderBy("lastUsedAt", "desc"), limit(take));
+    const snap = await getDocs(qy);
+    const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const images = rows.filter((r) => r.kind === "image");
+    const texts = rows.filter((r) => r.kind === "text");
+    return { images, texts };
+}
