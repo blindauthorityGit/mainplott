@@ -57,8 +57,8 @@ export default function DashboardHome() {
                         <NavIcon href="/dashboard" icon={<FiHome />} active />
                         <NavIcon href="/dashboard/orders" icon={<FiShoppingBag />} />
                         <NavIcon href="/dashboard/uploads" icon={<FiUploadCloud />} />
-                        <NavIcon href="/dashboard/quotes" icon={<FiFileText />} />
-                        <NavIcon href="/dashboard/addresses" icon={<FiMapPin />} />
+                        <NavIcon href="/dashboard/angebot" icon={<FiFileText />} />
+                        <NavIcon href="/dashboard/profile" icon={<FiMapPin />} />
                         <button
                             onClick={() => auth.signOut()}
                             className="mt-auto text-gray-400 hover:text-gray-700"
@@ -77,7 +77,7 @@ export default function DashboardHome() {
                     {/* Main */}
                     <main className="flex-1">
                         {/* DEV: Email Override (nur sichtbar, wenn DEV_MODE=1) */}
-                        {process.env.NEXT_PUBLIC_DEV && (
+                        {/* {process.env.NEXT_PUBLIC_DEV && (
                             <div className="mb-4 flex items-center gap-2 rounded-2xl border bg-white p-3">
                                 <input
                                     value={devEmail}
@@ -92,7 +92,7 @@ export default function DashboardHome() {
                                     Test-Fetch
                                 </button>
                             </div>
-                        )}
+                        )} */}
                         {/* Head / Hero */}
                         <div className="rounded-3xl bg-white px-6 py-8 shadow-sm border">
                             <p className="text-sm text-gray-500">Willkommen zurück</p>
@@ -110,8 +110,8 @@ export default function DashboardHome() {
                             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                                 <QuickCard href="/dashboard/orders" title="Bestellhistorie" icon={<FiShoppingBag />} />
                                 <QuickCard href="/dashboard/uploads" title="Uploads" icon={<FiUploadCloud />} />
-                                <QuickCard href="/dashboard/quotes" title="Angebotsanfrage" icon={<FiFileText />} />
-                                <QuickCard href="/dashboard/addresses" title="Adressen" icon={<FiMapPin />} />
+                                <QuickCard href="/dashboard/angebot" title="Angebotsanfrage" icon={<FiFileText />} />
+                                <QuickCard href="/dashboard/profile" title="Adressen" icon={<FiMapPin />} />
                             </div>
                         </div>
 
@@ -152,7 +152,7 @@ export default function DashboardHome() {
                                 <SectionTitle>Schnellstart</SectionTitle>
                                 <div className="grid gap-3 sm:grid-cols-2">
                                     <ActionButton href="/dashboard/orders">Letzte Bestellung öffnen</ActionButton>
-                                    <ActionButton href="/dashboard/quotes">Direkte Angebotsanfrage</ActionButton>
+                                    <ActionButton href="/dashboard/angebot">Direkte Angebotsanfrage</ActionButton>
                                 </div>
                             </div>
                         </div>
@@ -183,7 +183,7 @@ function QuickCard({ href, title, icon }) {
             href={href}
             className="group flex items-center gap-3 rounded-2xl border bg-white p-4 hover:shadow-sm transition"
         >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-700 group-hover:bg-gray-900 group-hover:text-white">
+            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gray-100 text-gray-700 group-hover:bg-gray-900 group-hover:text-white">
                 {icon}
             </div>
             <div className="font-medium">{title}</div>

@@ -17,7 +17,13 @@ import {
 } from "firebase/firestore/lite";
 import { getStorage, ref, uploadBytes, listAll, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
-import { getAuth } from "firebase/auth";
+import {
+    getAuth,
+    EmailAuthProvider,
+    reauthenticateWithCredential,
+    sendPasswordResetEmail,
+    updatePassword,
+} from "firebase/auth";
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE,
@@ -492,4 +498,25 @@ export async function fetchLibrary(uid, take = 200) {
     const images = rows.filter((r) => r.kind === "image");
     const texts = rows.filter((r) => r.kind === "text");
     return { images, texts };
+}
+
+export async function updateFirestoreProfile({ collection, docId, data }) {
+    if (!collection || !docId) throw new Error("collection/docId fehlt");
+    const ref = doc(db, collection, docId);
+    await setDoc(ref, data, { merge: true });
+}
+
+/** Reset‑E‑Mail für aktuelles oder gegebenes E‑Mail */
+export async function sendPasswordResetForEmail(email) {
+    if (!email) throw new Error("email fehlt");
+    return sendPasswordResetEmail(auth, email);
+}
+
+/** Direktes Passwort ändern mit Re‑Auth */
+export async function changePasswordWithReauth(oldPassword, newPassword) {
+    const user = auth.currentUser;
+    if (!user?.email) throw new Error("Kein eingeloggter Nutzer");
+    const cred = EmailAuthProvider.credential(user.email, oldPassword);
+    await reauthenticateWithCredential(user, cred);
+    await updatePassword(user, newPassword);
 }

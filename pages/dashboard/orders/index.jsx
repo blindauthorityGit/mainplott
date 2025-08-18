@@ -15,6 +15,12 @@ import {
     FiRefreshCcw,
 } from "react-icons/fi";
 import { FiTrash2 } from "react-icons/fi";
+import { v4 as uuidv4 } from "uuid";
+import useStore from "@/store/store";
+import { buildCartItemsFromPendingEntry } from "@/functions/reorderFromPending";
+import { hydrateCartItemsWithProduct } from "@/functions/reorderHydrate";
+import { getProductByHandle } from "@/libs/shopify"; // oder wie deine Funktion heißt
+import { reorderPendingEntry, editPendingEntry } from "@/functions/reorder";
 
 /** ---- kleine Utils ---- */
 function fmtMoney(n) {
@@ -135,6 +141,13 @@ export default function OrdersPage() {
     const [openId, setOpenId] = useState(null); // aktuell geöffneter Eintrag
     const [deletingId, setDeletingId] = useState(null);
 
+    const replaceCartItems = useStore((s) => s.replaceCartItems);
+    const openCartSidebar = useStore((s) => s.openCartSidebar);
+
+    async function handleReorder(entry) {
+        await reorderPendingEntry(entry);
+    }
+
     // Laden: Pending (Firestore)
     useEffect(() => {
         const uid = auth.currentUser?.uid || null;
@@ -203,8 +216,8 @@ export default function OrdersPage() {
                         <NavIcon href="/dashboard" icon={<FiHome />} />
                         <NavIcon href="/dashboard/orders" icon={<FiShoppingBag />} active />
                         <NavIcon href="/dashboard/uploads" icon={<FiUploadCloud />} />
-                        <NavIcon href="/dashboard/quotes" icon={<FiFileText />} />
-                        <NavIcon href="/dashboard/addresses" icon={<FiMapPin />} />
+                        <NavIcon href="/dashboard/angebot" icon={<FiFileText />} />
+                        <NavIcon href="/dashboard/profile" icon={<FiMapPin />} />
                         <button
                             onClick={() => auth.signOut()}
                             className="mt-auto text-gray-400 hover:text-gray-700"
@@ -271,24 +284,6 @@ export default function OrdersPage() {
             </div>
         </div>
     );
-}
-
-/** ---- Reorder Hook (hier andocken) ----
- * Aktuell: leitet – wenn vorhanden – auf die Produktseite des Snapshots um
- * und hängt ?reorder=<id> an. Passe das auf deine Logik an (Cart-API etc.).
- */
-function handleReorder(entry) {
-    try {
-        const handle = entry?.items?.[0]?.snapshot?.productHandle;
-        if (handle) {
-            window.location.href = `/product/${handle}?reorder=${entry.id}`;
-            return;
-        }
-        // Fallback: Konfigurator / Kontakt
-        window.location.href = `/configurator?reorder=${entry.id}`;
-    } catch (e) {
-        console.error("Reorder failed", e);
-    }
 }
 
 /** ---- UI Blöcke ---- */

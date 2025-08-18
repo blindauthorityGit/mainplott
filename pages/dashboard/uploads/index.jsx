@@ -169,8 +169,8 @@ export default function UploadsPage() {
                         <NavIcon href="/dashboard" icon={<FiHome />} />
                         <NavIcon href="/dashboard/orders" icon={<FiShoppingBag />} />
                         <NavIcon href="/dashboard/uploads" icon={<FiUploadCloud />} active />
-                        <NavIcon href="/dashboard/quotes" icon={<FiFileText />} />
-                        <NavIcon href="/dashboard/addresses" icon={<FiMapPin />} />
+                        <NavIcon href="/dashboard/angebot" icon={<FiFileText />} />
+                        <NavIcon href="/dashboard/profile" icon={<FiMapPin />} />
                         <button
                             onClick={() => auth.signOut()}
                             className="mt-auto text-gray-400 hover:text-gray-700"
