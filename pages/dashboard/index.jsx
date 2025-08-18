@@ -111,7 +111,7 @@ export default function DashboardHome() {
                                 <QuickCard href="/dashboard/orders" title="Bestellhistorie" icon={<FiShoppingBag />} />
                                 <QuickCard href="/dashboard/uploads" title="Uploads" icon={<FiUploadCloud />} />
                                 <QuickCard href="/dashboard/angebot" title="Angebotsanfrage" icon={<FiFileText />} />
-                                <QuickCard href="/dashboard/profile" title="Adressen" icon={<FiMapPin />} />
+                                <QuickCard href="/dashboard/profile" title="Profil" icon={<FiMapPin />} />
                             </div>
                         </div>
 
