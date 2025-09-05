@@ -13,6 +13,7 @@ import formatPrice from "@/functions/formatPrice";
 import { calculateNetPrice } from "@/functions/calculateNetPrice";
 import { getColorHex } from "@/libs/colors";
 import { isB2BUser, getUserPiecePrice, getUserTotalPrice } from "@/functions/priceHelpers";
+import { getDecorationSummary } from "@/functions/decorationMode";
 
 export default function DefineOptions({ product, veredelungen, profiDatenCheck, layoutService }) {
     const { purchaseData, setPurchaseData } = useStore(); // Global state
@@ -37,6 +38,7 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
 
     // If we have a min order requirement
     const minOrder = product.mindestBestellMenge?.value ? parseInt(product.mindestBestellMenge.value, 10) : 0;
+    const deco = getDecorationSummary(purchaseData);
 
     // Check “All-Inclusive” from metafield
     useEffect(() => {
@@ -438,6 +440,23 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
                         <P klasse="!text-xs">
                             {veredelungPerPiece.back > 0 && `inkl. EUR ${veredelungPerPiece.back} Druck Rücken / Stk`}
                         </P>
+                        {/* Veredelungs-Zusammenfassung (zählt je nach NEXT_PUBLIC_DECORATION_MODE) */}
+                        {deco.front || deco.back ? (
+                            <div className="mt-1 flex gap-2">
+                                {deco.front > 0 && (
+                                    <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 border border-gray-200">
+                                        {deco.front}× Front
+                                    </span>
+                                )}
+                                {deco.back > 0 && (
+                                    <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 border border-gray-200">
+                                        {deco.back}× Rücken
+                                    </span>
+                                )}
+                            </div>
+                        ) : (
+                            <P klasse="!text-xs text-gray-500">Keine Veredelungen</P>
+                        )}
                     </div>
                 </motion.div>
             </ContentWrapper>

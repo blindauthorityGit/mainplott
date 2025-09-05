@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Tabs, Tab, Button, Checkbox, FormControlLabel } from "@mui/material";
+import { Tabs, Tab, Button } from "@mui/material";
 import { P } from "@/components/typography";
 import useStore from "@/store/store";
-import ContentWrapper from "../components/contentWrapper";
 import { FiX, FiType, FiImage } from "react-icons/fi";
-import { IconButton } from "@/components/buttons";
 import CustomRadioButton from "@/components/inputs/customRadioButton";
 import VeredelungTable from "@/components/infoTable/veredlungsTable";
-import GraphicControls from "@/components/productConfigurator/controls/GraphicControls";
-import TextControls from "@/components/productConfigurator/controls/TextControls";
+import GraphicControls from "@/components/productConfigurator/controls/graphicControls";
+import TextControls from "@/components/productConfigurator/controls/textControls";
 
 // FUNCTIONS
 import handleFileUpload from "@/functions/handleFileUpload";
@@ -161,7 +159,31 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     };
 
     const handleTabChange = (_event, newIndex) => {
-        setPurchaseData({ ...purchaseData, currentSide: newIndex === 0 ? "front" : "back" });
+        const nextSide = newIndex === 0 ? "front" : "back";
+        setPurchaseData((prev) => {
+            const sideData = prev.sides?.[nextSide] || {};
+            const firstGraphicId = sideData.uploadedGraphics?.[0]?.id ?? null;
+            const firstTextId = sideData.texts?.[0]?.id ?? null;
+            const nextActive = firstGraphicId
+                ? { type: "graphic", id: firstGraphicId }
+                : firstTextId
+                ? { type: "text", id: firstTextId }
+                : null;
+            return {
+                ...prev,
+                currentSide: nextSide,
+                sides: {
+                    ...prev.sides,
+                    [nextSide]: {
+                        ...sideData,
+                        activeGraphicId:
+                            nextActive?.type === "graphic" ? nextActive.id : sideData.activeGraphicId ?? null,
+                        activeTextId: nextActive?.type === "text" ? nextActive.id : sideData.activeTextId ?? null,
+                        activeElement: nextActive,
+                    },
+                },
+            };
+        });
     };
 
     const handleGraphicUpload = async (event) => {
@@ -364,9 +386,6 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
 
     return (
         <div className="flex flex-col lg:px-16 lg:mt-4 2xl:mt-8 font-body ">
-            {/* Header */}
-            {/* {steps[currentStep] === "Design" && isMobile ? null : <ContentWrapper data={stepData} showToggle />} */}
-
             {/* Tabs */}
             <Tabs
                 value={tabIndex}
@@ -387,9 +406,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 {selectedVariant?.backImageUrl && <Tab label="Rückseite" className="text-lg font-semibold" />}
             </Tabs>
 
-            {/* --- Steuerbereich --- */}
+            {/* Steuerbereich */}
             {purchaseData.configurator === "template" ? (
-                // TEMPLATE: Radio-Buttons (bleibt!)
                 <div className="flex flex-wrap lg:mb-4">
                     {positions?.[currentSide]?.default?.map((option, index) => (
                         <CustomRadioButton
@@ -406,7 +424,6 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                     ))}
                 </div>
             ) : noElementsCurrent ? (
-                // FREIE PLATZIERUNG: Leerer Zustand → zwei CTAs
                 <div className="flex gap-3">
                     <Button
                         variant="contained"
@@ -446,7 +463,6 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                     </Button>
                 </div>
             ) : (
-                // FREIE PLATZIERUNG: Controls für aktives Element
                 <>
                     {active?.type === "text" ? (
                         <TextControls
@@ -525,9 +541,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 )}
             </div>
 
-            {/* Previews der AKTUELLEN Seite (Grafiken + Texte) */}
-            {/* Previews der aktuellen Seite (Grafiken + Texte) */}
-            {uploadedGraphics.length > 0 || texts.length > 0 ? (
+            {/* Previews der aktuellen Seite */}
+            {(uploadedGraphics.length > 0 || texts.length > 0) && (
                 <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 lg:gap-4">
                     {/* Grafiken */}
                     {uploadedGraphics.map((g) => {
@@ -599,7 +614,6 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                                 },
                                             };
                                         });
-                                        // ObjectURL aufräumen
                                         if (g.file instanceof Blob && thumbSrc?.startsWith("blob:")) {
                                             setTimeout(() => {
                                                 try {
@@ -717,7 +731,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                         );
                     })}
                 </div>
-            ) : null}
+            )}
         </div>
     );
 }

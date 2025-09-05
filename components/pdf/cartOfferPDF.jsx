@@ -13,13 +13,9 @@ const theme = {
         line: "#eee",
         mute: "#666",
     },
-    fonts: {
-        headline: "Montserrat",
-        body: "Montserrat",
-    },
+    fonts: { headline: "Montserrat", body: "Montserrat" },
 };
 
-// Register fonts (served from Next.js /public)
 try {
     Font.register({
         family: "Montserrat",
@@ -28,13 +24,10 @@ try {
             { src: "/fonts/Montserrat-Bold.ttf", fontWeight: "700" },
         ],
     });
-} catch (e) {
-    // no-op: fallback to built-in fonts
-}
+} catch {}
 
 const currency = (n) => `€${Number(n || 0).toFixed(2)}`;
 
-/* ---- Styles ---- */
 const styles = StyleSheet.create({
     page: {
         padding: 28,
@@ -43,8 +36,6 @@ const styles = StyleSheet.create({
         color: theme.colors.text,
         backgroundColor: theme.colors.bg,
     },
-
-    /* Header */
     header: {
         borderWidth: 1,
         borderColor: theme.colors.primary,
@@ -55,16 +46,9 @@ const styles = StyleSheet.create({
     },
     headerRow: { flexDirection: "row" },
     brandWrap: { flexGrow: 1 },
-    brand: {
-        fontFamily: theme.fonts.headline,
-        fontSize: 28,
-        lineHeight: 1.0,
-        color: theme.colors.primary700,
-    },
+    brand: { fontFamily: theme.fonts.headline, fontSize: 28, lineHeight: 1.0, color: theme.colors.primary700 },
     tagline: { fontSize: 10, color: theme.colors.primary700, marginTop: 2 },
     contact: { fontSize: 10, textAlign: "right" },
-
-    /* Section titles */
     h1: {
         fontFamily: theme.fonts.headline,
         fontSize: 18,
@@ -73,8 +57,6 @@ const styles = StyleSheet.create({
         color: theme.colors.primary700,
     },
     sub: { color: theme.colors.mute, marginBottom: 10 },
-
-    /* Item block */
     item: {
         borderTopWidth: 1,
         borderTopColor: theme.colors.line,
@@ -87,19 +69,8 @@ const styles = StyleSheet.create({
     itemMeta: { marginLeft: 8 },
     itemTitle: { fontSize: 12, fontWeight: 700 },
     muted: { color: theme.colors.mute, marginTop: 2 },
-
-    /* --- Table --- */
-    table: {
-        marginTop: 6,
-        borderWidth: 1,
-        borderColor: theme.colors.line,
-        borderStyle: "solid",
-        borderRadius: 6,
-    },
-    row: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
+    table: { marginTop: 6, borderWidth: 1, borderColor: theme.colors.line, borderStyle: "solid", borderRadius: 6 },
+    row: { flexDirection: "row", alignItems: "center" },
     rowHeader: {
         backgroundColor: theme.colors.accent,
         borderBottomWidth: 1,
@@ -114,30 +85,29 @@ const styles = StyleSheet.create({
         borderLeftStyle: "solid",
     },
     cellFirst: { borderLeftWidth: 0 },
-    // column widths (ratios) — IMPORTANT: flexBasis: 0 for consistent distribution
-    colName: { flexGrow: 6, flexBasis: 0 }, // Variante
-    colQty: { flexGrow: 2, flexBasis: 0 }, // Menge
-    colUnit: { flexGrow: 3, flexBasis: 0 }, // Einzelpreis
-    colSum: { flexGrow: 3, flexBasis: 0 }, // Zwischensumme
+    colName: { flexGrow: 6, flexBasis: 0 },
+    colQty: { flexGrow: 2, flexBasis: 0 },
+    colUnit: { flexGrow: 3, flexBasis: 0 },
+    colSum: { flexGrow: 3, flexBasis: 0 },
     cellRight: { alignItems: "flex-end" },
     cellText: { lineHeight: 1.25 },
     cellHead: { fontWeight: 700 },
-
     itemTotal: { marginTop: 6, textAlign: "right", fontWeight: 700 },
     notes: { marginTop: 10, padding: 8, backgroundColor: "#fafafa", borderRadius: 6 },
-    footerTotal: {
-        marginTop: 14,
-        textAlign: "right",
-        fontSize: 14,
-        fontWeight: 700,
-        color: theme.colors.primary700,
+    footerTotal: { marginTop: 14, textAlign: "right", fontSize: 14, fontWeight: 700, color: theme.colors.primary700 },
+    totalsBlock: {
+        marginTop: 8,
+        padding: 8,
+        backgroundColor: "#fff",
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: theme.colors.line,
     },
-
-    /* Footer */
+    totalsRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
+    savings: { color: "#0f7f5f", fontWeight: 700 },
     footer: { position: "absolute", bottom: 20, left: 28, right: 28, fontSize: 9, color: theme.colors.mute },
 });
 
-/* Row helper using real cells (aligned columns) */
 const lineRow = (left, qty, unit, sum, key) => (
     <View key={key} style={styles.row}>
         <View style={[styles.cell, styles.cellFirst, styles.colName]}>
@@ -155,8 +125,18 @@ const lineRow = (left, qty, unit, sum, key) => (
     </View>
 );
 
-export default function CartOfferPDF({ cartItems = [], totalPrice = 0, userNotes = "", logoSrc = "" }) {
+export default function CartOfferPDF({
+    cartItems = [],
+    totalPrice = 0,
+    userNotes = "",
+    logoSrc = "",
+    vatRate = 0.2,
+    b2bMode = true,
+}) {
     const now = format(new Date(), "dd.MM.yyyy HH:mm");
+    const net = Number(totalPrice || 0);
+    const vat = net * vatRate;
+    const gross = net + vat;
 
     return (
         <Document title="Warenkorb-Angebot">
@@ -182,7 +162,6 @@ export default function CartOfferPDF({ cartItems = [], totalPrice = 0, userNotes
                     </View>
                 </View>
 
-                {/* Title */}
                 <Text style={styles.h1}>Angebot / Warenkorb</Text>
                 <Text style={styles.sub}>Stand: {now}</Text>
 
@@ -195,31 +174,31 @@ export default function CartOfferPDF({ cartItems = [], totalPrice = 0, userNotes
                         item.product?.images?.edges?.[0]?.node?.originalSrc ||
                         "";
 
-                    const rows = [];
+                    // Varianten-Zeilen
+                    const variantRows = [];
+                    if (item.variants) {
+                        Object.entries(item.variants)
+                            .filter(([_, v]) => v?.quantity > 0)
+                            .forEach(([title, v]) => {
+                                variantRows.push(
+                                    lineRow(title, v.quantity, v.price, v.quantity * v.price, `var-${title}`)
+                                );
+                            });
+                    }
 
+                    const rows = [];
                     if (item.variants) {
                         Object.entries(item.variants)
                             .filter(([k, v]) => v?.quantity > 0 && k !== "frontVeredelung" && k !== "backVeredelung")
-                            .forEach(([size, v]) => {
-                                rows.push(lineRow(size, v.quantity, v.price, v.quantity * v.price, `size-${size}`));
+                            .forEach(([title, v]) => {
+                                rows.push(lineRow(title, v.quantity, v.price, v.quantity * v.price, `size-${title}`));
                             });
-
-                        ["frontVeredelung", "backVeredelung"].forEach((key) => {
-                            const v = item.variants[key];
-                            if (v?.quantity > 0) {
-                                rows.push(
-                                    lineRow(
-                                        v.title ||
-                                            (key === "frontVeredelung" ? "Veredelung Front" : "Veredelung Rücken"),
-                                        v.quantity,
-                                        v.price,
-                                        v.quantity * v.price,
-                                        key
-                                    )
-                                );
-                            }
-                        });
                     }
+
+                    // ✅ Veredelungs-Zeilen (neu)
+                    const refineRows = (item.refinements || [])
+                        .filter((r) => r?.quantity > 0)
+                        .map((r, i) => lineRow(r.title, r.quantity, r.price, r.quantity * r.price, `ref-${i}`));
 
                     return (
                         <View key={item.id || idx} style={styles.item}>
@@ -229,13 +208,11 @@ export default function CartOfferPDF({ cartItems = [], totalPrice = 0, userNotes
                                     <Text style={styles.itemTitle}>
                                         {item.productName || item.product?.productName}
                                     </Text>
-                                    {item.selectedColor ? (
-                                        <Text style={styles.muted}>Farbe: {item.selectedColor}</Text>
-                                    ) : null}
                                 </View>
                             </View>
 
-                            {rows.length > 0 && (
+                            {/* Varianten-Tabelle */}
+                            {variantRows.length > 0 && (
                                 <View style={styles.table}>
                                     <View style={[styles.row, styles.rowHeader]}>
                                         <View style={[styles.cell, styles.cellFirst, styles.colName]}>
@@ -251,7 +228,28 @@ export default function CartOfferPDF({ cartItems = [], totalPrice = 0, userNotes
                                             <Text style={[styles.cellText, styles.cellHead]}>Zwischensumme</Text>
                                         </View>
                                     </View>
-                                    {rows}
+                                    {variantRows}
+                                </View>
+                            )}
+
+                            {/* ✅ Veredelungen-Tabelle */}
+                            {refineRows.length > 0 && (
+                                <View style={[styles.table, { marginTop: 8 }]}>
+                                    <View style={[styles.row, styles.rowHeader]}>
+                                        <View style={[styles.cell, styles.cellFirst, styles.colName]}>
+                                            <Text style={[styles.cellText, styles.cellHead]}>Veredelung</Text>
+                                        </View>
+                                        <View style={[styles.cell, styles.colQty, styles.cellRight]}>
+                                            <Text style={[styles.cellText, styles.cellHead]}>Menge</Text>
+                                        </View>
+                                        <View style={[styles.cell, styles.colUnit, styles.cellRight]}>
+                                            <Text style={[styles.cellText, styles.cellHead]}>Einzelpreis</Text>
+                                        </View>
+                                        <View style={[styles.cell, styles.colSum, styles.cellRight]}>
+                                            <Text style={[styles.cellText, styles.cellHead]}>Zwischensumme</Text>
+                                        </View>
+                                    </View>
+                                    {refineRows}
                                 </View>
                             )}
 
@@ -267,9 +265,28 @@ export default function CartOfferPDF({ cartItems = [], totalPrice = 0, userNotes
                     </View>
                 ) : null}
 
-                <Text style={styles.footerTotal}>Gesamtsumme: {currency(totalPrice)}</Text>
+                {/* Totals */}
+                <View style={styles.totalsBlock}>
+                    <View style={styles.totalsRow}>
+                        <Text>Summe netto (B2B)</Text>
+                        <Text>{currency(net)}</Text>
+                    </View>
+                    <View style={styles.totalsRow}>
+                        <Text>USt. {Math.round(vatRate * 100)}% (hypothetisch für Privatkunden)</Text>
+                        <Text>{currency(vat)}</Text>
+                    </View>
+                    <View style={styles.totalsRow}>
+                        <Text>Brutto (hypothetisch, Privatkunde)</Text>
+                        <Text>{currency(gross)}</Text>
+                    </View>
+                    {b2bMode && (
+                        <View style={styles.totalsRow}>
+                            <Text style={styles.savings}>USt.-Ersparnis (B2B)</Text>
+                            <Text style={styles.savings}>−{currency(vat)}</Text>
+                        </View>
+                    )}
+                </View>
 
-                {/* Footer */}
                 <Text
                     style={styles.footer}
                     render={({ pageNumber, totalPages }) => `Seite ${pageNumber} von ${totalPages} · mainplott.de`}

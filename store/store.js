@@ -302,6 +302,8 @@ const useStore = create((set, get) => ({
             return { cartItems: updatedCartItems };
         }),
 
+    replaceCartItems: (items) => set({ cartItems: items }),
+
     // Remove item from cart by id
     removeCartItem: (id) => {
         set((state) => {

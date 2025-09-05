@@ -2,6 +2,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { calculateNetPrice } from "@/functions/calculateNetPrice";
 import useStore from "@/store/store";
+import { buildDecorationPatch, DECORATION_MODE } from "./decorations";
 
 /**
  * Staffel-Preis Logic + add/update cart item
@@ -16,57 +17,47 @@ export function saveCartItem({
     hideMobileSteps,
     isEditing,
     existingItemId,
+
+    // ⬇️ optionaler Schalter: perSide (Default) | perElement
+    decorationMode = DECORATION_MODE.PER_SIDE,
 }) {
-    // 0) Pick or generate your final itemId
+    // 0) id wählen/erzeugen
     const itemId = isEditing && existingItemId ? existingItemId : uuidv4();
 
-    // 1) shallow-copy purchaseData & force our itemId onto it
+    // 1) PurchaseData kopieren & selectedVariant anheften
     const updated = { ...purchaseData, id: itemId, selectedVariant };
-    const { sides, variants } = updated;
+    const { sides } = updated;
 
-    // 2) remove the “Standard” variant if present
-    const cleaned = { ...variants };
+    // 2) "Standard" aus Varianten entfernen
+    const cleaned = { ...(updated.variants || {}) };
     if (cleaned.Standard) delete cleaned.Standard;
 
-    // 3) compute totalQuantity
-    const totalQuantity = Object.values(cleaned).reduce((sum, v) => sum + (v.quantity || 0), 0);
+    // 3) totalQuantity (für Staffel)
+    const totalQuantity = Object.values(cleaned).reduce((sum, v) => sum + (Number(v?.quantity) || 0), 0);
 
-    // 4) apply price-tiers for front/back
-    ["front", "back"].forEach((sideKey) => {
-        const side = sides?.[sideKey];
-        if (!side || (!side.uploadedGraphic && !side.uploadedGraphicFile)) return;
-        const detail = veredelungen?.[sideKey];
-        if (!detail) return;
-
-        const match = detail.preisReduktion.discounts.find(
-            (d) => totalQuantity >= d.minQuantity && (d.maxQuantity == null || totalQuantity <= d.maxQuantity)
-        );
-        if (!match) return;
-
-        const idx = detail.preisReduktion.discounts.indexOf(match);
-        const sel = detail.variants.edges[idx];
-        if (!sel) return;
-
-        cleaned[`${sideKey}Veredelung`] = {
-            id: sel.node.id,
-            size: null,
-            quantity: totalQuantity,
-            price: calculateNetPrice(parseFloat(match.price)),
-            title: detail.title + " " + sideKey.charAt(0).toUpperCase() + sideKey.slice(1),
-            currency: detail.currency,
-        };
+    // 4) Veredelungspatch bauen (JETZT zählen auch Texte)
+    const { patch, perPiece, totalPerAll } = buildDecorationPatch({
+        sides,
+        veredelungen,
+        totalQuantity,
+        mode: decorationMode, // ← hier schaltest du um
+        calculateNetPrice,
     });
 
-    updated.variants = cleaned;
+    // 5) Varianten mergen & Zusatzinfos am Item speichern
+    updated.variants = { ...cleaned, ...patch };
+    updated.veredelungPerPiece = perPiece; // { front, back } – hilfreich für UI
+    updated.veredelungTotal = totalPerAll; // Summe, falls du sie anzeigen willst
+    updated.decorationMode = decorationMode;
 
-    // 5) add or update cart item
+    // 6) add or update
     if (isEditing && existingItemId) {
         updateCartItem(itemId, updated);
     } else {
         addCartItem(updated);
     }
 
-    // 6) cache each side’s blob under exactly the same key
+    // 7) Blobs cachen (wie vorher)
     const { cacheBlob } = useStore.getState();
     ["front", "back"].forEach((sideKey) => {
         const blob = updated.sides?.[sideKey]?.uploadedGraphicFile;

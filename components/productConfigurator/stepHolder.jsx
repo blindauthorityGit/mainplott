@@ -19,6 +19,8 @@ import { isNextDisabled, isPrevDisabled, handlePrevStep, handleNextStep } from "
 import exportAllSides from "@/functions/exportAllSides";
 import { calculateNetPrice } from "@/functions/calculateNetPrice"; // Import your net price function
 import { saveCartItem, cacheCartBlob } from "@/functions/saveCartItem";
+import { buildDecorationVariants, DECORATION_MODE } from "@/functions/decorations";
+
 import { v4 as uuidv4 } from "uuid";
 // Dynamically import the KonvaLayer component with no SSR
 // Provide a fallback
@@ -308,6 +310,17 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         return isFront ? frontOrig : backOrig;
     }, [selectedVariant, purchaseData.design, purchaseData.currentSide, currentStep, isPostDesign]);
 
+    // preload and then switch:
+    useEffect(() => {
+        if (!displayedImage) return;
+        setIsImgReady(false);
+        const img = new Image();
+        img.src = displayedImage;
+        img.onload = () => {
+            setActiveSrc(displayedImage);
+            setIsImgReady(true);
+        };
+    }, [displayedImage]);
     // SET VIEW TO FRONMT WHEN NAVIGATING
     // useEffect(() => {
     //
@@ -331,14 +344,14 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         }
     }, [containerRef.current]);
 
-    useEffect(() => {
-        if (!selectedVariant) return;
-        setSelectedImage(
-            purchaseData.currentSide !== "front" && selectedVariant.backImageUrl
-                ? selectedVariant.backImageUrl
-                : selectedVariant.image.originalSrc
-        );
-    }, [purchaseData.currentSide, selectedVariant]);
+    // useEffect(() => {
+    //     if (!selectedVariant) return;
+    //     setSelectedImage(
+    //         purchaseData.currentSide !== "front" && selectedVariant.backImageUrl
+    //             ? selectedVariant.backImageUrl
+    //             : selectedVariant.image.originalSrc
+    //     );
+    // }, [purchaseData.currentSide, selectedVariant]);
 
     // Handle rotate button click
     // Toggles between front/back in the store
@@ -363,10 +376,10 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     // Adjust image dimensions dynamically to maintain aspect ratio and fill the container up to 860px height
     useEffect(() => {
         // skip until we actually have a URL
-        if (!selectedImage || !imageRef.current) return;
+        if (!activeSrc || !imageRef.current) return;
 
         const img = new Image();
-        img.src = selectedImage;
+        img.src = activeSrc;
 
         img.onload = () => {
             let { width, height } = img;
@@ -393,7 +406,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
             setImageSize({ width, height });
         };
-    }, [selectedImage, isMobile]);
+    }, [activeSrc, isMobile]);
 
     // wenn displayedImage wechselt: erst vorladen, dann umschalten (kein Flicker)
     useEffect(() => {
@@ -453,62 +466,26 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
     const handleAddToCart = () => {
         const updatedPurchaseData = { ...purchaseData };
-        const { sides, variants } = updatedPurchaseData;
 
-        // 1) Copy `variants` and remove "Standard"
-        const updatedVariants = { ...variants };
+        // 1) Varianten kopieren, "Standard" entfernen (wie gehabt)
+        const baseVariants = { ...(updatedPurchaseData.variants || {}) };
+        if (baseVariants.Standard) delete baseVariants.Standard;
+        updatedPurchaseData.variants = baseVariants;
 
-        if (updatedVariants.Standard) {
-            delete updatedVariants.Standard;
-        }
-
-        const totalQuantity = Object.values(updatedVariants).reduce((sum, variant) => sum + (variant.quantity || 0), 0);
-
-        const sidesToProcess = ["front", "back"];
-        sidesToProcess.forEach((sideKey) => {
-            const side = sides?.[sideKey];
-
-            if (side?.uploadedGraphic || side?.uploadedGraphicFile) {
-                const veredelungDetail = veredelungen?.[sideKey];
-
-                if (veredelungDetail) {
-                    const matchedDiscount = veredelungDetail.preisReduktion.discounts.find(
-                        (discount) =>
-                            totalQuantity >= discount.minQuantity &&
-                            (discount.maxQuantity === null || totalQuantity <= discount.maxQuantity)
-                    );
-
-                    if (matchedDiscount) {
-                        const variantIndex = veredelungDetail.preisReduktion.discounts.indexOf(matchedDiscount);
-
-                        const selectedVariant = veredelungDetail.variants.edges[variantIndex];
-
-                        if (selectedVariant) {
-                            updatedVariants[`${sideKey}Veredelung`] = {
-                                id: selectedVariant.node.id,
-                                size: null,
-                                quantity: totalQuantity,
-                                price: calculateNetPrice(parseFloat(matchedDiscount.price)),
-                                title: `${veredelungDetail.title} ${
-                                    sideKey.charAt(0).toUpperCase() + sideKey.slice(1)
-                                }`,
-                                currency: veredelungDetail.currency,
-                            };
-                        } else {
-                            console.error(`No matching variant found for ${sideKey}.`);
-                        }
-                    } else {
-                        console.error(`No matching discount for ${sideKey}.`);
-                    }
-                } else {
-                    console.error(`No veredelung detail found for side: ${sideKey}`);
-                }
-            } else {
-            }
+        // 2) Veredelungs-Variants anhand von Text/Grafik ermitteln
+        const { variantsPatch, perPiece, totalPerAll } = buildDecorationVariants({
+            purchaseData: updatedPurchaseData,
+            veredelungen, // kommt bei dir bereits aus den Props/State
+            calculateNetPrice, // deine vorhandene Netto-Helferfunktion
+            mode: DECORATION_MODE.PER_SIDE, // <— jetzt 1x pro Seite (Text ODER Grafik). Später PER_ELEMENT möglich.
         });
 
-        updatedPurchaseData.variants = updatedVariants;
-
+        // 3) Varianten mergen + Preise in purchaseData ablegen (damit Summary/Optionen/Cart stimmen)
+        updatedPurchaseData.variants = { ...baseVariants, ...variantsPatch };
+        updatedPurchaseData.veredelungPerPiece = perPiece; // { front, back }
+        updatedPurchaseData.veredelungTotal = totalPerAll; // Summe für Anzeige
+        console.log("UPDATES PÖRTSCHESE", updatedPurchaseData);
+        // 4) in den Warenkorb und UI
         addCartItem(updatedPurchaseData);
         openCartSidebar();
         hideMobileSteps();
@@ -553,7 +530,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
             {/* Left - Product Image / Konva Layer with fade in/out animation */}
             <div className="col-span-12 lg:col-span-6 2xl:col-span-6 relative mb-4 lg:mb-0" ref={containerRef}>
                 <div
-                    style={{ minHeight: stableHeight }}
+                    style={{ minHeight: stableHeight - 80 }}
                     className="w-full flex items-center justify-center xl:min-h-[600px] 2xl:min-h-[800px] lg:max-h-[760px] relative overflow-hidden"
                 >
                     <AnimatePresence mode="wait">
@@ -623,7 +600,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     />
                                 ) : (
                                     <KonvaLayer
-                                        key={purchaseData.currentSide}
+                                        key={`${purchaseData.currentSide}-${isPostDesign ? "post" : "pre"}`}
                                         onExportReady={(fn) => (exportCanvasRef.current = fn)}
                                         ref={konvaLayerRef}
                                         uploadedGraphicFile={
@@ -634,7 +611,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                         }
                                         isPDF={purchaseData.sides[purchaseData.currentSide].isPDF}
                                         pdfPreview={purchaseData.sides[purchaseData.currentSide].preview}
-                                        productImage={selectedVariant?.configImage || selectedImage}
+                                        productImage={activeSrc || displayedImage}
                                         boundaries={
                                             {
                                                 /* ... */
@@ -684,7 +661,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     steps[currentStep] !== "Zusammenfassung")) && (
                                 <motion.div
                                     className="relative mix-blend-multiply max-w-full max-h-full xl:p-12"
-                                    key={activeSrc} // crossfade nur nach Preload
+                                    key={`${purchaseData.currentSide}-${isPostDesign ? "post" : "pre"}-${activeSrc}`}
                                     ref={imageRef}
                                     variants={fadeAnimationVariants}
                                     initial="initial"
@@ -693,7 +670,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     transition={{ duration: 0.1, ease: "easeInOut" }}
                                 >
                                     <img
-                                        src={displayedImage ?? ""}
+                                        src={activeSrc ?? ""}
                                         alt="Product Step Image"
                                         className="block max-w-full max-h-full w-auto h-auto object-contain mix-blend-multiply"
                                         onLoad={handleMeasuredLoad}

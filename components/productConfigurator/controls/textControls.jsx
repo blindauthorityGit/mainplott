@@ -11,7 +11,7 @@ export default function TextControls({
     yMin,
     yMax,
     sizeMin = 10,
-    sizeMax = 100,
+    sizeMax = 200,
     defaultFontSize = 36, // <- anpassbar
     fontOptions = ["Roboto", "Arial", "Impact", "Comic Sans MS", "Montserrat", "Courier New"],
 }) {
@@ -71,53 +71,6 @@ export default function TextControls({
                     />
                 </div>
             </div>
-
-            {/* Größe */}
-            <div className="mb-4 lg:mb-2 2xl:mb-4">
-                <P klasse="!text-xs 2xl:!text-sm !mb-0">Größe</P>
-                <div className="flex space-x-4">
-                    <Slider
-                        value={Number.isFinite(textObj.fontSize) ? textObj.fontSize : defaultFontSize}
-                        min={sizeMin}
-                        max={sizeMax}
-                        step={1}
-                        onChange={(_e, v) => setTextProp({ fontSize: Number(v) })}
-                        aria-labelledby="text-size-slider"
-                        sx={sliderSX}
-                    />
-                    <button
-                        className="bg-textColor text-white p-2 rounded-[10px]"
-                        onClick={() => setTextProp({ fontSize: defaultFontSize })}
-                        title="Größe zurücksetzen"
-                    >
-                        <FiMaximize />
-                    </button>
-                </div>
-            </div>
-
-            {/* Biegung */}
-            <div className="mb-4 lg:mb-2 2xl:mb-4">
-                <P klasse="!text-xs 2xl:!text-sm !mb-0">Biegung</P>
-                <div className="flex space-x-4">
-                    <Slider
-                        value={Number.isFinite(textObj.curvature) ? textObj.curvature : 0}
-                        min={-100}
-                        max={100}
-                        step={1}
-                        onChange={(_e, v) => setTextProp({ curvature: Number(v) })}
-                        aria-label="text-curve-slider"
-                        sx={sliderSX}
-                    />
-                    <button
-                        className="bg-textColor text-white p-2 rounded-[10px]"
-                        onClick={() => setTextProp({ curvature: 0 })}
-                        title="Biegung zurücksetzen"
-                    >
-                        <FiRotateCcw />
-                    </button>
-                </div>
-            </div>
-
             {/* X */}
             <div className="mb-4 lg:mb-2 2xl:mb-4">
                 <P klasse="!text-xs 2xl:!text-sm !mb-0">X‑Achse Position</P>
@@ -160,6 +113,50 @@ export default function TextControls({
                         title="Vertikal zentrieren"
                     >
                         <FiGitCommit />
+                    </button>
+                </div>
+            </div>
+            {/* Biegung */}
+            <div className="mb-4 lg:mb-2 2xl:mb-4">
+                <P klasse="!text-xs 2xl:!text-sm !mb-0">Biegung</P>
+                <div className="flex space-x-4">
+                    <Slider
+                        value={Number.isFinite(textObj.curvature) ? textObj.curvature : 0}
+                        min={-100}
+                        max={100}
+                        step={1}
+                        onChange={(_e, v) => setTextProp({ curvature: Number(v) })}
+                        aria-label="text-curve-slider"
+                        sx={sliderSX}
+                    />
+                    <button
+                        className="bg-textColor text-white p-2 rounded-[10px]"
+                        onClick={() => setTextProp({ curvature: 0 })}
+                        title="Biegung zurücksetzen"
+                    >
+                        <FiRotateCcw />
+                    </button>
+                </div>
+            </div>
+            {/* Größe */}
+            <div className="mb-4 lg:mb-2 2xl:mb-4">
+                <P klasse="!text-xs 2xl:!text-sm !mb-0">Größe</P>
+                <div className="flex space-x-4">
+                    <Slider
+                        value={Number.isFinite(textObj.fontSize) ? textObj.fontSize : defaultFontSize}
+                        min={sizeMin}
+                        max={sizeMax}
+                        step={1}
+                        onChange={(_e, v) => setTextProp({ fontSize: Number(v) })}
+                        aria-labelledby="text-size-slider"
+                        sx={sliderSX}
+                    />
+                    <button
+                        className="bg-textColor text-white p-2 rounded-[10px]"
+                        onClick={() => setTextProp({ fontSize: defaultFontSize })}
+                        title="Größe zurücksetzen"
+                    >
+                        <FiMaximize />
                     </button>
                 </div>
             </div>

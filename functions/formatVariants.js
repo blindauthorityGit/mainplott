@@ -1,53 +1,57 @@
-export default function formatVariants(variants) {
-    // Determine available option names from the first variant.
-    const optionNames = variants.edges[0]?.node.selectedOptions.map((opt) => opt.name) || [];
+// functions/formatVariants.js
+export default function formatVariants(variantsInput) {
+    // 1) Normalisieren: wir arbeiten mit einer reinen Node-Liste
+    const nodes = Array.isArray(variantsInput?.edges)
+        ? variantsInput.edges.map((e) => e?.node).filter(Boolean)
+        : Array.isArray(variantsInput)
+        ? variantsInput.filter(Boolean)
+        : [];
 
-    // Choose primary and secondary option names.
-    // Prefer "Größe" as primary if available, else first available;
-    // Prefer "Farbe" as secondary if available, else second available, else default.
-    const primaryName = optionNames.includes("Größe") ? "Größe" : optionNames[0] || "default";
-    const secondaryName = optionNames.includes("Farbe") ? "Farbe" : optionNames[1] || "default";
+    // Nichts da? -> leere Struktur zurück
+    if (nodes.length === 0) {
+        return { default: { colors: [] } };
+    }
 
-    // Create a temporary map to store back images by secondary option value.
+    // 2) Option-Namen aus der ersten Variante ziehen (falls vorhanden)
+    const firstSelected = nodes[0]?.selectedOptions || [];
+    const optionNames = firstSelected.map((opt) => opt?.name).filter(Boolean);
+
+    // bevorzugt "Größe" / "Farbe", sonst erste/zweite Option, sonst "default"
+    const primaryName = optionNames.includes("Größe") ? "Größe" : optionNames[0] ?? "default";
+    const secondaryName = optionNames.includes("Farbe") ? "Farbe" : optionNames[1] ?? "default";
+
+    // 3) Back-Images pro Secondary-Option merken
     const secondaryBackImages = {};
 
-    // First pass: Build the structure.
-    const structuredVariants = variants.edges.reduce((acc, { node }) => {
-        // Dynamically extract the primary and secondary option values.
-        const primaryValue = node.selectedOptions.find((opt) => opt.name === primaryName)?.value || "default";
-        const secondaryValue = node.selectedOptions.find((opt) => opt.name === secondaryName)?.value || "default";
+    // 4) Struktur aufbauen
+    const structured = nodes.reduce((acc, node) => {
+        const selected = node?.selectedOptions || [];
+        const primaryValue = selected.find((o) => o?.name === primaryName)?.value ?? "default";
+        const secondaryValue = selected.find((o) => o?.name === secondaryName)?.value ?? "default";
 
-        const imageUrl = node.image?.originalSrc;
-        const backImageUrl = node.backImageUrl || null;
-        const configImageUrl = node.configImageUrl || (node.configImage && node.configImage.value) || null;
-        const variantId = node.id;
-        const price = node.priceV2?.amount || null;
+        const imageUrl = node?.image?.originalSrc ?? node?.image?.src ?? null;
+        const backImageUrl = node?.backImageUrl || null;
+        const configImageUrl = node?.configImageUrl || (node?.configImage && node.configImage.value) || null;
+        const variantId = node?.id;
+        const price = node?.priceV2?.amount ?? node?.price?.amount ?? null;
 
-        // If a back image exists, store it for the secondary option.
         if (backImageUrl) {
             secondaryBackImages[secondaryValue] = backImageUrl;
         }
 
-        // Initialize the group for the primary value if needed.
         if (!acc[primaryValue]) {
-            acc[primaryValue] = {
-                // We keep the property name "colors" for compatibility with existing UI.
-                colors: [],
-            };
+            acc[primaryValue] = { colors: [] };
         }
 
-        // Push the variant data into the appropriate group.
         acc[primaryValue].colors.push({
-            // The secondary option value is stored in the "color" field.
             color: secondaryValue,
             image: imageUrl,
             backImage: backImageUrl || secondaryBackImages[secondaryValue] || null,
             configImage: configImageUrl,
             id: variantId,
             price,
-            // Optionally, store all option values if needed later.
-            options: node.selectedOptions.reduce((o, opt) => {
-                o[opt.name] = opt.value;
+            options: selected.reduce((o, opt) => {
+                if (opt?.name) o[opt.name] = opt?.value;
                 return o;
             }, {}),
         });
@@ -55,14 +59,14 @@ export default function formatVariants(variants) {
         return acc;
     }, {});
 
-    // Second pass: For any variant that lacks a back image, use the stored one.
-    Object.values(structuredVariants).forEach((primaryGroup) => {
-        primaryGroup.colors.forEach((colorEntry) => {
-            if (!colorEntry.backImage && secondaryBackImages[colorEntry.color]) {
-                colorEntry.backImage = secondaryBackImages[colorEntry.color];
+    // 5) Back-Image Fallbacks nachtragen
+    Object.values(structured).forEach((group) => {
+        group.colors.forEach((c) => {
+            if (!c.backImage && secondaryBackImages[c.color]) {
+                c.backImage = secondaryBackImages[c.color];
             }
         });
     });
 
-    return structuredVariants;
+    return structured;
 }

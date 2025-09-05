@@ -48,3 +48,16 @@ export function centeredTextPath(lengthPx, curvature, steps = 64) {
     }
     return d;
 }
+
+export function measureTextPx(text = "", fontFamily = "Roboto", fontSize = 36, fontStyle = "normal") {
+    const canvas = measureTextPx._c || (measureTextPx._c = document.createElement("canvas"));
+    const ctx = measureTextPx._ctx || (measureTextPx._ctx = canvas.getContext("2d"));
+    measureTextPx._ctx = ctx;
+    ctx.font = `${fontStyle} ${fontSize}px ${fontFamily}`;
+    const m = ctx.measureText(text);
+    return {
+        width: m.width,
+        ascent: m.actualBoundingBoxAscent ?? fontSize * 0.8,
+        descent: m.actualBoundingBoxDescent ?? fontSize * 0.2,
+    };
+}

@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { FaShoppingCart } from "react-icons/fa"; // Import the cart icon from react-icons
-import { FiMenu, FiX } from "react-icons/fi"; // Import burger and close icons from react-icons
+import { FaShoppingCart } from "react-icons/fa";
+import { FiMenu, FiX, FiUser } from "react-icons/fi";
 
 import { useMenu } from "../../context/menuContext";
-import MegaMenu from "./megaMenu"; // Import the MegaMenu component
-import { motion, AnimatePresence } from "framer-motion"; // Import framer-motion for animations
+import MegaMenu from "./megaMenu";
+import { motion, AnimatePresence } from "framer-motion";
 import { MainButton } from "../buttons";
-import useStore from "@/store/store"; // Import Zustand store
+import useStore from "@/store/store";
 import urlFor from "../../functions/urlFor";
 
 import LogoSM from "@/assets/logoSM.png";
@@ -21,50 +21,93 @@ import { useRouter } from "next/router";
 
 export default function Menu() {
     const [isOpen, setIsOpen] = useState(false);
-    const [isMegaMenuVisible, setIsMegaMenuVisible] = useState(false); // State for MegaMenu visibility
-    const [isSticky, setIsSticky] = useState(false); // State to track if the header is sticky
+    const [isMegaMenuVisible, setIsMegaMenuVisible] = useState(false);
+    const [isSticky, setIsSticky] = useState(false);
+    const [showUserMenu, setShowUserMenu] = useState(false);
 
-    const menuData = useMenu(); // Access menu data from context
-    const { cartItems, openCartSidebar } = useStore(); // Assuming cartItems is an array in Zustand
+    const menuData = useMenu();
+    const { cartItems, openCartSidebar } = useStore();
     const user = useUserStore((state) => state.user);
     const router = useRouter();
 
-    console.log(menuData);
+    const toggleUserMenu = () => setShowUserMenu((prev) => !prev);
+    const closeUserMenu = () => setShowUserMenu(false);
 
     useEffect(() => {
-        const handleScroll = () => {
-            if (window.scrollY > 400) {
-                setIsSticky(true);
-            } else {
-                setIsSticky(false);
-            }
-        };
-
+        const handleScroll = () => setIsSticky(window.scrollY > 400);
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    if (!menuData) return null; // Render nothing until data is loaded
+    if (!menuData) return null;
 
     const handleLogout = async () => {
         try {
             await signOut(auth);
-
             router.push("/");
-
-            // Optionally, reset the user in your Zustand store
             useUserStore.setState({ user: null });
+            closeUserMenu();
         } catch (error) {
             console.error("Error logging out:", error.message);
         }
     };
 
+    const UserDropdown = () => (
+        <div className="relative">
+            <button onClick={toggleUserMenu} className="p-2 rounded-full hover:bg-gray-100">
+                <FiUser className="text-2xl text-gray-700" />
+            </button>
+
+            {showUserMenu && (
+                <div
+                    className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-md py-2 z-50"
+                    onMouseLeave={closeUserMenu}
+                >
+                    {user ? (
+                        <>
+                            <Link
+                                href="/dashboard"
+                                className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                                onClick={closeUserMenu}
+                            >
+                                Zum Account
+                            </Link>
+                            <button
+                                onClick={handleLogout}
+                                className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                            >
+                                Logout
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <Link
+                                href="/signup?mode=login"
+                                className="block px-4 py-2 font-semibold text-gray-800 hover:bg-gray-100"
+                                onClick={closeUserMenu}
+                            >
+                                Login
+                            </Link>
+                            <Link
+                                href="/signup?mode=signup"
+                                className="block px-4 py-2 text-sm text-gray-500 hover:bg-gray-100"
+                                onClick={closeUserMenu}
+                            >
+                                Registrieren
+                            </Link>
+                        </>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+
     return (
         <>
             {/* Original Header */}
             <header className="relative font-body">
-                <div className="container mx-auto flex justify-between items-center lg:p-2 xl:py-5 2xl:py-12  relative font-semibold">
-                    {/* Left Section - Links */}
+                <div className="container mx-auto flex justify-between items-center lg:p-2 xl:py-5 2xl:py-12 relative font-semibold">
+                    {/* Left */}
                     <nav className="hidden md:flex space-x-4 text-sm 2xl:text-base">
                         <Link
                             href="/shop"
@@ -93,59 +136,40 @@ export default function Menu() {
                         </Link>
                     </nav>
 
-                    {/* Center Section - Logo with Home Link */}
-                    <div className="absolute hidden lg:block  left-1/2 transform -translate-x-1/2">
+                    {/* Center Logo (Desktop) */}
+                    <div className="absolute hidden lg:block left-1/2 transform -translate-x-1/2">
                         <Link href="/" className="text-2xl font-bold text-gray-900">
-                            <img
-                                src={urlFor(menuData.logo).url()}
-                                alt="Logo"
-                                className="h-16 2xl:h-24 inline-block mx-auto md:mx-0"
-                            />
+                            <img src={urlFor(menuData.logo).url()} alt="Logo" className="h-16 2xl:h-24 inline-block" />
                         </Link>
                     </div>
 
-                    {/* Center Section - Logo with Home Link */}
+                    {/* Center Logo (Mobile) */}
                     <div className="flex-1 p-2 lg:hidden md:flex-none md:text-left">
                         <Link href="/" className="text-2xl font-bold text-gray-900">
-                            <img src={LogoSM.src} alt="Logo" className="h-10 2xl:h-24 inline-block mx-auto md:mx-0" />
+                            <img src={LogoSM.src} alt="Logo" className="h-10 2xl:h-24 inline-block" />
                         </Link>
                     </div>
 
-                    {/* Right Section - CTA Button, Cart, and Burger Menu */}
+                    {/* Right */}
                     <div className="flex items-center space-x-4 md:space-x-4">
-                        {/* CTA Button */}
+                        {/* CTA */}
                         <MainButton
-                            klasse="!mt-0 !max-w-[200px] font-base !min-w-[0] px-12 !text-white"
+                            klasse="!mt-0 !max-w-[200px] font-base !min-w-[0] px-12 !text-white hidden md:inline-block"
                             link="/shop?cat=all"
-                            className="hidden md:inline-block   "
                         >
                             zum Shop
                         </MainButton>
-                        {/* Burger Menu */}
+
+                        {/* Mobile Burger */}
                         <button onClick={() => setIsOpen(!isOpen)} className="text-textColor pr-4 md:hidden">
                             {isOpen ? <FiX className="text-3xl" /> : <FiMenu className="text-3xl" />}
                         </button>
-                        <div className="hidden lg:block">
-                            {!user ? (
-                                <>
-                                    <Link href="/signup?mode=login" className="mr-4">
-                                        Login
-                                    </Link>
-                                    {/* <Link href="/signup?mode=signup">Sign Up</Link> */}
-                                </>
-                            ) : (
-                                <>
-                                    {/* <span className="mr-4">Hallo, {user.email}</span> */}
-                                    {/* Optionally show userType */}
-                                    {/* {user.userType && <span className="mr-4">({user.userType})</span>} */}
-                                    <button onClick={handleLogout} className="text-primaryColor  hover:underline">
-                                        Logout
-                                    </button>
-                                </>
-                            )}
-                        </div>{" "}
-                        {/* Cart Icon with Badge */}
-                        <button className="relative  md:inline-flex items-center">
+
+                        {/* User Dropdown */}
+                        <UserDropdown />
+
+                        {/* Cart */}
+                        <button className="relative md:inline-flex items-center">
                             <FaShoppingCart onClick={openCartSidebar} className="text-3xl text-gray-700" />
                             {cartItems.length > 0 && (
                                 <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full px-2 text-xs">
@@ -156,7 +180,7 @@ export default function Menu() {
                     </div>
                 </div>
 
-                {/* MegaMenu positioned outside individual links for full container width */}
+                {/* MegaMenu */}
                 <div
                     className={`relative lg:-top-10 ${isMegaMenuVisible ? "block" : "hidden"}`}
                     onMouseLeave={() => setIsMegaMenuVisible(false)}
@@ -168,6 +192,7 @@ export default function Menu() {
                     />
                 </div>
             </header>
+
             {/* Sticky Header */}
             <AnimatePresence>
                 {isSticky && (
@@ -179,7 +204,7 @@ export default function Menu() {
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                     >
                         <div className="container mx-auto flex justify-between items-center p-4 relative font-semibold">
-                            {/* Left Section - Links */}
+                            {/* Left */}
                             <nav className="hidden md:flex space-x-4 text-sm 2xl:text-base">
                                 <Link
                                     onMouseEnter={() => setIsMegaMenuVisible(true)}
@@ -196,45 +221,26 @@ export default function Menu() {
                                 </Link>
                             </nav>
 
-                            {/* Center Section - Logo with Home Link */}
+                            {/* Center Logo */}
                             <div className="absolute left-1/2 transform -translate-x-1/2">
                                 <Link href="/" className="text-2xl font-bold text-gray-900">
-                                    <img src={LogoSM.src} alt="Logo" className="h-12 inline-block mx-auto md:mx-0" />
+                                    <img src={LogoSM.src} alt="Logo" className="h-12 inline-block" />
                                 </Link>
                             </div>
 
-                            {/* Right Section - CTA Button, Cart */}
+                            {/* Right */}
                             <div className="flex items-center space-x-4 md:space-x-4">
-                                {/* CTA Button */}
                                 <MainButton
                                     klasse="!mt-0 !max-w-[240px] font-base !min-w-[0] px-12 !text-white"
                                     link="/shop?cat=all"
                                 >
                                     zum Shop
                                 </MainButton>
-                                {/* Cart Icon with Badge */}
-                                <div className="hidden lg:block">
-                                    {!user ? (
-                                        <>
-                                            <Link href="/signup?mode=login" className="mr-4">
-                                                Login
-                                            </Link>
-                                            {/* <Link href="/signup?mode=signup">Sign Up</Link> */}
-                                        </>
-                                    ) : (
-                                        <>
-                                            {/* <span className="mr-4">Hallo, {user.email}</span> */}
-                                            {/* Optionally show userType */}
-                                            {/* {user.userType && <span className="mr-4">({user.userType})</span>} */}
-                                            <button
-                                                onClick={handleLogout}
-                                                className="text-primaryColor hover:underline"
-                                            >
-                                                Logout
-                                            </button>
-                                        </>
-                                    )}
-                                </div>{" "}
+
+                                {/* User Dropdown (Sticky) */}
+                                <UserDropdown />
+
+                                {/* Cart */}
                                 <button className="relative hidden md:inline-flex items-center">
                                     <FaShoppingCart onClick={openCartSidebar} className="text-3xl text-gray-700" />
                                     {cartItems.length > 0 && (
@@ -247,12 +253,9 @@ export default function Menu() {
                         </div>
                     </motion.header>
                 )}
-                {/* MobileMenu overlay + side drawer */}
-                <MobileMenu
-                    isOpen={isOpen}
-                    onClose={() => setIsOpen(false)}
-                    data={menuData} // pass the entire menu data for mega menu
-                />
+
+                {/* MobileMenu */}
+                <MobileMenu isOpen={isOpen} onClose={() => setIsOpen(false)} data={menuData} />
             </AnimatePresence>
         </>
     );

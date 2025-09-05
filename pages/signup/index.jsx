@@ -151,7 +151,7 @@ export default function Signup() {
                 ...userData,
             });
 
-            router.push("/?loggedIn=1");
+            router.push("/dashboard?loggedIn=1");
         } catch (err) {
             console.error("Login Error:", err);
             setError(err.message);

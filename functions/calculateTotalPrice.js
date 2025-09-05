@@ -1,4 +1,21 @@
 import { isB2BUser, getUserPiecePrice, getUserTotalPrice } from "./priceHelpers";
+const MODE = (process.env.NEXT_PUBLIC_DECORATION_MODE || "ONE_PER_SIDE").toUpperCase();
+
+function countSideDecorations(sideObj) {
+    if (!sideObj) return 0;
+
+    const texts = Array.isArray(sideObj.texts) ? sideObj.texts.length : 0;
+    // Einzel-Upload plus Multi-Array berücksichtigen
+    const singleGraphic = sideObj.uploadedGraphic || sideObj.uploadedGraphicFile ? 1 : 0;
+    const multiGraphics = Array.isArray(sideObj.uploadedGraphics) ? sideObj.uploadedGraphics.length : 0;
+    const graphics = singleGraphic + multiGraphics;
+
+    if (MODE === "COUNT_ALL") {
+        return texts + graphics;
+    }
+    // ONE_PER_SIDE
+    return texts + graphics > 0 ? 1 : 0;
+}
 
 export const calculateTotalPrice = (
     variants,
@@ -86,28 +103,37 @@ export const calculateTotalPrice = (
     }
 
     // 4) veredelung (we keep the logic but ignore for "productDiscount")
+    // 4) veredelung
     let netVeredelungTotal = 0;
     const veredelungPerPiece = {};
     const sides = ["front", "back"];
+
     if (totalQuantity > 0) {
         sides.forEach((side) => {
-            if (purchaseData.sides[side]?.uploadedGraphic || purchaseData.sides[side]?.uploadedGraphicFile) {
-                const vData = veredelungen[side];
-                if (vData) {
-                    let netSidePricePerPiece = parseFloat(vData.price) || 0;
-                    // discount on veredelung? We'll skip it for "productDiscount"
-                    const match = vData.preisReduktion.discounts.find(
-                        (tier) =>
-                            totalQuantity >= tier.minQuantity &&
-                            (tier.maxQuantity == null || totalQuantity <= tier.maxQuantity)
-                    );
-                    if (match) {
-                        netSidePricePerPiece *= 1 - match.discountPercentage / 100;
-                    }
-                    netVeredelungTotal += netSidePricePerPiece * totalQuantity;
-                    veredelungPerPiece[side] = netSidePricePerPiece.toFixed(2);
-                }
+            const sideObj = purchaseData?.sides?.[side];
+            const count = countSideDecorations(sideObj); // <-- zählt Grafiken + Texte gemäß MODE
+            if (!count) return;
+
+            const vData = veredelungen?.[side];
+            if (!vData) return;
+
+            // Grundpreis pro Seite (netto)
+            let netSidePricePerPiece = parseFloat(vData.price) || 0;
+
+            // Mengenrabatt für die Veredelung anwenden (falls vorhanden)
+            const match = vData.preisReduktion?.discounts?.find(
+                (tier) =>
+                    totalQuantity >= tier.minQuantity && (tier.maxQuantity == null || totalQuantity <= tier.maxQuantity)
+            );
+            if (match && typeof match.discountPercentage === "number") {
+                netSidePricePerPiece *= 1 - match.discountPercentage / 100;
             }
+
+            // COUNT_ALL -> mehrfach berechnen; ONE_PER_SIDE -> 1x
+            const sideChargePerPiece = netSidePricePerPiece * count;
+
+            netVeredelungTotal += sideChargePerPiece * totalQuantity;
+            veredelungPerPiece[side] = sideChargePerPiece.toFixed(2);
         });
     }
 
