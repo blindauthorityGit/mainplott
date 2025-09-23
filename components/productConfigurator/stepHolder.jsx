@@ -689,8 +689,21 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
             {/* Right - Step Indicator, Dynamic Content, Buttons */}
             <div className="col-span-12 lg:col-span-6 2xl:col-span-6   flex flex-col h-full">
                 {/* Step Indicator */}
-                <div className="lg:mb-6">
-                    <StepIndicator currentStep={currentStep} steps={steps} />
+                <div className=" fixed bottom-0 left-0 w-full z-30">
+                    <StepIndicator
+                        steps={steps}
+                        currentStep={currentStep}
+                        // actions
+                        onPrev={() => handlePrevStep(currentStep, steps, setCurrentStep, isMobile)}
+                        onNext={() =>
+                            handleNextStep(currentStep, steps, setCurrentStep, purchaseData, isMobile, handleExport)
+                        }
+                        onSave={handleSave} // used on "Zusammenfassung"
+                        isEditing={isEditing} // to switch label/icon on summary
+                        // validation (same logic you already use)
+                        prevDisabled={isPrevDisabled(currentStep)}
+                        nextDisabled={isNextDisabled(currentStep, steps, purchaseData)}
+                    />
 
                     {showMobileSteps && (
                         <MobileStepNavigator
@@ -707,7 +720,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
                 {/* Dynamic Content with entry/exit animation */}
                 <div
-                    className="flex-grow mb-8 px-4 lg:px-0"
+                    className="flex-grow mb-8 px-4 lg:px-0 bg-white shadow-md"
                     style={{ zIndex: steps[currentStep] === "Design" && isMobileSliderOpen ? "-1" : null }}
                 >
                     <AnimatePresence mode="wait" layout initial={false}>
@@ -727,7 +740,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 </div>
 
                 {/* Navigation Buttons - Positioned at the bottom */}
-                <div className="mt-auto hidden lg:flex gap-2 lg:gap-4 justify-end 2xl:justify-between">
+                {/* <div className="mt-auto hidden lg:flex gap-2 lg:gap-4 justify-end 2xl:justify-between">
                     <div className="w-1/2 lg:w-auto">
                         <StepButton
                             onClick={() => handlePrevStep(currentStep, steps, setCurrentStep, isMobile)}
@@ -780,7 +793,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                             </StepButton>
                         )}
                     </div>
-                </div>
+                </div> */}
             </div>
         </div>
     );

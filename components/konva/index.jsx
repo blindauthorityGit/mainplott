@@ -104,6 +104,113 @@ const KonvaLayer = forwardRef(
         }, [uploadedGraphics]);
 
         const imageObjs = useImageObjects(imageSources);
+        // at top with other refs
+        const editingTextAreaRef = useRef(null);
+        const editingTextNodeRef = useRef(null);
+
+        // replace your beginInlineTextEdit with this version
+        function beginInlineTextEdit(t) {
+            const node = textRefs.current[t.id]?.current; // <-- Group for this text
+            const stage = stageRef.current;
+            if (!node || !stage) return;
+
+            // measure BEFORE hiding
+            const scale = stage.scaleX() || 1;
+            const { x: stageX, y: stageY } = stage.position();
+            const rect = node.getClientRect(); // stage space
+            const stageBox = stage.container().getBoundingClientRect();
+
+            const left = stageBox.left + stageX + rect.x * scale;
+            const top = stageBox.top + stageY + rect.y * scale;
+            const width = Math.max(160, rect.width * scale);
+            const height = Math.max(40, rect.height * scale);
+
+            // text style from state
+            const fontFamily = t.fontFamily || "Roboto";
+            const fontSize = (t.fontSize || 36) * (t.scale || 1) * scale;
+            const lineHeight = Number.isFinite(t.lineHeight) ? t.lineHeight : 1.2;
+            const color = t.fill || "#000";
+            const isItalic = /italic/.test(t.fontStyle || "");
+            const isBold = /bold/.test(t.fontStyle || "");
+            const weight = isBold ? "700" : "400";
+            const style = isItalic ? "italic" : "normal";
+            const letterSp = Number(t.letterSpacing ?? 0);
+
+            // create overlay textarea
+            const ta = document.createElement("textarea");
+            editingTextAreaRef.current = ta;
+            editingTextNodeRef.current = node;
+
+            ta.value = t.value || "";
+            ta.spellcheck = false; // remove red zigzag if you want
+            Object.assign(ta.style, {
+                position: "absolute",
+                left: `${left}px`,
+                top: `${top}px`,
+                width: `${width}px`,
+                height: `${height}px`,
+                padding: "6px 8px",
+                margin: "0",
+                border: "1px dashed #A42CD6",
+                borderRadius: "8px",
+                outline: "none",
+                background: "transparent", // <-- transparent overlay
+                color,
+                caretColor: color,
+                fontFamily,
+                fontSize: `${fontSize}px`,
+                fontWeight: weight,
+                fontStyle: style,
+                lineHeight: String(lineHeight),
+                letterSpacing: `${letterSp}px`,
+                boxShadow: "none",
+                zIndex: 9999,
+                resize: "none",
+                overflow: "hidden",
+                whiteSpace: "pre-wrap",
+            });
+
+            // hide the canvas text while editing so nothing shows behind
+            node.visible(false); // <-- key change
+            stage.container().style.pointerEvents = "none";
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+
+            const finish = (commit) => {
+                if (editingTextAreaRef.current) {
+                    if (commit) {
+                        updateText(purchaseData.currentSide || "front", t.id, {
+                            value: editingTextAreaRef.current.value,
+                        });
+                    }
+                    try {
+                        document.body.removeChild(editingTextAreaRef.current);
+                    } catch {}
+                    editingTextAreaRef.current = null;
+                }
+                // show text again
+                if (editingTextNodeRef.current) {
+                    try {
+                        editingTextNodeRef.current.visible(true);
+                    } catch {}
+                    editingTextNodeRef.current = null;
+                }
+                stage.container().style.pointerEvents = "auto";
+            };
+
+            ta.addEventListener("keydown", (e) => {
+                // Cmd/Ctrl+Enter or Tab = commit; Esc = cancel
+                if ((e.key === "Enter" && (e.metaKey || e.ctrlKey)) || e.key === "Tab") {
+                    e.preventDefault();
+                    finish(true);
+                } else if (e.key === "Escape") {
+                    e.preventDefault();
+                    finish(false);
+                }
+            });
+            ta.addEventListener("blur", () => finish(true));
+        }
 
         // Objekt-URLs wieder freigeben
         useEffect(() => {
@@ -279,6 +386,18 @@ const KonvaLayer = forwardRef(
                 showTransformerFor(4);
             }
         }, [activeGraphicId]);
+
+        useEffect(() => {
+            return () => {
+                if (editingTextAreaRef.current) {
+                    try {
+                        document.body.removeChild(editingTextAreaRef.current);
+                    } catch {}
+                    editingTextAreaRef.current = null;
+                }
+                if (stageRef.current) stageRef.current.container().style.pointerEvents = "auto";
+            };
+        }, []);
 
         useEffect(() => {
             if (!active) return;
@@ -1052,12 +1171,20 @@ const KonvaLayer = forwardRef(
 
                             const fontSize = t.fontSize || 36;
                             const fontFamily = t.fontFamily || "Roboto";
-                            const { width } = measureTextPx(t.value || "", fontFamily, fontSize);
-
-                            const PAD = Math.max(6, Math.round(fontSize * 0.12));
-                            const pathLength = width + 2 * PAD;
-                            const pathD = centeredTextPath(pathLength, t.curvature ?? 0);
-                            const centerComp = PAD;
+                            const isParagraph = (t.curvature ?? 0) === 0;
+                            let centerComp = 0;
+                            let pathD = null;
+                            if (!isParagraph) {
+                                const { width } = measureTextPx(
+                                    (t.value || "").replace(/\n+/g, " "),
+                                    fontFamily,
+                                    fontSize
+                                );
+                                const PAD = Math.max(6, Math.round(fontSize * 0.12));
+                                const pathLength = width + 2 * PAD;
+                                pathD = centeredTextPath(pathLength, t.curvature);
+                                centerComp = PAD;
+                            }
 
                             return (
                                 <Group
@@ -1076,28 +1203,65 @@ const KonvaLayer = forwardRef(
                                         hideGraphicTransformer({ immediate: true });
                                         setActiveElement(currentSide, "text", t.id);
                                     }}
+                                    onDblClick={() => {
+                                        hideGraphicTransformer({ immediate: true });
+                                        setActiveElement(currentSide, "text", t.id);
+                                        beginInlineTextEdit(t);
+                                    }}
+                                    onDblTap={() => {
+                                        hideGraphicTransformer({ immediate: true });
+                                        setActiveElement(currentSide, "text", t.id);
+                                        beginInlineTextEdit(t);
+                                    }}
                                     onDragEnd={(e) => {
                                         const { x, y } = e.target.position();
                                         updateText(currentSide, t.id, { x: x - centerComp, y });
                                     }}
                                     onTransformEnd={(e) => {
                                         const node = e.target;
-                                        updateText(currentSide, t.id, {
+                                        const next = {
                                             scale: node.scaleX(),
                                             rotation: node.rotation(),
                                             x: node.x() - centerComp,
                                             y: node.y(),
-                                        });
+                                        };
+                                        if (isParagraph) {
+                                            const width = Math.max(
+                                                80,
+                                                Math.min(boundingRect.width, node.width?.() || (t.boxWidth ?? 300))
+                                            );
+                                            next.boxWidth = width;
+                                        }
+                                        updateText(currentSide, t.id, next);
                                     }}
                                 >
-                                    <KonvaTextPath
-                                        data={pathD}
-                                        text={t.value}
-                                        fontSize={fontSize}
-                                        fontFamily={fontFamily}
-                                        fill={t.fill || "#000"}
-                                        listening={true}
-                                    />
+                                    {isParagraph ? (
+                                        <Text
+                                            text={t.value || ""}
+                                            width={t.boxWidth ?? Math.round((boundingRect?.width || 500) * 0.6)}
+                                            align={t.align ?? "left"}
+                                            lineHeight={t.lineHeight ?? 1.2}
+                                            padding={t.padding ?? 4}
+                                            fontSize={fontSize}
+                                            fontFamily={fontFamily}
+                                            fill={t.fill || "#000"}
+                                            fontStyle={t.fontStyle ?? "normal"}
+                                            textDecoration={t.textDecoration ?? ""}
+                                            letterSpacing={t.letterSpacing ?? 0}
+                                            wrap="word"
+                                            listening
+                                        />
+                                    ) : (
+                                        <KonvaTextPath
+                                            data={pathD}
+                                            text={(t.value || "").replace(/\n+/g, " ")}
+                                            fontSize={fontSize}
+                                            fontFamily={fontFamily}
+                                            fill={t.fill || "#000"}
+                                            fontStyle={t.fontStyle ?? "normal"}
+                                            listening
+                                        />
+                                    )}
                                 </Group>
                             );
                         })}
@@ -1122,10 +1286,26 @@ const KonvaLayer = forwardRef(
                             <Transformer
                                 ref={textTransformerRef}
                                 nodes={[textRefs.current[active.id].current]}
-                                enabledAnchors={[]}
+                                enabledAnchors={(() => {
+                                    const t = sideTexts.find((tt) => tt.id === active.id);
+                                    const isParagraph = (t?.curvature ?? 0) === 0;
+                                    return isParagraph ? ["middle-left", "middle-right"] : [];
+                                })()}
                                 rotateEnabled={false}
                                 padding={6}
                                 borderStroke="#A42CD6"
+                                boundBoxFunc={(oldB, newB) => {
+                                    const t = sideTexts.find((tt) => tt.id === active.id);
+                                    if ((t?.curvature ?? 0) !== 0) return newB; // nur Absatz beschränken
+                                    const minW = 80;
+                                    const maxW = Math.max(minW, boundingRect.width);
+                                    const w = Math.max(minW, Math.min(maxW, newB.width));
+                                    // Breite live in den State schreiben
+                                    if (Math.abs((t?.boxWidth ?? 300) - w) > 1) {
+                                        updateText(currentSide, t.id, { boxWidth: w });
+                                    }
+                                    return { ...newB, width: w };
+                                }}
                             />
                         )}
                         {hoveredTextId && hoveredTextId !== active?.id && textRefs.current[hoveredTextId]?.current && (
@@ -1187,7 +1367,7 @@ const KonvaLayer = forwardRef(
                     </Button>
 
                     {/* Datei hochladen */}
-                    <input
+                    {/* <input
                         ref={hiddenFileInputRef}
                         type="file"
                         hidden
@@ -1201,10 +1381,10 @@ const KonvaLayer = forwardRef(
                         variant="contained"
                     >
                         <FiImage size={24} />
-                    </Button>
+                    </Button> */}
 
                     {/* Text hinzufügen */}
-                    <Button
+                    {/* <Button
                         sx={{ minWidth: "32px", padding: "8px", fontSize: "0.875rem" }}
                         className="!bg-primaryColor"
                         variant="contained"
@@ -1224,10 +1404,10 @@ const KonvaLayer = forwardRef(
                         }}
                     >
                         <FiType size={24} />
-                    </Button>
+                    </Button> */}
 
                     {/* NEU: Library öffnen/schließen */}
-                    <div ref={libraryWrapRef} className="relative">
+                    {/* <div ref={libraryWrapRef} className="relative">
                         <Button
                             sx={{ minWidth: 32, p: 1, fontSize: "0.875rem" }}
                             className="!bg-[#ba979d]"
@@ -1294,7 +1474,7 @@ const KonvaLayer = forwardRef(
                                 )}
                             </div>
                         )}
-                    </div>
+                    </div> */}
                 </div>
             </div>
         );

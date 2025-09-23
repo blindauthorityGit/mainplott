@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { StepButton } from "@/components/buttons";
 import { Tabs, Tab, Button } from "@mui/material";
 import { P } from "@/components/typography";
 import useStore from "@/store/store";
-import { FiX, FiType, FiImage } from "react-icons/fi";
+// import { FiX, FiType, FiImage } from "react-icons/fi";
 import CustomRadioButton from "@/components/inputs/customRadioButton";
 import VeredelungTable from "@/components/infoTable/veredlungsTable";
 import GraphicControls from "@/components/productConfigurator/controls/graphicControls";
 import TextControls from "@/components/productConfigurator/controls/textControls";
+import { FiX, FiType, FiImage, FiPlus, FiSearch } from "react-icons/fi";
+import uploadGraphic from "@/functions/uploadGraphic";
 
 // FUNCTIONS
 import handleFileUpload from "@/functions/handleFileUpload";
@@ -16,6 +19,9 @@ import { getFixedImagePlacement } from "@/functions/getImagePlacement";
 import { centerVertically, centerHorizontally } from "@/functions/centerFunctions";
 import resetScale from "@/functions/resetScale";
 import useIsMobile from "@/hooks/isMobile";
+
+import { auth } from "@/config/firebase";
+import { useUserAssets } from "@/hooks/useUserAsset";
 
 import { v4 as uuidv4 } from "uuid";
 
@@ -57,11 +63,41 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
 
     const printRect = purchaseData.boundingRect || { x: 0, y: 0, width: 0, height: 0 };
     const fontSizeMin = 10;
-    const fontSizeMax = Math.round(printRect.height * 0.1);
+    const fontSizeMax = Math.max(200, Math.round(printRect.height * 0.35));
     const xMinText = printRect.x;
     const xMaxText = printRect.x + printRect.width;
     const yMinText = printRect.y;
     const yMaxText = printRect.y + printRect.height;
+
+    const fileInputRef = useRef(null);
+    const triggerGraphicUpload = () => fileInputRef.current?.click();
+
+    const addFileInputRef = useRef(null);
+    const triggerAddGraphic = () => addFileInputRef.current?.click();
+
+    // use the SAME logic as Konva’s add button
+    const handleAddGraphic = async (event) => {
+        const newFile = event.target.files?.[0];
+        if (!newFile) return;
+
+        await uploadGraphic({
+            newFile,
+            currentSide: purchaseData.currentSide,
+            purchaseData,
+            setPurchaseData,
+            setModalOpen,
+            setShowSpinner,
+            setModalContent,
+            setUploading,
+            setUploadError,
+            setColorSpace,
+            setDpi,
+            stepAhead: true, // like in Konva
+        });
+
+        // clear input so the same file can be re-selected
+        event.target.value = "";
+    };
 
     useEffect(() => {}, [isMobileSliderOpen]);
 
@@ -313,6 +349,9 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     // Front → Back Übernehmen
     const frontSide = purchaseData.sides?.front || { uploadedGraphics: [], texts: [] };
     const hasFrontStuff = (frontSide.uploadedGraphics?.length || 0) > 0 || (frontSide.texts?.length || 0) > 0;
+    // NEW: Back → Front
+    const backSide = purchaseData.sides?.back || { uploadedGraphics: [], texts: [] };
+    const hasBackStuff = (backSide.uploadedGraphics?.length || 0) > 0 || (backSide.texts?.length || 0) > 0;
 
     const centerX = (purchaseData.boundingRect?.x || 0) + (purchaseData.boundingRect?.width || containerWidth) / 2;
     const centerY = (purchaseData.boundingRect?.y || 0) + (purchaseData.boundingRect?.height || containerHeight) / 2;
@@ -375,6 +414,14 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                             fill: "#000",
                             scale: 1,
                             rotation: 0,
+                            align: "left",
+                            lineHeight: 1.2,
+                            boxWidth: Math.round((prev.boundingRect?.width || 500) * 0.6),
+                            padding: 4,
+                            curvature: 0, // 0 = Absatz (Konva.Text); != 0 = gebogen (TextPath)
+                            fontStyle: "normal", // "normal", "bold", "italic", "bold italic"
+                            textDecoration: "", // "", "underline", "line-through", "underline line-through"
+                            letterSpacing: 0, // e.g., 0..2
                         },
                     ],
                     activeTextId: id,
@@ -384,10 +431,113 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         }));
     };
 
+    // --- Library (Meine Grafiken) ---
+    const uid = auth.currentUser?.uid ?? null;
+    const { images: assetsImages = [], loading: assetsLoading } = useUserAssets(uid);
+
+    // map to what our insert handler expects
+    const libImages = useMemo(
+        () =>
+            (assetsImages || []).map((i) => ({
+                id: i.id || i._id || i.url,
+                url: i.url,
+                name: i.filename || i.productTitle || i.name || "Grafik",
+            })),
+        [assetsImages]
+    );
+
+    const [libOpen, setLibOpen] = useState(false);
+    const libraryWrapRef = useRef(null);
+    const openLibrary = () => setLibOpen((v) => !v);
+
+    const measureBlob = (blob) =>
+        new Promise((resolve) => {
+            const url = URL.createObjectURL(blob);
+            const img = new window.Image();
+            img.onload = () => {
+                resolve({ w: img.width, h: img.height });
+                URL.revokeObjectURL(url);
+            };
+            img.onerror = () => {
+                resolve(null);
+                URL.revokeObjectURL(url);
+            };
+            img.src = url;
+        });
+
+    const insertGraphicFromLibrary = async (asset) => {
+        if (!asset?.url) return;
+
+        // 1) URL -> Blob (matches KonvaLayer behavior)
+        let blob;
+        try {
+            const res = await fetch(asset.url, { mode: "cors", cache: "no-store" });
+            if (!res.ok) throw new Error("fetch failed");
+            blob = await res.blob();
+        } catch (e) {
+            console.error("Konnte Library-Grafik nicht laden:", e);
+            return;
+        }
+
+        // 2) natural size
+        const dims = await measureBlob(blob);
+        if (!dims) return;
+
+        // 3) placement (same logic as KonvaLayer)
+        const hasKonfig = !!(purchaseData?.product?.konfigBox && purchaseData.product.konfigBox.value);
+        const placement = hasKonfig
+            ? getFixedImagePlacement({
+                  imageNaturalWidth: dims.w,
+                  imageNaturalHeight: dims.h,
+                  boundingRect: purchaseData.boundingRect,
+                  centerImage: true,
+              })
+            : getImagePlacement({
+                  containerWidth,
+                  containerHeight,
+                  imageNaturalWidth: dims.w,
+                  imageNaturalHeight: dims.h,
+              });
+
+        const { finalWidth, finalHeight, x, y } = placement;
+        const id = uuidv4();
+
+        // 4) push into current side, centered & active
+        setPurchaseData((prev) => {
+            const sideKey = prev.currentSide || "front";
+            const side = { ...(prev.sides?.[sideKey] || {}) };
+            const arr = Array.isArray(side.uploadedGraphics) ? [...side.uploadedGraphics] : [];
+
+            const cx = (x ?? (prev.boundingRect?.x || 0)) + finalWidth / 2;
+            const cy = (y ?? (prev.boundingRect?.y || 0)) + finalHeight / 2;
+
+            arr.push({
+                id,
+                type: "upload",
+                name: asset.name || null,
+                file: blob, // triggers objectURL in Konva layer
+                downloadURL: asset.url,
+                url: asset.url,
+                xPosition: cx,
+                yPosition: cy,
+                width: finalWidth, // key: do NOT use natural size
+                height: finalHeight,
+                scale: 1,
+                rotation: 0,
+            });
+
+            side.uploadedGraphics = arr;
+            side.activeGraphicId = id;
+            side.activeElement = { type: "graphic", id };
+
+            return { ...prev, sides: { ...prev.sides, [sideKey]: side } };
+        });
+    };
+
     return (
-        <div className="flex flex-col lg:px-16 lg:mt-4 2xl:mt-8 font-body ">
+        <div className="flex flex-col lg:px-16 lg:mt-4 2xl:my-8 font-body ">
             {/* Tabs */}
-            <Tabs
+            {/* <Tabs
                 value={tabIndex}
                 onChange={handleTabChange}
                 textColor="primary"
@@ -404,7 +554,146 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
             >
                 <Tab label="Vorderseite" className="text-xl font-semibold" />
                 {selectedVariant?.backImageUrl && <Tab label="Rückseite" className="text-lg font-semibold" />}
-            </Tabs>
+            </Tabs> */}
+            {/* Top toolbar: side switch + CTAs */}
+            {/* Top toolbar: side switch + compact CTAs */}
+            <div className="mb-6 rounded-2xl border border-gray-200 bg-white/80 backdrop-blur px-4 py-3 shadow-sm">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    {/* Segmented tabs – visually distinct from buttons */}
+                    <div className="inline-flex overflow-hidden rounded-full border border-gray-200 bg-white shadow-sm">
+                        <button
+                            type="button"
+                            onClick={() => handleTabChange(null, 0)}
+                            className={[
+                                "px-4 py-2 text-sm font-medium transition",
+                                currentSide === "front"
+                                    ? "bg-primaryColor-50 text-primaryColor-700"
+                                    : "text-gray-600 hover:bg-gray-50",
+                            ].join(" ")}
+                            aria-pressed={currentSide === "front"}
+                        >
+                            Vorderseite
+                        </button>
+
+                        {selectedVariant?.backImageUrl && (
+                            <button
+                                type="button"
+                                onClick={() => handleTabChange(null, 1)}
+                                className={[
+                                    "px-4 py-2 text-sm font-medium transition border-l border-gray-200",
+                                    currentSide === "back"
+                                        ? "bg-primaryColor-50 text-primaryColor-700"
+                                        : "text-gray-600 hover:bg-gray-50",
+                                ].join(" ")}
+                                aria-pressed={currentSide === "back"}
+                            >
+                                Rückseite
+                            </button>
+                        )}
+                    </div>
+
+                    {/* CTAs: smaller, lively “+” buttons */}
+                    <div className="flex gap-2">
+                        {/* Add Graphic — uses Konva logic */}
+                        <button
+                            type="button"
+                            onClick={triggerAddGraphic}
+                            className="group inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 shadow-sm hover:border-primaryColor-300 hover:bg-primaryColor-50 active:scale-[0.98] transition"
+                            title="Grafik hinzufügen"
+                        >
+                            <span className="grid h-5 w-5 place-items-center rounded-md bg-textColor text-white transition group-hover:bg-primaryColor-600">
+                                <FiPlus className="text-[12px]" />
+                            </span>
+                            <FiImage className="opacity-70" />
+                            Grafik
+                        </button>
+
+                        <input
+                            ref={addFileInputRef}
+                            type="file"
+                            hidden
+                            accept="image/*,application/pdf"
+                            onChange={handleAddGraphic}
+                        />
+
+                        {/* Add Text */}
+                        <button
+                            type="button"
+                            onClick={addCenteredText}
+                            className="group inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 shadow-sm hover:border-primaryColor-300 hover:bg-primaryColor-50 active:scale-[0.98] transition"
+                            title="Text hinzufügen"
+                        >
+                            <span className="grid h-5 w-5 place-items-center rounded-md bg-textColor text-white transition group-hover:bg-primaryColor-600">
+                                <FiPlus className="text-[12px]" />
+                            </span>
+                            <FiType className="opacity-70" />
+                            Text
+                        </button>
+                        {/* Meine Grafiken (Library) */}
+                        <div ref={libraryWrapRef} className="relative">
+                            <button
+                                type="button"
+                                onClick={openLibrary}
+                                className="group inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 shadow-sm hover:border-primaryColor-300 hover:bg-primaryColor-50 active:scale-[0.98] transition"
+                                title="Meine Grafiken"
+                                aria-expanded={libOpen}
+                            >
+                                <span className="grid h-5 w-5 place-items-center rounded-md bg-[#ba979d] text-white transition group-hover:bg-primaryColor-600">
+                                    <FiSearch className="text-[12px]" />
+                                </span>
+                                <span className="opacity-80">Bibliothek</span>
+                            </button>
+
+                            {libOpen && (
+                                <div
+                                    className="absolute z-50 top-10 w-64 max-h-80 overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 shadow-xl"
+                                    role="dialog"
+                                    aria-label="Meine Grafiken"
+                                >
+                                    <div className="flex items-center justify-between mb-1 px-1">
+                                        <div className="flex items-center gap-2 text-sm font-medium">
+                                            <FiSearch /> <span>Meine Grafiken</span>
+                                        </div>
+                                        <button
+                                            className="p-1 rounded hover:bg-gray-100"
+                                            onClick={() => setLibOpen(false)}
+                                            title="Schließen"
+                                        >
+                                            <FiX size={16} />
+                                        </button>
+                                    </div>
+
+                                    {assetsLoading ? (
+                                        <div className="text-sm text-gray-500 px-1 py-2">Lade …</div>
+                                    ) : libImages.length === 0 ? (
+                                        <div className="text-xs text-gray-500 px-1 py-2">Keine Grafiken gefunden.</div>
+                                    ) : (
+                                        <div className="flex flex-col gap-2">
+                                            {libImages.map((a) => (
+                                                <button
+                                                    key={a.id}
+                                                    onClick={() => insertGraphicFromLibrary(a)}
+                                                    className="flex items-center gap-3 border rounded-lg p-2 hover:bg-[#f7f2f4] transition text-left"
+                                                    title={a.name || "Grafik"}
+                                                >
+                                                    <img
+                                                        src={a.url}
+                                                        alt={a.name || "Grafik"}
+                                                        className="w-12 h-12 object-contain rounded border"
+                                                    />
+                                                    <span className="text-xs text-gray-800 truncate">
+                                                        {a.name || "Grafik"}
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             {/* Steuerbereich */}
             {purchaseData.configurator === "template" ? (
@@ -523,6 +812,56 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                 className="flex items-center gap-2 p-2 rounded-2xl border border-[#ececec] bg-white hover:bg-[#f7f2f4] transition"
                                 onClick={() => copyTextToCurrent(t)}
                                 title={`"${t.value || "Text"}" auf Rückseite kopieren`}
+                            >
+                                <div className="w-20 h-20 rounded-xl border border-[#e0d0d0] grid place-items-center">
+                                    <FiType size={28} />
+                                </div>
+                                <span className="text-xs max-w-[10rem] truncate">{t.value || "Text"}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Vorderseite: Von der Rückseite übernehmen */}
+            {purchaseData.configurator !== "template" && currentSide === "front" && hasBackStuff && (
+                <div className="mt-8">
+                    <P klasse="!text-sm 2xl:!text-base !mb-2">Von der Rückseite übernehmen</P>
+
+                    <div className="flex flex-wrap gap-4">
+                        {/* Grafiken von der Rückseite */}
+                        {(backSide.uploadedGraphics || []).map((g) => {
+                            const thumbSrc =
+                                g.isPDF && g.preview
+                                    ? g.preview
+                                    : g.file instanceof Blob
+                                    ? URL.createObjectURL(g.file)
+                                    : g.downloadURL || "";
+
+                            return (
+                                <button
+                                    key={`bg-${g.id}`}
+                                    className="flex items-center gap-2 p-2 rounded-2xl border border-[#ececec] bg-white hover:bg-[#f7f2f4] transition"
+                                    onClick={() => copyGraphicToCurrent(g)}
+                                    title="Grafik auf Vorderseite kopieren"
+                                >
+                                    <img
+                                        className="max-h-20 max-w-20 rounded-xl border border-[#e0d0d0] object-contain"
+                                        src={thumbSrc}
+                                        alt="Back-Grafik"
+                                    />
+                                    <span className="text-xs">Übernehmen</span>
+                                </button>
+                            );
+                        })}
+
+                        {/* Texte von der Rückseite */}
+                        {(backSide.texts || []).map((t) => (
+                            <button
+                                key={`bt-${t.id}`}
+                                className="flex items-center gap-2 p-2 rounded-2xl border border-[#ececec] bg-white hover:bg-[#f7f2f4] transition"
+                                onClick={() => copyTextToCurrent(t)}
+                                title={`"${t.value || "Text"}" auf Vorderseite kopieren`}
                             >
                                 <div className="w-20 h-20 rounded-xl border border-[#e0d0d0] grid place-items-center">
                                     <FiType size={28} />

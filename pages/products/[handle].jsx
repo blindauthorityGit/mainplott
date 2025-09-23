@@ -62,7 +62,7 @@ export default function Product({ product, sizes, relatedProducts, category, glo
     return (
         <>
             <MetaShopify data={seoData} />
-            <MainContainer>
+            <div className="mx-auto container !max-w-[1600px]  3xl:max-h-full ">
                 <Breadcrumbs category={category} productTitle={productTitle} />
                 {product?.productByHandle?.konfigurator?.value == "true" ? (
                     <ProductConfigurator
@@ -77,7 +77,9 @@ export default function Product({ product, sizes, relatedProducts, category, glo
                     ></ProductConfigurator>
                 ) : (
                     <SimpleConfigurator product={product?.productByHandle}></SimpleConfigurator>
-                )}
+                )}{" "}
+            </div>
+            <MainContainer>
                 {product?.productByHandle?.detailbeschreibung?.value ? (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 lg:mt-20 mb-16 lg:mb-4">
                         <div className="lg:pl-24  font-body text-sm lg:text-base text-textColor p-4 lg:p-2 lg:pr-24">

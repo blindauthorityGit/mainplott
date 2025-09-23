@@ -86,11 +86,25 @@ const GraphicUploadModalContent = ({
     };
 
     // Function to handle Next Step and close the modal
-    const handleNextStep = () => {
-        if (currentStep < steps.length - 1) {
+    // const handleNextStep = () => {
+    //     if (currentStep < steps.length - 1) {
+    //         setCurrentStep(currentStep + 1);
+    //     }
+    //     setModalOpen(false);
+    // };
+    const handleNextStep = (e) => {
+        e?.preventDefault?.();
+        e?.stopPropagation?.();
+        const canAdvance =
+            Array.isArray(steps) && typeof currentStep === "number" && typeof setCurrentStep === "function";
+
+        if (canAdvance && currentStep < steps.length - 1) {
             setCurrentStep(currentStep + 1);
         }
+        // always close
         setModalOpen(false);
+        // if your modal stays open when content is set, also clear it:
+        props?.setModalContent?.(null);
     };
 
     return (
