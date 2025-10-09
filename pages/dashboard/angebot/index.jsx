@@ -35,6 +35,21 @@ import {
 const domain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN;
 const token = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN;
 
+const EXCLUDED_FROM_ALL = [
+    "hochzeit",
+    "geburt",
+    "weihnachten",
+    "kinder",
+    "geschenkidee",
+    "veredelung",
+    "profidatencheck",
+];
+
+function isAllowedProduct(p) {
+    const tags = (p.tags || []).map((t) => (t || "").toLowerCase());
+    return !tags.some((t) => EXCLUDED_FROM_ALL.some((blocked) => t.includes(blocked)));
+}
+
 async function callShopify(queryStr, variables = {}) {
     const url = `https://${domain}/api/2023-01/graphql.json`;
     const res = await fetch(url, {
@@ -53,7 +68,8 @@ async function callShopify(queryStr, variables = {}) {
 
 // Pagination-fähige Produktsuche (für Infinite Scroll)
 async function searchProductsPage({ queryTerm = "", after = null, pageSize = 24 }) {
-    const qStr = queryTerm ? `${queryTerm}` : undefined;
+    const exclusion = EXCLUDED_FROM_ALL.map((t) => `-tag:'${t}'`).join(" ");
+    const qStr = [queryTerm, exclusion].filter(Boolean).join(" ") || undefined;
 
     const gql = `
     query ProductsSearch($q: String, $after: String, $first: Int!) {
@@ -81,6 +97,8 @@ async function searchProductsPage({ queryTerm = "", after = null, pageSize = 24 
     const data = await callShopify(gql, { q: qStr, after, first: pageSize });
     const conn = data?.products;
     const items = (conn?.edges || []).map((e) => e.node);
+
+    console.log(items);
 
     return { items, endCursor: conn?.pageInfo?.endCursor || null, hasNextPage: !!conn?.pageInfo?.hasNextPage };
 }
@@ -152,15 +170,35 @@ function ProduktListe({ onPick }) {
         loadingMoreRef.current = true;
         setLoading(true);
         try {
-            const page = await searchProductsPage({
+            const MIN_SEED = 12; // so wirkt’s “voll”
+            let nextAfter = reset ? null : after;
+            let acc = reset ? [] : [...results];
+
+            // erste Seite
+            let page = await searchProductsPage({
                 queryTerm: q,
-                after: reset ? null : after,
+                after: nextAfter,
                 pageSize: 24,
             });
-            // const pageFiltered = page.items.filter(isAllowedProduct);
-            setResults((prev) => (reset ? page.items : [...prev, ...page.items])); // ✅ alle Produkte
-            setAfter(page.endCursor);
-            setHasNext(page.hasNextPage);
+            nextAfter = page.endCursor;
+            let nextHasNext = page.hasNextPage;
+            acc = reset ? page.items.filter(isAllowedProduct) : [...acc, ...page.items.filter(isAllowedProduct)];
+
+            // wenn initial zu wenig übrig bleibt: weitere Seiten nachschieben
+            while (reset && acc.length < MIN_SEED && nextHasNext) {
+                page = await searchProductsPage({
+                    queryTerm: q,
+                    after: nextAfter,
+                    pageSize: 24,
+                });
+                nextAfter = page.endCursor;
+                nextHasNext = page.hasNextPage;
+                acc = [...acc, ...page.items.filter(isAllowedProduct)];
+            }
+
+            setResults(acc);
+            setAfter(nextAfter);
+            setHasNext(nextHasNext);
         } finally {
             setLoading(false);
             loadingMoreRef.current = false;
