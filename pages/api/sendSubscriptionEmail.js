@@ -51,7 +51,7 @@ Ihr Mainplott-Team`;
     `;
 
         const userMailOptions = {
-            from: process.env.NEXT_DEV === "true" ? process.env.NEXT_W4YUSER : process.env.NEXT_MAIL_BUCHUNG_LIVE,
+            from: process.env.NEXT_DEV === "true" ? process.env.NEXT_W4YUSER : process.env.NEXT_W4YUSER,
             to: req.body.email,
             subject: "Willkommen als Firmenkunde bei Mainplott",
             text: businessText,
