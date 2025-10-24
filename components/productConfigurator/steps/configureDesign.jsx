@@ -38,6 +38,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         isMobileSliderOpen,
         setActiveElement,
         updateText,
+        addTextCentered,
     } = useStore();
 
     const [uploading, setUploading] = useState(false);
@@ -395,40 +396,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     };
 
     const addCenteredText = () => {
-        const id = uuidv4();
-        setPurchaseData((prev) => ({
-            ...prev,
-            sides: {
-                ...prev.sides,
-                [currentSide]: {
-                    ...prev.sides[currentSide],
-                    texts: [
-                        ...(prev.sides[currentSide].texts || []),
-                        {
-                            id,
-                            value: "Text hier bearbeiten",
-                            x: centerX,
-                            y: centerY,
-                            fontSize: 36,
-                            fontFamily: "Roboto",
-                            fill: "#000",
-                            scale: 1,
-                            rotation: 0,
-                            align: "left",
-                            lineHeight: 1.2,
-                            boxWidth: Math.round((prev.boundingRect?.width || 500) * 0.6),
-                            padding: 4,
-                            curvature: 0, // 0 = Absatz (Konva.Text); != 0 = gebogen (TextPath)
-                            fontStyle: "normal", // "normal", "bold", "italic", "bold italic"
-                            textDecoration: "", // "", "underline", "line-through", "underline line-through"
-                            letterSpacing: 0, // e.g., 0..2
-                        },
-                    ],
-                    activeTextId: id,
-                    activeElement: { type: "text", id },
-                },
-            },
-        }));
+        if (!purchaseData.boundingRect) return;
+        addTextCentered(purchaseData.currentSide, purchaseData.boundingRect);
     };
 
     // --- Library (Meine Grafiken) ---

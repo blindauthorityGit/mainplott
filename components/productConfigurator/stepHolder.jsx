@@ -672,7 +672,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     <img
                                         src={activeSrc ?? ""}
                                         alt="Product Step Image"
-                                        className="block max-w-full max-h-full w-auto h-auto object-contain mix-blend-multiply"
+                                        className="block max-w-full max-h-full w-auto h-auto object-contain mix-blend-multiply md:min-h-[700px]"
                                         onLoad={handleMeasuredLoad}
                                     />
                                 </motion.div>
@@ -689,7 +689,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
             {/* Right - Step Indicator, Dynamic Content, Buttons */}
             <div className="col-span-12 lg:col-span-6 2xl:col-span-6   flex flex-col h-full">
                 {/* Step Indicator */}
-                <div className=" fixed bottom-0 left-0 w-full z-30">
+                <div className=" fixed bottom-10 left-0 w-full z-30">
                     <StepIndicator
                         steps={steps}
                         currentStep={currentStep}
@@ -720,7 +720,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
                 {/* Dynamic Content with entry/exit animation */}
                 <div
-                    className="flex-grow mb-8 px-4 lg:px-0 bg-white shadow-md"
+                    className="flex-grow mb-8 px-4 py-4 lg:px-0 bg-white shadow-md"
                     style={{ zIndex: steps[currentStep] === "Design" && isMobileSliderOpen ? "-1" : null }}
                 >
                     <AnimatePresence mode="wait" layout initial={false}>

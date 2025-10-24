@@ -324,6 +324,47 @@ const KonvaLayer = forwardRef(
             currentTweenRef.current.play();
         }
 
+        // helper oben in der Komponente
+        function deselectAll() {
+            // aktives Element im Store löschen
+            setActiveElement(currentSide, null, null);
+
+            // Text-Transformer leeren
+            if (textTransformerRef.current) {
+                try {
+                    textTransformerRef.current.nodes([]);
+                } catch {}
+            }
+
+            // Grafik-Transformer leeren + verstecken
+            if (transformerRef.current) {
+                try {
+                    transformerRef.current.nodes([]);
+                } catch {}
+            }
+            setTransformerVisible(false);
+
+            // Hover-Transformer aus
+            setHoveredTextId(null);
+            if (textHoverTransformerRef.current) {
+                try {
+                    textHoverTransformerRef.current.nodes([]);
+                } catch {}
+            }
+
+            // Inline-Textarea ggf. schließen (commit)
+            if (editingTextAreaRef.current) {
+                try {
+                    editingTextAreaRef.current.blur();
+                } catch {}
+            }
+        }
+
+        function getPlacementRect() {
+            // exakt die Box verwenden, die auch gerendert wird:
+            return getDynamicRect(); // statt boundingRect
+        }
+
         function showTransformerFor(seconds = 4) {
             const tr = transformerRef.current;
             if (!tr || !tr.getStage()) return; // <-- Guard
@@ -1097,15 +1138,28 @@ const KonvaLayer = forwardRef(
                     onMouseOut={() => {
                         if (stageRef.current) stageRef.current.container().style.cursor = "default";
                     }}
+                    onMouseDown={(e) => {
+                        const stage = e.target.getStage();
+                        const clickedEmpty = e.target === stage; // nur wirkliche Leerclicks
+
+                        if (clickedEmpty) {
+                            deselectAll();
+                        }
+                    }}
+                    onTouchStart={(e) => {
+                        const stage = e.target.getStage();
+                        if (e.target === stage) deselectAll();
+                    }}
                 >
                     <Layer>
-                        {productImage && <KonvaImage ref={productImageRef} />}
+                        {productImage && <KonvaImage ref={productImageRef} listening={false} />}
                         <Rect
                             ref={boundaryRectRef}
                             x={getDynamicRect().x}
                             y={getDynamicRect().y}
                             width={boundingRect.width}
                             height={boundingRect.height}
+                            listening={false}
                         />
 
                         {purchaseData.configurator !== "template" &&
@@ -1365,116 +1419,6 @@ const KonvaLayer = forwardRef(
                     >
                         <FiRefreshCw size={24} />
                     </Button>
-
-                    {/* Datei hochladen */}
-                    {/* <input
-                        ref={hiddenFileInputRef}
-                        type="file"
-                        hidden
-                        onChange={handleAddGraphic}
-                        accept="image/*,application/pdf"
-                    />
-                    <Button
-                        sx={{ minWidth: "32px", padding: "8px", fontSize: "0.875rem" }}
-                        className="!bg-textColor"
-                        onClick={handleAddGraphicClick}
-                        variant="contained"
-                    >
-                        <FiImage size={24} />
-                    </Button> */}
-
-                    {/* Text hinzufügen */}
-                    {/* <Button
-                        sx={{ minWidth: "32px", padding: "8px", fontSize: "0.875rem" }}
-                        className="!bg-primaryColor"
-                        variant="contained"
-                        onClick={() => {
-                            const defaultX = boundingRect.x + boundingRect.width / 2;
-                            const defaultY = boundingRect.y + boundingRect.height / 2;
-                            addText(purchaseData.currentSide || "front", {
-                                value: "Ihr Text",
-                                x: defaultX,
-                                y: defaultY,
-                                fontSize: 36,
-                                fontFamily: "Roboto",
-                                fill: "#000",
-                                rotation: 0,
-                                scale: 1,
-                            });
-                        }}
-                    >
-                        <FiType size={24} />
-                    </Button> */}
-
-                    {/* NEU: Library öffnen/schließen */}
-                    {/* <div ref={libraryWrapRef} className="relative">
-                        <Button
-                            sx={{ minWidth: 32, p: 1, fontSize: "0.875rem" }}
-                            className="!bg-[#ba979d]"
-                            variant="contained"
-                            title="Meine Grafiken"
-                            onClick={openLibrary}
-                        >
-                            <FiSearch size={20} />
-                        </Button>
-
-                        {libOpen && (
-                            <div
-                                className="rounded-xl shadow-xl border bg-white"
-                                style={{
-                                    position: "absolute",
-                                    top: 0, // gleiche Höhe wie Button
-                                    left: 48, // rechts neben dem Button (~48px)
-                                    width: 260,
-                                    maxHeight: 320,
-                                    overflowY: "auto",
-                                    padding: 10,
-                                    zIndex: 50,
-                                    opacity: libOpen ? 1 : 0,
-                                    transition: "opacity .15s ease-in-out",
-                                }}
-                            >
-                                <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center gap-2 text-sm font-medium">
-                                        <FiSearch /> <span>Meine Grafiken</span>
-                                    </div>
-                                    <button
-                                        className="p-1 rounded hover:bg-gray-100"
-                                        onClick={() => setLibOpen(false)}
-                                        title="Schließen"
-                                    >
-                                        <FiX size={16} />
-                                    </button>
-                                </div>
-
-                                {assetsLoading ? (
-                                    <div className="text-sm text-gray-500 px-1 py-2">Lade …</div>
-                                ) : libImages.length === 0 ? (
-                                    <div className="text-xs text-gray-500 px-1 py-2">Keine Grafiken gefunden.</div>
-                                ) : (
-                                    <div className="flex flex-col gap-2">
-                                        {libImages.map((a) => (
-                                            <button
-                                                key={a.id}
-                                                onClick={() => insertGraphicFromLibrary(a)}
-                                                className="flex items-center gap-3 border rounded-lg p-2 hover:bg-[#f7f2f4] transition"
-                                                title={a.name || "Grafik"}
-                                            >
-                                                <img
-                                                    src={a.url}
-                                                    alt={a.name || "Grafik"}
-                                                    className="w-12 h-12 object-contain rounded border"
-                                                />
-                                                <span className="text-xs text-gray-800 truncate">
-                                                    {a.name || "Grafik"}
-                                                </span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div> */}
                 </div>
             </div>
         );

@@ -243,6 +243,52 @@ const useStore = create((set, get) => ({
             };
         }),
 
+    addTextCentered: (side, boundingRect) =>
+        set((state) => {
+            const id = uuidv4();
+            const pd = state.purchaseData;
+            const s = pd.sides?.[side] || {};
+
+            // Mittelpunkt der Druckfläche (boundingRect aus KonvaLayer)
+            const cx = boundingRect.x + boundingRect.width / 2;
+            const cy = boundingRect.y + boundingRect.height / 2;
+
+            const fontSize = 36;
+            const boxWidth = Math.round((boundingRect.width || 500) * 0.6);
+
+            const base = {
+                id,
+                value: "Neuer Text",
+                fontSize,
+                fontFamily: "Roboto",
+                boxWidth,
+                align: "center",
+                x: cx - boxWidth / 2,
+                y: cy - fontSize / 2,
+                scale: 1,
+                rotation: 0,
+                fill: "#000",
+                curvature: 0,
+            };
+
+            const texts = Array.isArray(s.texts) ? [...s.texts, base] : [base];
+
+            return {
+                purchaseData: {
+                    ...pd,
+                    sides: {
+                        ...pd.sides,
+                        [side]: {
+                            ...s,
+                            texts,
+                            activeTextId: id,
+                            activeElement: { type: "text", id },
+                        },
+                    },
+                },
+            };
+        }),
+
     updateText: (side, id, patch) =>
         set((state) => {
             const pd = state.purchaseData;
