@@ -113,6 +113,7 @@ const colorDictionary = {
     Grau: "#4f525d",
     Blau: "#2e2866",
     apfelgrün: "#9baf26",
+    "back to nature": "#EAD9AE",
 
     // weitere Farben hinzufügen
 };

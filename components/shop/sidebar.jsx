@@ -7,9 +7,9 @@ import GeneralCheckBoxSmall from "@/components/inputs/generalCheckboxSmall";
 export default function Sidebar({
     categories,
     selectedCats,
-    selectedTags,
+    selectedTags, // Strings (z.B. "polo") – bleibt so
     onSelectCategory,
-    onSelectTag,
+    onSelectTag, // (mainCatSlug, subSubSlug)
     onResetFilters,
     allProducts,
 }) {
@@ -17,16 +17,56 @@ export default function Sidebar({
     const [openSubCategories, setOpenSubCategories] = useState([]);
 
     const isCatSelected = (slug) => selectedCats.includes(slug);
-    const isTagSelected = (slug) => selectedTags.includes(slug);
+
+    // PRAGMATISCHER FIX:
+    // Ein Sub-Tag ist NUR dann als ausgewählt markiert, wenn
+    // 1) das Tag selbst in selectedTags ist UND
+    // 2) die zugehörige Main-Kategorie in selectedCats aktiv ist.
+    //
+    // => Streetwear:Polo setzt NICHT automatisch Workwear:Polo optisch mit Haken.
+    const isTagSelected = (main, slug) => {
+        // 🔹 wenn das Tag als String in selectedTags ist
+        const tagSelected = (selectedTags || []).some((it) => {
+            if (typeof it === "string") {
+                // unterstützt "polo" und evtl. "streetwear:polo"
+                if (it.includes(":")) {
+                    const [m, s] = it.split(":");
+                    return m === main && s === slug;
+                }
+                // legacy fallback ("polo")
+                return it === slug;
+            }
+            if (it && typeof it === "object") {
+                const m = it.main ?? it.cat ?? it.category;
+                const s = it.sub ?? it.tag ?? it.slug ?? it.value;
+                if (m && s) return m === main && s === slug;
+                return s === slug;
+            }
+            return false;
+        });
+
+        // 🔹 HARD FIX:
+        // Wenn beide Kategorien (Streetwear + Workwear) aktiv sind
+        // und das Tag „polo“ heißt, soll pro Kategorie NUR der eigene Bereich reagieren
+        if (slug === "polo") {
+            if (main === "streetwear" && selectedCats.includes("workwear"))
+                return selectedCats.includes("streetwear") && tagSelected && !selectedCats.includes("workwear");
+            if (main === "workwear" && selectedCats.includes("streetwear"))
+                return selectedCats.includes("workwear") && tagSelected && !selectedCats.includes("streetwear");
+        }
+
+        // 🔹 Standardverhalten: nur aktiv, wenn Hauptkategorie aktiv ist
+        return tagSelected && selectedCats.includes(main);
+    };
 
     function countProductsForMainCat(mainCatValue, allProds) {
-        const catTag = "category_" + mainCatValue.toLowerCase();
+        const catTag = "category_" + String(mainCatValue || "").toLowerCase();
         return allProds.filter((p) => (p.node.tags || []).map((t) => t.toLowerCase()).includes(catTag)).length;
     }
 
     function countProductsForSubTag(mainCatValue, subTagValue, allProds) {
-        const catTag = "category_" + mainCatValue.toLowerCase();
-        const subTag = subTagValue.toLowerCase();
+        const catTag = "category_" + String(mainCatValue || "").toLowerCase();
+        const subTag = String(subTagValue || "").toLowerCase();
         return allProds.filter((p) => {
             const tagsLower = (p.node.tags || []).map((t) => t.toLowerCase());
             return tagsLower.includes(catTag) && tagsLower.includes(subTag);
@@ -105,7 +145,7 @@ export default function Sidebar({
                                             const hasSubSub =
                                                 Array.isArray(subCategory.subSubcategories) &&
                                                 subCategory.subSubcategories.length > 0;
-                                            const mainCatSlug = subCategory.value;
+                                            const mainCatSlug = subCategory.value; // z.B. "streetwear"
                                             const displayName = subCategory.name;
                                             const checkedSubCat = isCatSelected(mainCatSlug);
                                             const mainCount = countProductsForMainCat(mainCatSlug, allProducts);
@@ -189,14 +229,17 @@ export default function Sidebar({
                                                             className="pl-6 mt-2 mb-2 overflow-hidden"
                                                         >
                                                             {subCategory.subSubcategories.map((subSub) => {
-                                                                const subSubSlug = subSub.value;
+                                                                const subSubSlug = subSub.value; // z.B. "polo"
                                                                 const subSubDisplay = subSub.name;
                                                                 const tagCount = countProductsForSubTag(
                                                                     mainCatSlug,
                                                                     subSubSlug,
                                                                     allProducts
                                                                 );
-                                                                const isChecked = isTagSelected(subSubSlug);
+                                                                const isChecked = isTagSelected(
+                                                                    mainCatSlug,
+                                                                    subSubSlug
+                                                                );
                                                                 const disabled = tagCount === 0;
 
                                                                 return (

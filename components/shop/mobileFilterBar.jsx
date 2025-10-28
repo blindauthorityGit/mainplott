@@ -1,18 +1,9 @@
 // components/MobileFilterBar.jsx
-
 import { useState } from "react";
-import {
-    FiChevronDown,
-    FiChevronUp,
-    FiFilter,
-    FiXCircle, // ← added for reset icon
-} from "react-icons/fi";
+import { FiChevronDown, FiChevronUp, FiFilter, FiXCircle } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import urlFor from "@/functions/urlFor";
 
-/**
- * MobileFilterBar
- */
 export default function MobileFilterBar({
     categories,
     selectedCats,
@@ -27,18 +18,55 @@ export default function MobileFilterBar({
     const [filterOpen, setFilterOpen] = useState(false);
 
     const isCatSelected = (slug) => selectedCats.includes(slug);
-    const isTagSelected = (slug) => selectedTags.includes(slug);
 
+    // ---- Tag-Häkchen-Logik (wie in Sidebar, inkl. „polo“-Sonderfall)
+    const isTagSelected = (main, slug) => {
+        const tagSelected = (selectedTags || []).some((it) => {
+            if (typeof it === "string") {
+                if (it.includes(":")) {
+                    const [m, s] = it.split(":");
+                    return m === main && s === slug;
+                }
+                return it === slug; // legacy: nur "polo"
+            }
+            if (it && typeof it === "object") {
+                const m = it.main ?? it.cat ?? it.category;
+                const s = it.sub ?? it.tag ?? it.slug ?? it.value;
+                if (m && s) return m === main && s === slug;
+                return s === slug;
+            }
+            return false;
+        });
+
+        // „polo“ Hard-Fix gegen doppelte Aktivierung bei zwei aktiven Hauptkategorien
+        if (slug === "polo") {
+            if (main === "streetwear" && selectedCats.includes("workwear")) {
+                return tagSelected && selectedCats.includes("streetwear") && !selectedCats.includes("workwear");
+            }
+            if (main === "workwear" && selectedCats.includes("streetwear")) {
+                return tagSelected && selectedCats.includes("workwear") && !selectedCats.includes("streetwear");
+            }
+        }
+
+        return tagSelected && selectedCats.includes(main);
+    };
+
+    // Counts analog zur Desktop-Sidebar
     const countProductsForCollection = (collectionHandle) => {
-        const lower = collectionHandle.toLowerCase();
+        const lower = String(collectionHandle || "").toLowerCase();
         return allProducts.filter((p) => {
             const handles = p.node.collections.edges.map((e) => e.node.handle.toLowerCase());
             return handles.includes(lower);
         }).length;
     };
-    const countProductsForTag = (tag) => {
-        const lower = tag.toLowerCase();
-        return allProducts.filter((p) => p.node.tags.map((t) => t.toLowerCase()).includes(lower)).length;
+
+    const countProductsForSubTag = (mainCat, subTag) => {
+        const catTag = "category_" + String(mainCat || "").toLowerCase();
+        const sub = String(subTag || "").toLowerCase();
+        return allProducts.filter((p) => {
+            const tagsLower = (p.node.tags || []).map((t) => t.toLowerCase());
+            return tagsLower.includes(catTag) && tagsLower.includes(sub);
+        }).length;
     };
 
     const toggleFilter = () => {
@@ -70,18 +98,17 @@ export default function MobileFilterBar({
             <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200 shadow-sm">
                 <h3 className="text-base font-semibold text-textColor">Produkte</h3>
                 <div className="flex items-center space-x-3">
-                    {/* Open filter panel */}
                     <button
                         className="flex items-center space-x-1 text-primaryColor font-medium"
                         onClick={toggleFilter}
                     >
                         <FiFilter />
                         <span>Filter</span>
-                    </button>{" "}
-                    {/* Reset all filters */}
+                    </button>
                     <button
                         onClick={handleAllProductsClick}
                         className="flex items-center text-gray-600 hover:text-gray-800"
+                        title="Alle Filter löschen"
                     >
                         <FiXCircle size={20} />
                     </button>
@@ -201,15 +228,26 @@ export default function MobileFilterBar({
                                                                         className="pl-4 mt-1"
                                                                     >
                                                                         {subSubcategories.map((ss) => {
-                                                                            const tagCount = countProductsForTag(
-                                                                                ss.name
+                                                                            const tagCount = countProductsForSubTag(
+                                                                                value,
+                                                                                ss.value
                                                                             );
-                                                                            const tagChecked = isTagSelected(ss.value);
+                                                                            const tagChecked = isTagSelected(
+                                                                                value,
+                                                                                ss.value
+                                                                            );
+                                                                            const disabled = tagCount === 0;
+
                                                                             return (
                                                                                 <div
                                                                                     key={ss.value}
-                                                                                    className="flex items-center mb-1 text-xs cursor-pointer"
+                                                                                    className={`flex items-center mb-1 text-xs ${
+                                                                                        disabled
+                                                                                            ? "opacity-40 cursor-not-allowed"
+                                                                                            : "cursor-pointer"
+                                                                                    }`}
                                                                                     onClick={() =>
+                                                                                        !disabled &&
                                                                                         onSelectTag(value, ss.value)
                                                                                     }
                                                                                 >
@@ -218,11 +256,13 @@ export default function MobileFilterBar({
                                                                                         className="mr-2 cursor-pointer"
                                                                                         checked={tagChecked}
                                                                                         onChange={() =>
+                                                                                            !disabled &&
                                                                                             onSelectTag(value, ss.value)
                                                                                         }
                                                                                         onClick={(e) =>
                                                                                             e.stopPropagation()
                                                                                         }
+                                                                                        disabled={disabled}
                                                                                     />
                                                                                     <label>
                                                                                         {ss.name} ({tagCount})

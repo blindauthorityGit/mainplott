@@ -1,6 +1,8 @@
 import React, { useRef } from "react";
 import { H2 } from "@/components/typography";
 
+import useStore from "@/store/store";
+
 // COMPONENTS
 import { ListElement } from "@/components/list";
 import { ContainImage } from "@/components/images"; // Importing the ContainImage component
@@ -104,7 +106,7 @@ const GraphicUploadModalContent = ({
         // always close
         setModalOpen(false);
         // if your modal stays open when content is set, also clear it:
-        props?.setModalContent?.(null);
+        // props?.setModalContent?.(null);
     };
 
     return (
