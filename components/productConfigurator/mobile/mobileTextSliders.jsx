@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Slider } from "@mui/material";
 import { FiTrash2 } from "react-icons/fi";
 import useStore from "@/store/store";
@@ -12,7 +12,7 @@ export default function MobileTextSliders({ boundingRect, onDeleteActive }) {
         if (active?.type !== "text") return null;
         return (side.texts || []).find((t) => t.id === active.id) || null;
     }, [active, side.texts]);
-
+    const [showColor, setShowColor] = useState(false);
     if (!text) return null;
 
     const set = (patch) => {
@@ -30,11 +30,6 @@ export default function MobileTextSliders({ boundingRect, onDeleteActive }) {
         }));
     };
 
-    const minX = 0,
-        maxX = purchaseData.containerWidth || 0;
-    const minY = 0,
-        maxY = purchaseData.containerHeight || 0;
-
     return (
         <div className="fixed left-0 right-0 bottom-0 bg-white p-4 rounded-t-2xl shadow-2xl z-[280]">
             <div className="flex items-center justify-between mb-2">
@@ -47,6 +42,7 @@ export default function MobileTextSliders({ boundingRect, onDeleteActive }) {
                 </button>
             </div>
 
+            {/* Schriftgröße */}
             <div className="mb-3">
                 <div className="text-xs mb-1">Größe</div>
                 <Slider
@@ -58,27 +54,34 @@ export default function MobileTextSliders({ boundingRect, onDeleteActive }) {
                 />
             </div>
 
+            {/* Rotation */}
             <div className="mb-3">
-                <div className="text-xs mb-1">X</div>
+                <div className="text-xs mb-1">Rotation</div>
                 <Slider
-                    value={Math.round(text.x || 0)}
-                    min={minX}
-                    max={maxX}
+                    value={Math.round(text.rotation || 0)}
+                    min={-180}
+                    max={180}
                     step={1}
-                    onChange={(_e, v) => set({ x: Number(v) })}
+                    onChange={(_e, v) => set({ rotation: Number(v) })}
                 />
             </div>
 
-            <div className="mb-1">
-                <div className="text-xs mb-1">Y</div>
-                <Slider
-                    value={Math.round(text.y || 0)}
-                    min={minY}
-                    max={maxY}
-                    step={1}
-                    onChange={(_e, v) => set({ y: Number(v) })}
+            {/* Farbe */}
+            {showColor ? (
+                <input
+                    type="color"
+                    className="w-full h-10 mb-2"
+                    value={text.fill || "#000000"}
+                    onChange={(e) => set({ fill: e.target.value })}
                 />
-            </div>
+            ) : (
+                <button
+                    onClick={() => setShowColor(true)}
+                    className="w-full py-2 rounded-md bg-[#ba979d] text-white text-sm mb-2"
+                >
+                    Farbe ändern
+                </button>
+            )}
         </div>
     );
 }

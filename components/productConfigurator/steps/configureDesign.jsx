@@ -526,7 +526,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
             </Tabs> */}
             {/* Top toolbar: side switch + CTAs */}
             {/* Top toolbar: side switch + compact CTAs */}
-            <div className="mb-6 rounded-2xl border border-gray-200 bg-white/80 backdrop-blur px-4 py-3 shadow-sm">
+            <div className="mb-6 rounded-2xl hidden md:block border border-gray-200 bg-white/80 backdrop-blur px-4 py-3 shadow-sm">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     {/* Segmented tabs – visually distinct from buttons */}
                     <div className="inline-flex overflow-hidden rounded-full border border-gray-200 bg-white shadow-sm">
