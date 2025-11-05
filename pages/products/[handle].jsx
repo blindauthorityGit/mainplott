@@ -27,7 +27,7 @@ import client from "../../client";
 import { useRouter } from "next/router";
 
 export default function Product({ product, sizes, relatedProducts, category, globalData }) {
-    const { resetPurchaseData, purchaseData } = useStore(); // Add a reset function in your Zustand store
+    const { resetPurchaseData, purchaseData, setPurchaseData } = useStore(); // Add a reset function in your Zustand store
     const router = useRouter();
     const { handle } = router.query; // Extract the product handle from the URL
 
@@ -50,6 +50,28 @@ export default function Product({ product, sizes, relatedProducts, category, glo
             setSelectedImage(customImages[0]);
         }
     }, [handle, product, isEditing]);
+
+    useEffect(() => {
+        // Be liberal in what we accept; use whatever your Shopify helper returned
+        const extraId =
+            product?.extraDecorationVariantId || // recommended key you added
+            product?.zusatzVeredelungData?.variants?.edges?.[0]?.node?.id || // if you returned a block
+            product?.parsedVeredelungData?.extra?.variants?.edges?.[0]?.node?.id || // another possible shape
+            process.env.NEXT_PUBLIC_EXTRA_DECORATION_VARIANT_ID || // last-resort env fallback
+            null;
+
+        if (extraId) {
+            setPurchaseData((prev) => ({
+                ...prev,
+                extraDecorationVariantId: extraId, // used later by prepareLineItems()
+            }));
+        }
+    }, [
+        product?.extraDecorationVariantId,
+        product?.zusatzVeredelungData,
+        product?.parsedVeredelungData,
+        setPurchaseData,
+    ]);
 
     useEffect(() => {
         console.log("PÖRTSCHESE", purchaseData);

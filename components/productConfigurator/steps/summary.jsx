@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
-import useStore from "@/store/store"; // Zustand store
+import React, { useState, useEffect, useMemo } from "react";
+import useStore from "@/store/store";
 import { ListElement } from "@/components/list";
 import { H2, H3, P } from "@/components/typography";
-import { calculateNetPrice } from "@/functions/calculateNetPrice"; // Import your net price function
+import { calculateNetPrice } from "@/functions/calculateNetPrice";
 import { getDecorationSummary } from "@/functions/decorationMode";
 
 export default function OrderSummary({ product }) {
@@ -10,22 +10,61 @@ export default function OrderSummary({ product }) {
     const [allInclusive, setAllInclusive] = useState(false);
 
     const sizeOrder = ["XS", "S", "M", "L", "XL", "2XL", "3XL"];
-
-    console.log(purchaseData);
     const deco = getDecorationSummary(purchaseData);
 
-    // Relevant data mapping for display
+    // ---- Helper: Motive & Zusatzveredelungen zählen ----
+    const counts = useMemo(() => {
+        const side = (key) => purchaseData?.sides?.[key] || {};
+        const getSideTotals = (s) => {
+            const texts = Array.isArray(s.texts) ? s.texts.length : 0;
+            const graphics = Array.isArray(s.uploadedGraphics) ? s.uploadedGraphics.length : 0;
+            const total = texts + graphics;
+            const extra = Math.max(0, total - 1); // 1 Motiv pro Seite inklusive, Rest = Zusatz
+            return { total, extra };
+        };
+
+        const f = getSideTotals(side("front"));
+        const b = getSideTotals(side("back"));
+
+        const stored = purchaseData?.extraDecorations;
+        const frontExtra = typeof stored?.front === "number" ? stored.front : f.extra;
+        const backExtra = typeof stored?.back === "number" ? stored.back : b.extra;
+
+        return {
+            frontTotal: f.total,
+            backTotal: b.total,
+            total: f.total + b.total,
+            frontExtra,
+            backExtra,
+            extraTotal: frontExtra + backExtra,
+            sidesWithContent: deco.sidesWithContent,
+        };
+    }, [purchaseData, deco.sidesWithContent]);
+
+    // zusammengesetzter Text für die Design-Zeile
+    const designValue = (() => {
+        if (counts.total === 0) return "Keine Motive";
+        // Beispiel: "3 Motive (Front 2, Rücken 1) – davon 1 Zusatz"
+        const sidePart = [
+            counts.frontTotal ? `Front ${counts.frontTotal}` : null,
+            counts.backTotal ? `Rücken ${counts.backTotal}` : null,
+        ]
+            .filter(Boolean)
+            .join(", ");
+        const extraPart = counts.extraTotal > 0 ? ` – davon ${counts.extraTotal} Zusatz` : "";
+        return `${counts.total} Motive (${sidePart})${extraPart}`;
+    })();
+
+    // Summary rows
     const summaryData = [
         { label: "Produkt Name", value: purchaseData.productName },
         { label: "Farbe", value: purchaseData.selectedColor || "Nicht ausgewählt" },
-        { label: "Design", value: `${deco.sidesWithContent} Motive (Seiten)` },
-
-        // { label: "Veredelungen", value: purchaseData.veredelungen || "Keine" },
+        { label: "Design", value: designValue },
         { label: "Profi Datencheck", value: purchaseData.profiDatenCheck ? "Ja" : "Nein" },
         { label: "Layout Service", value: purchaseData.layoutServiceSelected ? "Ja" : "Nein" },
     ];
 
-    // Parse the price model from Shopify
+    // Preis-Modell ermitteln
     useEffect(() => {
         if (product?.preisModell?.value) {
             const preisModellArray = JSON.parse(product.preisModell.value);
@@ -35,34 +74,24 @@ export default function OrderSummary({ product }) {
         }
     }, [product.preisModell]);
 
-    // Extract sizes and quantities
+    // Größen & Mengen
     const sizeQuantityList = Object.entries(purchaseData.variants || {})
-        // Filter out the "Standard" size
-        .filter(([size, variant]) => size.toUpperCase() !== "STANDARD")
-        .map(([size, variant]) => ({
-            label: `Variante ${size}`,
-            value: `${variant.quantity} Stück`,
-            size, // Keep the size for sorting
-        }))
+        .filter(([size]) => size.toUpperCase() !== "STANDARD")
+        .map(([size, variant]) => ({ label: `Variante ${size}`, value: `${variant.quantity} Stück`, size }))
         .sort((a, b) => {
-            const aIndex = sizeOrder.indexOf(a.size.toUpperCase());
-            const bIndex = sizeOrder.indexOf(b.size.toUpperCase());
-
-            // Handle sizes not found in sizeOrder
-            if (aIndex === -1 && bIndex === -1) {
-                return a.size.localeCompare(b.size);
-            }
-            if (aIndex === -1) return 1;
-            if (bIndex === -1) return -1;
-
-            return aIndex - bIndex;
+            const ai = sizeOrder.indexOf(a.size.toUpperCase());
+            const bi = sizeOrder.indexOf(b.size.toUpperCase());
+            if (ai === -1 && bi === -1) return a.size.localeCompare(b.size);
+            if (ai === -1) return 1;
+            if (bi === -1) return -1;
+            return ai - bi;
         });
 
     return (
         <div className="lg:px-16 lg:mt-8 font-body">
             <H2 klasse="mb-4 text-textColor">Zusammenfassung</H2>
+
             <div className="flex flex-col gap-1">
-                {/* General Summary Data */}
                 {summaryData.map((item, index) => (
                     <ListElement
                         width="!w-2/6"
@@ -74,13 +103,12 @@ export default function OrderSummary({ product }) {
                     />
                 ))}
 
-                {/* Sizes and Quantities */}
                 {sizeQuantityList.map((item, index) =>
                     item.value.split("")[0] == 0 || item.label.split(" ")[1] == "profiDatenCheck" ? null : (
                         <ListElement
                             width="!w-2/6"
                             key={`size-${index}`}
-                            index={index + summaryData.length} // Offset index for unique keys
+                            index={index + summaryData.length}
                             label={item.label}
                             description={item.label}
                             value={item.value}
@@ -89,20 +117,13 @@ export default function OrderSummary({ product }) {
                 )}
             </div>
 
-            {/* Final Price */}
+            {/* Gesamtpreis */}
             <div className="mt-8">
                 <P klasse="text-lg font-semibold mb-4">Gesamtpreis:</P>
                 <H3 klasse="lg:text-xl">EUR {Number(purchaseData.totalPrice).toFixed(2)}</H3>
-                {/* <H3 klasse="lg:text-xl">EUR {calculateNetPrice(Number(purchaseData.totalPrice).toFixed(2))}</H3> */}
-                {/* <P klasse="!text-sm">
-                    {purchaseData.veredelungTotal &&
-                        !allInclusive &&
-                        `Davon EUR ${calculateNetPrice(purchaseData.veredelungTotal)} für Verdelungen`}
-                </P>
-                <P klasse="!text-sm">
-                    {purchaseData.profiDatenCheck &&
-                        `Davon EUR ${purchaseData.profiDatenCheckPrice}.00 für Profi DatenCheck`}
-                </P> */}
+                {/* Beispiel für Nettotext (optional):
+        <P klasse="!text-sm text-gray-600">Netto: EUR {calculateNetPrice(Number(purchaseData.totalPrice).toFixed(2))}</P>
+        */}
             </div>
         </div>
     );

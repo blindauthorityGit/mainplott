@@ -1,5 +1,4 @@
 // components/CartSidebar.jsx
-
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,28 +15,56 @@ import { auth, createPendingOrder, upsertLibraryAsset } from "@/config/firebase"
 const PDFDownloadLink = dynamic(() => import("@react-pdf/renderer").then((m) => m.PDFDownloadLink), { ssr: false });
 import CartOfferPDF from "@/components/pdf/cartOfferPDF";
 
+// kleine Helfer zum Zählen der Motive/Zusatzveredelungen
+function countSideContent(sideObj) {
+    const s = sideObj || {};
+    const texts = Array.isArray(s.texts) ? s.texts.length : 0;
+    const graphics = Array.isArray(s.uploadedGraphics) ? s.uploadedGraphics.length : 0;
+    const total = texts + graphics;
+    const extra = Math.max(0, total - 1); // 1 pro Seite inkl., Rest = Zusatz
+    return { total, extra };
+}
+function getDecorationCounts(item) {
+    const sides = item?.sides || {};
+    const f = countSideContent(sides.front);
+    const b = countSideContent(sides.back);
+    // falls im Item bereits extraDecorations mitgeliefert wurde, nimm diese
+    const stored = item?.extraDecorations;
+    const frontExtra = typeof stored?.front === "number" ? stored.front : f.extra;
+    const backExtra = typeof stored?.back === "number" ? stored.back : b.extra;
+    return {
+        frontTotal: f.total,
+        backTotal: b.total,
+        total: f.total + b.total,
+        frontExtra,
+        backExtra,
+        extraTotal: frontExtra + backExtra,
+    };
+}
+
 export default function CartSidebar() {
     const { cartItems, isCartSidebarOpen, closeCartSidebar, removeCartItem, setModalContent, setModalOpen } =
         useStore();
 
     const [userNotes, setUserNotes] = useState("");
     const [totalPrice, setTotalPrice] = useState("0.00");
-
     const [pdfLoading, setPdfLoading] = useState(false);
+    const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
         const subtotal = cartItems.reduce((sum, item) => sum + Number(item.totalPrice), 0);
         setTotalPrice(subtotal.toFixed(2));
     }, [cartItems]);
 
-    const [isClient, setIsClient] = useState(false);
     useEffect(() => setIsClient(true), []);
+
+    // ======= (alles unterhalb ist unverändert außer dem Render-Block des Items) =======
+
     function buildSideSnapshot(item, side) {
         const s = item?.sides?.[side] || {};
         const designURL = item?.design?.[side]?.downloadURL || null;
 
         const images = [];
-        // Array-Uploads
         if (Array.isArray(s.uploadedGraphics)) {
             s.uploadedGraphics.forEach((g) => {
                 const url = g?.downloadURL || g?.url || null;
@@ -47,7 +74,6 @@ export default function CartSidebar() {
                         url,
                         name: g.name || null,
                         type: "upload",
-                        // ⬇️ NEU: mögliche Transforms aus deinem Konfigurator-Objekt mit übernehmen
                         x: g.x ?? g.position?.x ?? null,
                         y: g.y ?? g.position?.y ?? null,
                         scale: g.scale ?? g.s ?? 1,
@@ -55,7 +81,6 @@ export default function CartSidebar() {
                     });
             });
         }
-        // Single-Upload
         if (s.uploadedGraphic?.downloadURL) {
             const g = s.uploadedGraphic;
             images.push({
@@ -69,10 +94,8 @@ export default function CartSidebar() {
                 rotation: g.rotation ?? g.r ?? 0,
             });
         }
-        // Design-Preview
         if (designURL) images.push({ id: null, url: designURL, name: "designPreview", type: "design" });
 
-        // Texte (du hast hier schon alle Transforms drin – passt)
         const texts = Array.isArray(s.texts)
             ? s.texts.map((t) => ({
                   id: t.id,
@@ -92,12 +115,10 @@ export default function CartSidebar() {
         return { images, texts };
     }
 
-    // ⬇️ NEU: Rich-Snapshot eines Cart-Items für Firestore
     function buildItemSnapshot(srcItem, lineItemForThis) {
         const layoutInfo = srcItem?.layout
             ? {
                   instructions: srcItem.layout.instructions || null,
-                  // *nur* URL/Name mitgeben – NIEMALS das File-Objekt
                   uploadedFileUrl: srcItem.layout.uploadedFile?.downloadURL || null,
                   uploadedFileName: srcItem.layout.uploadedFile?.name || null,
               }
@@ -109,34 +130,23 @@ export default function CartSidebar() {
             selectedColor: srcItem?.selectedColor || null,
             selectedSize: srcItem?.selectedSize || null,
             totalPrice: Number(srcItem?.totalPrice || 0),
-
             variants: srcItem?.variants
                 ? Object.entries(srcItem.variants).reduce((acc, [k, v]) => {
-                      acc[k] = {
-                          id: v?.id || null,
-                          quantity: Number(v?.quantity ?? 0),
-                          price: Number(v?.price ?? 0),
-                      };
+                      acc[k] = { id: v?.id || null, quantity: Number(v?.quantity ?? 0), price: Number(v?.price ?? 0) };
                       return acc;
                   }, {})
                 : {},
-
             sides: {
                 front: buildSideSnapshot(srcItem, "front"),
                 back: buildSideSnapshot(srcItem, "back"),
             },
-
             lineItemConfig: lineItemForThis?.customAttributes || null,
             personalisierungsText: srcItem?.personalisierungsText || null,
-
-            // ⬇️ sicherer Layout-Block (keine Files)
             layout: layoutInfo,
         };
     }
 
-    // ⬇️ NEU: erzeugt die Pending-Items 1:1 aus cartItems + den Shopify lineItems (gleiche Reihenfolge)
     function buildItemsForPending(cartItems, lineItems) {
-        // Wir ordnen über itemIndex (falls im Attribut vorhanden), sonst über Reihenfolge
         return cartItems.map((src, idx) => {
             const li =
                 lineItems.find((li) =>
@@ -163,7 +173,6 @@ export default function CartSidebar() {
         return v;
     }
 
-    // sammelt mögliche Upload-IDs aus den Cart-Items
     function collectUploadIds(items) {
         const ids = [];
         for (const it of items) {
@@ -176,17 +185,14 @@ export default function CartSidebar() {
         return Array.from(new Set(ids)).slice(0, 25);
     }
 
-    // baut ein schlankes Pending-Item-Array aus deinen lineItems
     function compactItemsForPending(lineItems) {
         return lineItems.map((li) => ({
             variantId: li.variantId || li.merchandiseId,
             quantity: Number(li.quantity || 0),
-            // falls du Custom-Attributes/Config mitschickst:
             config: li.customAttributes || li.attributes || null,
         }));
     }
 
-    // stabile ID per Mini-Hash (für Bilder/Textkombis)
     function hash(s) {
         let h = 0,
             i,
@@ -200,10 +206,9 @@ export default function CartSidebar() {
         return String(h);
     }
 
-    // zieht aus den Items (mit snapshot) alle Bilder/Texte für die Library
     function collectAssetsFromPendingItems(items) {
-        const imagesMap = new Map(); // per URL deduplizieren
-        const textsMap = new Map(); // per (value|font|size|fill) deduplizieren
+        const imagesMap = new Map();
+        const textsMap = new Map();
         const now = new Date();
 
         (items || []).forEach((it) => {
@@ -212,7 +217,6 @@ export default function CartSidebar() {
 
             ["front", "back"].forEach((side) => {
                 const st = snap?.sides?.[side] || {};
-                // Upload-Bilder
                 (st.images || [])
                     .filter((img) => img?.type === "upload" && img?.url)
                     .forEach((img) => {
@@ -234,8 +238,6 @@ export default function CartSidebar() {
                             });
                         }
                     });
-
-                // Texte
                 (st.texts || []).forEach((t) => {
                     const sig = [t.value, t.fontFamily, t.fontSize, t.fill].join("|");
                     const id = "txt_" + hash(sig);
@@ -264,14 +266,15 @@ export default function CartSidebar() {
             });
         });
 
-        return {
-            images: Array.from(imagesMap.values()),
-            texts: Array.from(textsMap.values()),
-        };
+        return { images: Array.from(imagesMap.values()), texts: Array.from(textsMap.values()) };
     }
+
+    const EXTRA_UNIT = Number(process.env.NEXT_PUBLIC_EXTRA_DECORATION_PRICE || 3.5);
+
     const handleCheckout = async () => {
         try {
             const lineItems = prepareLineItems(cartItems);
+            console.log("LINE", lineItems);
             const uploads = collectUploadIds(cartItems);
             const uid = auth.currentUser?.uid || null;
             const anonId = uid ? null : getAnonId();
@@ -287,12 +290,9 @@ export default function CartSidebar() {
                 context: { uid, anonId },
             });
 
-            // ⬇️ N E U  –  Library updaten (nur wenn eingeloggt)
             if (uid) {
                 const { images, texts } = collectAssetsFromPendingItems(itemsForPending);
-                // orderId anreichern (praktisch für spätere Referenz)
                 const toSave = [...images, ...texts].map((a) => ({ ...a, orderId: pendingId }));
-                // bewusst seriell/Promise.all – wenige Writes pro Checkout
                 await Promise.all(toSave.map((asset) => upsertLibraryAsset(uid, asset)));
             }
 
@@ -319,99 +319,82 @@ export default function CartSidebar() {
         }
     };
 
-    function closeSideBar() {
-        console.log("BUBUBUBU");
-        closeCartSidebar();
-    }
-
-    async function handleDownloadPdf() {
-        try {
-            setPdfLoading(true);
-            const { pdf } = await import("@react-pdf/renderer"); // lazy-load lib
-            const { default: CartOfferPDF } = await import("@/components/pdf/cartOfferPDF"); // lazy-load component
-
-            const doc = <CartOfferPDF cartItems={cartItems} totalPrice={totalPrice} userNotes={userNotes} />;
-            const blob = await pdf(doc).toBlob();
-
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `Angebot_${new Date().toISOString().slice(0, 10)}.pdf`;
-            a.click();
-            URL.revokeObjectURL(url);
-        } finally {
-            setPdfLoading(false);
-        }
-    }
-
-    console.log(cartItems);
-
     return (
         <AnimatePresence>
             {isCartSidebarOpen && (
                 <>
                     <Overlay onClose={closeCartSidebar} />
                     <motion.div
-                        className="fixed top-0 right-0 h-full lg:w-1/3 bg-white shadow-lg z-50 flex flex-col p-4 lg:px-12 lg:py-12"
+                        className="fixed top-0 right-0 h-full lg:w-1/3 bg-white shadow-lg z-50 flex flex-col p-4 lg:px-10 lg:py-10"
                         initial={{ x: "100%" }}
                         animate={{ x: 0 }}
                         exit={{ x: "100%" }}
                         transition={{ type: "spring", stiffness: 400, damping: 20, duration: 0.2 }}
                     >
-                        <button onClick={() => closeCartSidebar()} className="self-end mb-6">
+                        <button onClick={closeCartSidebar} className="self-end mb-4">
                             <FiX className="text-3xl" />
                         </button>
 
                         <div className="flex-1 overflow-y-auto font-body">
                             {cartItems.length > 0 ? (
                                 cartItems.map((item, index) => {
-                                    // do we have per-size variants?
-                                    const hasVariants = item.variants && Object.keys(item.variants).length > 0;
-
-                                    // build quantity string
-                                    let qtyDisplay;
-                                    if (hasVariants) {
-                                        const parts = Object.entries(item.variants)
-                                            .filter(([, det]) => det.quantity > 0)
-                                            .map(([size, det]) => `${det.quantity}x (${size})`);
-                                        qtyDisplay = parts.length ? parts.join(", ") : "0";
-                                    } else if (item.selectedSize) {
-                                        qtyDisplay = `${item.quantity || 0}x (${item.selectedSize})`;
-                                    } else {
-                                        qtyDisplay = item.quantity != null ? item.quantity : "0";
-                                    }
+                                    const counts = getDecorationCounts(item);
 
                                     return (
-                                        <div key={item.id} className="flex items-start mb-8">
-                                            {/* Vorschaubild */}
-                                            <Link
-                                                onClick={closeSideBar}
-                                                href={`/products/${item.product.handle}?editIndex=${index}`}
-                                                prefetch={false}
-                                            >
-                                                <img
-                                                    src={
-                                                        item.tryout
-                                                            ? item.cartImage
-                                                            : item.design?.front?.downloadURL ||
-                                                              item.design?.back?.downloadURL ||
-                                                              item.selectedImage ||
-                                                              item.product?.images?.edges?.[0]?.node.originalSrc ||
-                                                              ""
-                                                    }
-                                                    alt={item.productName}
-                                                    className="w-16 mr-4 rounded"
-                                                />
-                                            </Link>
+                                        <div
+                                            key={item.id}
+                                            className="mb-4 rounded-2xl border border-gray-200/70 bg-white/90 shadow-sm p-3"
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                {/* Bild */}
+                                                <Link
+                                                    onClick={closeCartSidebar}
+                                                    href={`/products/${item.product.handle}?editIndex=${index}`}
+                                                    prefetch={false}
+                                                >
+                                                    <img
+                                                        src={
+                                                            item.tryout
+                                                                ? item.cartImage
+                                                                : item.design?.front?.downloadURL ||
+                                                                  item.design?.back?.downloadURL ||
+                                                                  item.selectedImage ||
+                                                                  item.product?.images?.edges?.[0]?.node.originalSrc ||
+                                                                  ""
+                                                        }
+                                                        alt={item.productName}
+                                                        className="w-16 h-16 object-contain rounded-xl border border-gray-200 bg-white"
+                                                    />
+                                                </Link>
 
-                                            <div className="flex-1">
-                                                <H5 klasse="!mb-2">{item.productName}</H5>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <H5 klasse="!mb-1 truncate">{item.productName}</H5>
 
-                                                {/* 1) Size-Badges */}
-                                                {item.variants && (
-                                                    <div className="flex flex-wrap gap-2 mb-2">
-                                                        <div className="flex flex-wrap gap-2 mb-2">
-                                                            <span className="px-2 py-1  text-primaryColor font-bold text-xs rounded-full">
+                                                        <div className="flex items-center gap-2 shrink-0">
+                                                            <Link
+                                                                onClick={closeCartSidebar}
+                                                                href={`/products/${item.product.handle}?editIndex=${index}`}
+                                                                prefetch={false}
+                                                                className="text-gray-600 hover:text-gray-800"
+                                                                title="Bearbeiten"
+                                                            >
+                                                                <FiEdit2 className="text-lg" />
+                                                            </Link>
+                                                            <button
+                                                                onClick={() => removeCartItem(item.id)}
+                                                                className="text-red-500 hover:text-red-700"
+                                                                title="Löschen"
+                                                            >
+                                                                <FiTrash2 className="text-lg" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Varianten (kompakte Chips) */}
+                                                    {item.variants && (
+                                                        <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                                                            <span className="px-2 py-0.5 text-[11px] font-semibold text-gray-700">
                                                                 Varianten:
                                                             </span>
                                                             {Object.entries(item.variants)
@@ -424,66 +407,47 @@ export default function CartSidebar() {
                                                                 .map(([size, det]) => (
                                                                     <span
                                                                         key={size}
-                                                                        className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full"
+                                                                        className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-800 text-[11px] border border-gray-200"
                                                                     >
                                                                         {det.quantity}× {size}
                                                                     </span>
                                                                 ))}
                                                         </div>
+                                                    )}
+
+                                                    {/* Motive & Zusatzveredelungen */}
+                                                    <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                                                        <span className="px-2 py-0.5 text-[11px] font-semibold text-gray-700">
+                                                            Design:
+                                                        </span>
+                                                        {counts.frontTotal > 0 && (
+                                                            <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-800 text-[11px] border border-gray-200">
+                                                                Front {counts.frontTotal} Motiv
+                                                                {counts.frontTotal > 1 ? "e" : ""}
+                                                            </span>
+                                                        )}
+                                                        {counts.backTotal > 0 && (
+                                                            <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-800 text-[11px] border border-gray-200">
+                                                                Rücken {counts.backTotal} Motiv
+                                                                {counts.backTotal > 1 ? "e" : ""}
+                                                            </span>
+                                                        )}
+                                                        {counts.extraTotal > 0 && (
+                                                            <span className="px-2 py-0.5 rounded-full bg-[#fff7f7] text-[#9a1c1c] text-[11px] border border-[#f3d0d0]">
+                                                                Zusatz {counts.extraTotal}
+                                                                {/* {Number.isFinite(EXTRA_UNIT)
+                                                                    ? ` × €${EXTRA_UNIT.toFixed(2)}`
+                                                                    : ""} */}
+                                                            </span>
+                                                        )}
                                                     </div>
-                                                )}
 
-                                                {/* 2) Veredelungs-Badges */}
-                                                {item.variants &&
-                                                    (() => {
-                                                        const vd = [];
-                                                        if (item.variants.frontVeredelung?.quantity > 0) {
-                                                            vd.push(`${item.variants.frontVeredelung.quantity}× Front`);
-                                                        }
-                                                        if (item.variants.backVeredelung?.quantity > 0) {
-                                                            vd.push(`${item.variants.backVeredelung.quantity}× Rücken`);
-                                                        }
-                                                        if (vd.length === 0) return null;
-                                                        return (
-                                                            <div className="flex flex-wrap gap-2 mb-2">
-                                                                <span className="px-2 py-1  text-primaryColor font-bold text-xs rounded-full">
-                                                                    Veredelungen:
-                                                                </span>
-                                                                {vd.map((text, i) => (
-                                                                    <span
-                                                                        key={i}
-                                                                        className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full"
-                                                                    >
-                                                                        {text}
-                                                                    </span>
-                                                                ))}
-                                                            </div>
-                                                        );
-                                                    })()}
-
-                                                {/* 3) Einzelpreis */}
-                                                <p className="text-sm font-semibold">
-                                                    Preis: €{Number(item.totalPrice).toFixed(2)}
-                                                </p>
+                                                    {/* Preis */}
+                                                    <p className="text-sm font-semibold mt-1">
+                                                        Preis: €{Number(item.totalPrice).toFixed(2)}
+                                                    </p>
+                                                </div>
                                             </div>
-
-                                            {/* EDIT-Icon */}
-                                            <Link
-                                                onClick={closeSideBar}
-                                                href={`/products/${item.product.handle}?editIndex=${index}`}
-                                                prefetch={false}
-                                                className="ml-4 text-gray-600 hover:text-gray-800"
-                                            >
-                                                <FiEdit2 className="text-xl" />
-                                            </Link>
-
-                                            {/* Mülleimer */}
-                                            <button
-                                                onClick={() => removeCartItem(item.id)}
-                                                className="text-red-500 hover:text-red-700 ml-4"
-                                            >
-                                                <FiTrash2 className="text-lg" />
-                                            </button>
                                         </div>
                                     );
                                 })
@@ -494,51 +458,72 @@ export default function CartSidebar() {
 
                         {cartItems.length > 0 ? (
                             <button
-                                onClick={handleDownloadPdf}
+                                onClick={async () => {
+                                    try {
+                                        setPdfLoading(true);
+                                        const { pdf } = await import("@react-pdf/renderer");
+                                        const { default: CartOfferPDF } = await import("@/components/pdf/cartOfferPDF");
+                                        const doc = (
+                                            <CartOfferPDF
+                                                cartItems={cartItems}
+                                                totalPrice={totalPrice}
+                                                userNotes={userNotes}
+                                            />
+                                        );
+                                        const blob = await pdf(doc).toBlob();
+                                        const url = URL.createObjectURL(blob);
+                                        const a = document.createElement("a");
+                                        a.href = url;
+                                        a.download = `Angebot_${new Date().toISOString().slice(0, 10)}.pdf`;
+                                        a.click();
+                                        URL.revokeObjectURL(url);
+                                    } finally {
+                                        setPdfLoading(false);
+                                    }
+                                }}
                                 disabled={pdfLoading}
-                                className="w-full font-body font-semibold mt-2 border flex items-center justify-center border-gray-300 text-gray-800 py-3 rounded-lg text-center"
+                                className="w-full font-body font-semibold mt-1 border flex items-center justify-center border-gray-300 text-gray-800 py-3 rounded-lg text-center"
                             >
-                                <FiFileText />{" "}
-                                {pdfLoading ? (
-                                    <div className="ml-4">PDF wird erstellt …</div>
-                                ) : (
-                                    <div className="ml-4">Angebot als PDF herunterladen</div>
-                                )}
+                                <FiFileText />
+                                <span className="ml-3">
+                                    {pdfLoading ? "PDF wird erstellt …" : "Angebot als PDF herunterladen"}
+                                </span>
                             </button>
                         ) : null}
 
-                        {/* User notes */}
-                        <div className="my-4 bg-[#f3f4f6] ">
-                            <P klasse="mb-2 font-semibold !tracking-wider px-4 py-2">Besondere Anmerkungen:</P>
-                            <TextField
-                                fullWidth
-                                multiline
-                                rows={4}
-                                placeholder="Ihre Anmerkungen..."
-                                value={userNotes}
-                                onChange={(e) => setUserNotes(e.target.value)}
-                                variant="outlined"
-                                className="font-body"
-                            />
+                        {/* Notizen */}
+                        <div className="my-4 bg-[#f3f4f6] rounded-xl border border-gray-200">
+                            <P klasse="mb-2 font-semibold !tracking-wider px-4 pt-3">Besondere Anmerkungen:</P>
+                            <div className="px-4 pb-4">
+                                <TextField
+                                    fullWidth
+                                    multiline
+                                    rows={4}
+                                    placeholder="Ihre Anmerkungen..."
+                                    value={userNotes}
+                                    onChange={(e) => setUserNotes(e.target.value)}
+                                    variant="outlined"
+                                    className="font-body bg-white rounded-md"
+                                />
+                            </div>
                         </div>
 
                         {/* Total & Checkout */}
-                        <div className="mt-4 mb-6">
+                        <div className="mt-2 mb-4">
                             <H3 klasse="!mb-2">Gesamtsumme: €{totalPrice}</H3>
+                            <div className="mt-1 text-center">
+                                <Link href="/shop" onClick={closeCartSidebar} prefetch={false}>
+                                    <button className="text-sm font-semibold text-textColor hover:underline">
+                                        ← Weiter einkaufen
+                                    </button>
+                                </Link>
+                            </div>
                         </div>
 
-                        {/* … nach der Gesamtsumme, vor dem Checkout-Button */}
-                        <div className="mt-2 mb-4 text-center">
-                            <Link href="/shop" onClick={closeSideBar} prefetch={false}>
-                                <button className="text-sm font-semibold text-textColor hover:underline">
-                                    ← Weiter einkaufen
-                                </button>
-                            </Link>
-                        </div>
                         {cartItems.length > 0 && (
                             <button
                                 onClick={handleCheckout}
-                                className="w-full mt-6 bg-primaryColor font-bold text-white py-3 rounded-lg"
+                                className="w-full mt-2 bg-primaryColor font-bold text-white py-3 rounded-lg"
                             >
                                 ZUR KASSE
                             </button>

@@ -178,6 +178,7 @@ const useStore = create((set, get) => ({
                 },
                 extraDecorationsTotalCount: 0,
                 extraDecorationsTotalCharge: 0,
+                extraDecorationUnitNet: 0,
                 // ...persistentData, // Preserve specific values if provided
             },
         }),
@@ -418,6 +419,12 @@ const useStore = create((set, get) => ({
             return { cartItems: updatedCartItems };
         });
     },
+
+    // optional helper: set once when product page loads
+    setExtraDecorVariantId: (id) =>
+        set((state) => ({
+            purchaseData: { ...state.purchaseData, extraDecorationVariantId: id },
+        })),
 
     addToCart: () =>
         set((state) => ({

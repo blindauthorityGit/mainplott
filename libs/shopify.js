@@ -117,6 +117,43 @@ export async function getAllProductHandles() {
 
 // libs/shopify.js
 
+async function getSingleVariantIdByQuery(queryString) {
+    const query = `{
+    products(first: 1, query: ${JSON.stringify(queryString)}) {
+      edges {
+        node {
+          id
+          title
+          handle
+          variants(first: 1) {
+            edges { node { id } }
+          }
+        }
+      }
+    }
+  }`;
+    const res = await callShopify(query);
+    return res?.data?.products?.edges?.[0]?.node?.variants?.edges?.[0]?.node?.id || null;
+}
+
+// Try by handle first, then by tag/title as fallback
+export async function getExtraDecorationVariantId() {
+    // adapt the handle/tag to what you actually use in Shopify
+    const byHandle = await getSingleVariantIdByQuery('handle: "zusatzveredelung"');
+    if (byHandle) return byHandle;
+
+    // e.g. a tag you put on the product: "zusatzveredelung"
+    const byTag = await getSingleVariantIdByQuery('tag:"zusatzveredelung"');
+    if (byTag) return byTag;
+
+    // e.g. title match (last resort)
+    const byTitle = await getSingleVariantIdByQuery('title:"Zusatzveredelung"');
+    if (byTitle) return byTitle;
+
+    // fallback to env (optional)
+    return process.env.NEXT_PUBLIC_EXTRA_DECORATION_VARIANT_ID || null;
+}
+
 export async function getProductByHandle(handle) {
     const query = `{
       productByHandle(handle: "${handle}") {
@@ -349,6 +386,9 @@ export async function getProductByHandle(handle) {
     const veredelungBrustResponse = await callShopify(veredelungQueryBrust);
     const veredelungRueckenResponse = await callShopify(veredelungQueryRuecken);
 
+    const extraDecorationVariantId = await getExtraDecorationVariantId();
+    console.log("extra", extraDecorationVariantId);
+
     function parseVeredelungEdges(edges) {
         return edges.map((edge) => {
             const product = edge.node;
@@ -444,6 +484,7 @@ export async function getProductByHandle(handle) {
         parsedVeredelungData,
         profiDatenCheckData,
         layoutServiceData, // Added layoutService data here
+        extraDecorationVariantId,
 
         // veredelungProducts, // Include in the final response
     };
