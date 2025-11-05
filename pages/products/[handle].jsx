@@ -75,6 +75,7 @@ export default function Product({ product, sizes, relatedProducts, category, glo
 
     useEffect(() => {
         console.log("PÖRTSCHESE", purchaseData);
+        console.log("EPRODUCT", product);
     }, [purchaseData]);
 
     // Extract the product title from the Shopify data
