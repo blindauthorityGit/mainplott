@@ -8,6 +8,7 @@ import PdfPreview from "@/components/pdfPreview";
 import getImagePlacement, { getFixedImagePlacement } from "@/functions/getImagePlacement";
 import dataURLToBlob from "@/functions/dataURLToBlob";
 import { saveGraphicToDB } from "@/indexedDB/graphics";
+import useStore from "@/store/store";
 
 export default async function uploadAllGraphics({
     newFile,
@@ -67,48 +68,37 @@ export default async function uploadAllGraphics({
             analysisResult = {};
 
         // Diese Variable halten wir für Konva bereit:
-        // - bei Images: original File
-        // - bei PDFs: Preview-Blob als File
         let konvaRenderableFile = newFile;
 
         if (newFile.type.startsWith("image/")) {
             imgType = "image";
-
-            // Maße aus dem lokalen File (kein CORS)
             const img = new window.Image();
             img.src = URL.createObjectURL(newFile);
             await new Promise((res) => (img.onload = res));
             width = img.width;
             height = img.height;
 
-            // Analyse
             analysisResult = await analyzeImage(newFile);
             setColorSpace?.(analysisResult.colorSpace);
             setDpi?.(analysisResult.dpi);
         } else if (newFile.type === "application/pdf") {
             imgType = "pdf";
-
-            // PDF analysieren -> previewImage (DataURL oder URL) + numPages etc.
             analysisResult = await analyzePdf(newFile);
 
-            // Preview in einen Blob/File verwandeln, damit Konva lokal rendert (kein CORS)
             let previewBlob;
             const src = analysisResult.previewImage;
 
             if (src.startsWith("data:")) {
                 previewBlob = dataURLToBlob(src);
             } else {
-                // Falls die Analyse ein remote-URL liefert, hole sie als Blob
-                const resp = await fetch(src, { mode: "cors" }); // i.d.R. erlaubt; landet trotzdem lokal als Blob
+                const resp = await fetch(src, { mode: "cors" });
                 previewBlob = await resp.blob();
             }
 
-            // Als File "verpacken", damit dein useImageObjects sauber arbeitet
             konvaRenderableFile = new File([previewBlob], `${newFile.name.replace(/\.pdf$/i, "")}-preview.png`, {
                 type: previewBlob.type || "image/png",
             });
 
-            // Dimensionen für Placement aus dem Preview ermitteln
             const tmpImg = new window.Image();
             tmpImg.src = URL.createObjectURL(konvaRenderableFile);
             await new Promise((res) => (tmpImg.onload = res));
@@ -151,7 +141,6 @@ export default async function uploadAllGraphics({
                 });
             }
         } else {
-            // Fallback
             placement = { x: 100, y: 100, scale: 1, finalWidth: 100, finalHeight: 100 };
         }
 
@@ -161,9 +150,7 @@ export default async function uploadAllGraphics({
         // Grafik-Objekt fürs Array
         const newGraphic = {
             id: uuidv4(),
-            // Wichtig: für Konva immer ein lokales File/Blob
             file: konvaRenderableFile,
-            // Optional weiterhin Metadaten der Original-Upload-URL etc.
             ...fileMetadata,
             originalFileType: newFile.type,
             width: placement.finalWidth,
@@ -176,7 +163,6 @@ export default async function uploadAllGraphics({
             isActive: true,
             ...(imgType === "pdf" && {
                 isPDF: true,
-                // Für UI/Modals kannst du trotzdem die Preview weiterreichen (wir rendern sie dort ebenfalls lokal)
                 preview:
                     konvaRenderableFile instanceof File
                         ? URL.createObjectURL(konvaRenderableFile)
@@ -188,7 +174,7 @@ export default async function uploadAllGraphics({
             await saveGraphicToDB({
                 name: newFile.name,
                 fileOrBlob: newFile,
-                preview: analysisResult?.previewImage || null, // dataURL bei PDFs? passt
+                preview: analysisResult?.previewImage || null,
                 isPDF: imgType === "pdf",
                 userId: purchaseData?.userId || "anonymous",
             });
@@ -210,10 +196,16 @@ export default async function uploadAllGraphics({
                         uploadedGraphics: [...updatedGraphics, newGraphic],
                         activeGraphicId: newGraphic.id,
                         uploadedGraphic: fileMetadata,
-                        uploadedGraphicFile: newFile, // Original-Upload (nur zur Info/Auswertung)
+                        uploadedGraphicFile: newFile,
                     },
                 },
             };
+        });
+
+        // ✅ trigger extra decoration recalculation after the state update
+        queueMicrotask(() => {
+            const { recalcExtraDecorations } = useStore.getState();
+            recalcExtraDecorations();
         });
 
         setUploading?.(false);

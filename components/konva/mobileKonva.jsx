@@ -387,10 +387,10 @@ const MobileKonvaLayer = forwardRef(function MobileKonvaLayer({ onExportReady, p
         event.target.value = "";
     };
     const handleAddText = () => {
-        const defaultX = boundingRect.x + boundingRect.width / 2;
-        const defaultY = boundingRect.y + boundingRect.height / 2;
+        const defaultX = boundingRect.x + boundingRect.width / 2 - 15;
+        const defaultY = boundingRect.y + boundingRect.height / 5;
         addText(currentSide, {
-            value: "Doppelklick zum Bearbeiten",
+            value: "Double Tap me",
             x: defaultX,
             y: defaultY,
             fontSize: 18,
@@ -889,7 +889,7 @@ const MobileKonvaLayer = forwardRef(function MobileKonvaLayer({ onExportReady, p
                     setIsTyping(false);
                     setPurchaseData((p) => ({ ...p, currentSide: p.currentSide === "front" ? "back" : "front" }));
                 }}
-                className="absolute -top-1 right-4 bg-white p-2 text-textColor rounded-full shadow-md"
+                className="absolute top-0 right-4 bg-white p-2 text-textColor rounded-full shadow-md"
                 style={{ opacity: isEditing ? 0 : 1, zIndex: 300, pointerEvents: isEditing ? "none" : "auto" }}
                 aria-label="Seite wechseln"
             >

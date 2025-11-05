@@ -39,6 +39,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
         setActiveElement,
         updateText,
         addTextCentered,
+        recalcExtraDecorations,
     } = useStore();
 
     const [uploading, setUploading] = useState(false);
@@ -901,6 +902,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                             const wasActive =
                                                 prev.sides[currentSide].activeGraphicId === g.id &&
                                                 prev.sides[currentSide].activeElement?.type === "graphic";
+
                                             return {
                                                 ...prev,
                                                 sides: {
@@ -922,6 +924,10 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                                 },
                                             };
                                         });
+
+                                        // 🔁 recompute extra-deco counters after the mutation
+                                        queueMicrotask(() => recalcExtraDecorations());
+
                                         if (g.file instanceof Blob && thumbSrc?.startsWith("blob:")) {
                                             setTimeout(() => {
                                                 try {
@@ -984,6 +990,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                             const nextTexts = prev.sides[currentSide].texts.filter(
                                                 (tt) => tt.id !== t.id
                                             );
+
                                             const wasActiveText =
                                                 prev.sides[currentSide].activeElement?.type === "text" &&
                                                 prev.sides[currentSide].activeElement?.id === t.id;
@@ -1011,6 +1018,10 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                                 },
                                             };
                                         });
+
+                                        // 🔁 recompute extra decorations on the next tick
+                                        queueMicrotask(() => recalcExtraDecorations());
+                                        // (alternatively: setTimeout(recalcExtraDecorations, 0))
                                     }}
                                     className="absolute top-2 right-2 z-10 rounded-full p-1.5 text-white bg-red-600/90 hover:bg-red-700 shadow"
                                     aria-label="Text löschen"

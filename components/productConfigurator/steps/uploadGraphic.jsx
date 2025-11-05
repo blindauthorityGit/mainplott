@@ -17,6 +17,7 @@ import analyzeImageWithOpenAI from "@/functions/analyzeImageWithOpenAI";
 import syncDecorations from "@/functions/syncDecorations";
 // ✅ neue IndexedDB-Helpers (Multi-Graphic kompatibel)
 import { getRecentGraphics, deleteGraphicFromDB } from "@/indexedDB/graphics";
+import useIsMobile from "@/hooks/isMobile";
 
 import useStore from "@/store/store";
 import { v4 as uuidv4 } from "uuid";
@@ -34,9 +35,11 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
         showSpinner,
         setShowSpinner,
         addTextCentered,
+        addText,
     } = useStore();
 
     const currentSide = purchaseData.currentSide || "front";
+    const isMobile = useIsMobile();
 
     const [uploadedFile, setUploadedFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
@@ -176,20 +179,68 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
         setTimeout(() => setAcceptedDisclaimer((v) => !v), 400);
     };
 
+    // robust: nimmt printRectRaw > boundingRect > Full Container
+    const getCenterRect = () => {
+        const { containerWidth = 0, containerHeight = 0, printRectRaw, boundingRect } = purchaseData || {};
+        const rect = printRectRaw || boundingRect;
+        if (rect?.width && rect?.height) return rect;
+        return { x: 0, y: 0, width: containerWidth || 800, height: containerHeight || 800 };
+    };
+
     // „Text statt Grafik“ – fügt Text als Element hinzu (Multi-Flow bleibt unberührt)
+    // const handleChooseText = () => {
+    //     const rect = purchaseData.boundingRect || {
+    //         x: 0,
+    //         y: 0,
+    //         width: purchaseData.containerWidth || 500,
+    //         height: purchaseData.containerHeight || 500,
+    //     };
+
+    //     // 1) zentriert über Store anlegen
+    //     addTextCentered(purchaseData.currentSide || "front", rect);
+
+    //     // 2) nach dem State-Update den neuesten Store ziehen + synchronisieren
+    //     //    queueMicrotask stellt sicher, dass das set() im Store durch ist.
+    //     queueMicrotask(() => {
+    //         const latestPD = useStore.getState().purchaseData;
+    //         syncDecorations({
+    //             purchaseData: latestPD,
+    //             setPurchaseData,
+    //             product: latestPD?.product || product,
+    //         });
+
+    //         // 3) automatisch zum nächsten Step gehen (wie vorher)
+    //         if (steps[currentStep] === "Upload") {
+    //             setCurrentStep(Math.min(currentStep + 1, steps.length - 1));
+    //         }
+    //     });
+    // };
     const handleChooseText = () => {
-        const rect = purchaseData.boundingRect || {
-            x: 0,
-            y: 0,
-            width: purchaseData.containerWidth || 500,
-            height: purchaseData.containerHeight || 500,
-        };
+        const side = purchaseData.currentSide || "front";
+        const { containerWidth = 800 } = purchaseData || {};
+        const br = getCenterRect();
+        const cx = br.x + br.width / 2 - 15;
+        const cy = br.y + br.height / 5;
 
-        // 1) zentriert über Store anlegen
-        addTextCentered(purchaseData.currentSide || "front", rect);
+        if (isMobile) {
+            // MOBILE: gleiche Defaults wie der Floating-Button in mobileKonva
+            addText(side, {
+                value: "Double Tap me!",
+                x: cx,
+                y: cy,
+                fontSize: 18,
+                fontFamily: "Roboto",
+                fill: "#000",
+                rotation: 0,
+                scale: 1,
+                boxWidth: Math.min(br.width, containerWidth * 0.85),
+            });
+        } else {
+            // DESKTOP: altes Verhalten beibehalten
+            addTextCentered(side, br);
+        }
 
-        // 2) nach dem State-Update den neuesten Store ziehen + synchronisieren
-        //    queueMicrotask stellt sicher, dass das set() im Store durch ist.
+        // nach dem Store-Update syncen & weiter
         queueMicrotask(() => {
             const latestPD = useStore.getState().purchaseData;
             syncDecorations({
@@ -197,14 +248,27 @@ export default function UploadGraphic({ product, setCurrentStep, steps, currentS
                 setPurchaseData,
                 product: latestPD?.product || product,
             });
-
-            // 3) automatisch zum nächsten Step gehen (wie vorher)
             if (steps[currentStep] === "Upload") {
                 setCurrentStep(Math.min(currentStep + 1, steps.length - 1));
             }
         });
     };
-
+    //   const handleAddText = () => {
+    //         const defaultX = boundingRect.x + boundingRect.width / 2 - 15;
+    //         const defaultY = boundingRect.y + boundingRect.height / 5;
+    //         addText(currentSide, {
+    //             value: "Double Tap me",
+    //             x: defaultX,
+    //             y: defaultY,
+    //             fontSize: 18,
+    //             fontFamily: "Roboto",
+    //             fill: "#000",
+    //             rotation: 0,
+    //             scale: 1,
+    //             boxWidth: Math.min(boundingRect.width, containerWidth * 0.85),
+    //         });
+    //         setIsEditing(true);
+    //     };
     // Canvas-Zielgröße aus deinem State ableiten (Fallbacks ok)
     const getDstCanvas = () => ({
         width: purchaseData?.containerWidth || 800,

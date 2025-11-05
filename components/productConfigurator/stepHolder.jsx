@@ -713,7 +713,9 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                             handlePrevStep={handlePrevStep}
                             handleNextStep={handleNextStep}
                             isNextDisabled={isNextDisabled}
-                            handleAddToCart={handleAddToCart}
+                            handleAddToCart={handleSave}
+                            // onSave={handleSave} // used on "Zusammenfassung"
+                            isEditing={isEditing} // to switch label/icon on summary
                         />
                     )}
                 </div>
