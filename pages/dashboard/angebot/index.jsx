@@ -17,6 +17,8 @@ import {
     FiX,
 } from "react-icons/fi";
 
+import Logo from "@/assets/logo.jpg";
+
 // ---- Firebase (client-safe modular) ----
 import { auth } from "@/config/firebase";
 import {
@@ -29,6 +31,7 @@ import {
     orderBy,
     query,
     serverTimestamp,
+    fetchDashboardData,
 } from "firebase/firestore";
 
 // ---- Shopify fetcher ----
@@ -49,6 +52,83 @@ function isAllowedProduct(p) {
     const tags = (p.tags || []).map((t) => (t || "").toLowerCase());
     return !tags.some((t) => EXCLUDED_FROM_ALL.some((blocked) => t.includes(blocked)));
 }
+
+// ----- TIER-HELPERS (wie im Konfigurator) -----
+function parseTiers(mf) {
+    try {
+        const raw = mf && mf.value ? JSON.parse(mf.value) : [];
+        const arr = Array.isArray(raw) ? raw : Array.isArray(raw.discounts) ? raw.discounts : [];
+        return arr
+            .map((d) => ({ min: Number(d.minQuantity) || 0, price: Number(d.price) || 0 }))
+            .filter((d) => d.price > 0)
+            .sort((a, b) => a.min - b.min);
+    } catch (e) {
+        return [];
+    }
+}
+
+function parseProductDiscounts(mf) {
+    try {
+        const raw = mf && mf.value ? JSON.parse(mf.value) : null;
+        const list = Array.isArray(raw?.discounts) ? raw.discounts : Array.isArray(raw) ? raw : [];
+        return list
+            .map((d) => ({
+                minQuantity: Number(d.minQuantity) || 0,
+                maxQuantity: d.maxQuantity != null ? Number(d.maxQuantity) : null,
+                discountSum: d.discountSum != null ? Number(d.discountSum) : 0,
+                discountPercentage: d.discountPercentage != null ? Number(d.discountPercentage) : 0,
+            }))
+            .sort((a, b) => a.minQuantity - b.minQuantity);
+    } catch (e) {
+        return [];
+    }
+}
+
+// Veredelungs-Staffeln: { discounts:[{minQuantity,maxQuantity,price}] } -> Preisersatz
+function parseDecorationTiers(mf) {
+    try {
+        const raw = mf && mf.value ? JSON.parse(mf.value) : null;
+        const list = Array.isArray(raw?.discounts) ? raw.discounts : Array.isArray(raw) ? raw : [];
+        return list
+            .map((d) => ({
+                minQuantity: Number(d.minQuantity) || 0,
+                maxQuantity: d.maxQuantity != null ? Number(d.maxQuantity) : null,
+                price: Number(d.price) || 0,
+            }))
+            .filter((t) => t.price > 0)
+            .sort((a, b) => a.minQuantity - b.minQuantity);
+    } catch (e) {
+        return [];
+    }
+}
+
+// Produkt-Rabatt gültig für totalQty zurückgeben
+function pickProductDiscount(totalQty, productDiscounts) {
+    if (!Array.isArray(productDiscounts) || !productDiscounts.length) return { discountSum: 0, discountPercentage: 0 };
+    const tier =
+        productDiscounts.find(
+            (t) => totalQty >= t.minQuantity && (t.maxQuantity == null || totalQty <= t.maxQuantity)
+        ) || productDiscounts.filter((t) => totalQty >= t.minQuantity).pop();
+    return tier || { discountSum: 0, discountPercentage: 0 };
+}
+
+// Veredelungs-Preisstaffel (Ersatzpreis) wählen
+function pickDecorationUnit(totalQty, tiers, fallbackUnit) {
+    if (!Array.isArray(tiers) || !tiers.length) return fallbackUnit;
+    const tier =
+        tiers.find((t) => totalQty >= t.minQuantity && (t.maxQuantity == null || totalQty <= t.maxQuantity)) ||
+        tiers.filter((t) => totalQty >= t.minQuantity).pop();
+    return tier ? tier.price : fallbackUnit;
+}
+
+function pickTierPrice(totalQty, tiers, fallbackUnit) {
+    if (!Array.isArray(tiers) || tiers.length === 0) return fallbackUnit == null ? null : fallbackUnit;
+    const hit = tiers.filter((t) => totalQty >= t.min).pop();
+    return hit ? Number(hit.price) : fallbackUnit == null ? null : fallbackUnit;
+}
+
+// Zusatzveredelung (fix netto)
+const EXTRA_DECORATION_UNIT_NET = 3.5;
 
 async function callShopify(queryStr, variables = {}) {
     const url = `https://${domain}/api/2023-01/graphql.json`;
@@ -98,9 +178,53 @@ async function searchProductsPage({ queryTerm = "", after = null, pageSize = 24 
     const conn = data?.products;
     const items = (conn?.edges || []).map((e) => e.node);
 
-    console.log(items);
+    console.log("ITENS", items);
 
     return { items, endCursor: conn?.pageInfo?.endCursor || null, hasNextPage: !!conn?.pageInfo?.hasNextPage };
+}
+
+async function fetchPricingMeta(handle) {
+    const gql = `
+    query PricingMeta($handle:String!) {
+      productByHandle(handle:$handle) {
+        preisReduktion: metafield(namespace:"custom", key:"preis_reduktion"){ value }
+      }
+      front: products(first:1, query:"veredelung-brust") {
+        edges { node {
+          variants(first:1){ edges{ node{ price{ amount } } } }
+          preisReduktion: metafield(namespace:"custom", key:"preis_reduktion"){ value }
+        } }
+      }
+      back: products(first:1, query:"veredelung-rucken") {
+        edges { node {
+          variants(first:1){ edges{ node{ price{ amount } } } }
+          preisReduktion: metafield(namespace:"custom", key:"preis_reduktion"){ value }
+        } }
+      }
+    }`;
+
+    const data = await callShopify(gql, { handle });
+
+    const prodMF = data?.productByHandle?.preisReduktion;
+    const productDiscounts = parseProductDiscounts(prodMF);
+
+    const frontNode = data?.front?.edges?.[0]?.node;
+    const backNode = data?.back?.edges?.[0]?.node;
+
+    const frontBase = Number(frontNode?.variants?.edges?.[0]?.node?.price?.amount) || 6.5;
+    const backBase = Number(backNode?.variants?.edges?.[0]?.node?.price?.amount) || 6.5;
+
+    console.groupCollapsed("[PRICING META]", handle);
+    console.log("productDiscounts (raw):", productDiscounts);
+    console.log("front tiers:", { base: frontBase, tiers: parseDecorationTiers(frontNode?.preisReduktion) });
+    console.log("back  tiers:", { base: backBase, tiers: parseDecorationTiers(backNode?.preisReduktion) });
+    console.groupEnd();
+
+    return {
+        productDiscounts, // ← Rabatt-Tiers (discountSum / discountPercentage)
+        front: { tiers: parseDecorationTiers(frontNode?.preisReduktion), base: frontBase },
+        back: { tiers: parseDecorationTiers(backNode?.preisReduktion), base: backBase },
+    };
 }
 
 // ---- Helpers ----
@@ -294,32 +418,62 @@ function ProduktListe({ onPick }) {
 }
 
 // ---- Rechte Spalte: Varianten ----
-function VariantMatrix({ product, onChangeTotalQty, onChangeRows }) {
+// ---- Rechte Spalte: Varianten (Farbe -> Größenliste) ----
+function VariantMatrix({ product, onChangeTotalQty, onChangeRows, productDiscounts = [] }) {
     const [rows, setRows] = useState({});
+    const [selectedColor, setSelectedColor] = useState(null);
 
+    // simple parser: "SIZE / COLOR" -> {size, color}
+    const parseTitle = (t = "") => {
+        const parts = String(t)
+            .split("/")
+            .map((s) => s.trim());
+        if (parts.length >= 2) return { size: parts[0], color: parts.slice(1).join(" / ") };
+        // Fallback falls Titel anders formatiert ist
+        return { size: t, color: "—" };
+    };
+
+    // Größen-Sortierung wie im Shop
+    const sizeOrder = ["XXS", "XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL", "7XL"];
+    const sizeRank = (s) => {
+        const i = sizeOrder.indexOf(String(s).toUpperCase());
+        return i === -1 ? 999 : i;
+    };
+
+    // initialisieren / Produktwechsel
     useEffect(() => {
         if (!product) {
             setRows({});
             onChangeRows({});
             onChangeTotalQty(0);
+            setSelectedColor(null);
             return;
         }
+
         const next = {};
         (product.variants?.edges || []).forEach(({ node }) => {
-            next[node.id] = { title: node.title, price: toNumber(node.price?.amount), qty: 0 };
+            next[node.id] = {
+                title: node.title,
+                price: toNumber(node.price?.amount),
+                qty: 0,
+                ...parseTitle(node.title),
+            };
         });
+
         setRows(next);
         onChangeRows(next);
         onChangeTotalQty(0);
+
+        // erste Farbe wählen
+        const colors = Array.from(new Set(Object.values(next).map((v) => v.color))).filter(Boolean);
+        setSelectedColor(colors[0] || null);
     }, [product]);
 
+    // total qty melden
     useEffect(() => {
         const totalQty = Object.values(rows).reduce((s, r) => s + toNumber(r.qty), 0);
         onChangeTotalQty(totalQty);
     }, [rows]);
-
-    const list = Object.entries(rows);
-    const variantsSum = list.reduce((s, [, r]) => s + toNumber(r.qty) * toNumber(r.price), 0);
 
     if (!product) {
         return (
@@ -329,8 +483,31 @@ function VariantMatrix({ product, onChangeTotalQty, onChangeRows }) {
         );
     }
 
+    // verfügbare Farben + gefilterte Größen der aktiven Farbe
+    const all = Object.entries(rows).map(([id, r]) => ({ id, ...r }));
+    const totalQtyAllVariants = all.reduce((s, r) => s + toNumber(r.qty), 0);
+
+    // Produkt-Rabatt-Tier holen
+    const { discountSum, discountPercentage } = pickProductDiscount(totalQtyAllVariants, productDiscounts || []);
+
+    const rowsWithEffectiveUnit = all.map((v) => {
+        const base = Number(v.price || 0);
+        const unit = Math.max(0, base - (discountSum || 0)); // ← hier
+        return { ...v, unit };
+    });
+
+    const colors = Array.from(new Set(all.map((v) => v.color)))
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, "de"));
+    const sizesForColor = rowsWithEffectiveUnit
+        .filter((v) => v.color === selectedColor)
+        .sort((a, b) => sizeRank(a.size) - sizeRank(b.size));
+
+    const variantsSum = rowsWithEffectiveUnit.reduce((s, r) => s + toNumber(r.qty) * toNumber(r.unit), 0);
+
     return (
         <div className="rounded-3xl bg-white p-4 shadow-sm border">
+            {/* Produktkopf */}
             <div className="flex items-center gap-3">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -344,34 +521,57 @@ function VariantMatrix({ product, onChangeTotalQty, onChangeRows }) {
                 </div>
             </div>
 
+            {/* Farbauswahl */}
+            <div className="mt-4">
+                <div className="text-sm font-medium mb-2">Farbe</div>
+                <div className="flex flex-wrap gap-2">
+                    {colors.map((c) => (
+                        <button
+                            key={c}
+                            onClick={() => setSelectedColor(c)}
+                            className={`px-3 py-1.5 rounded-xl border text-sm transition ${
+                                c === selectedColor ? "bg-black text-white border-black" : "bg-white hover:bg-gray-50"
+                            }`}
+                            title={c}
+                        >
+                            {c}
+                        </button>
+                    ))}
+                    {colors.length === 0 && <span className="text-xs text-gray-500">Keine Farben erkannt</span>}
+                </div>
+            </div>
+
+            {/* Größenliste der gewählten Farbe */}
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                {list.map(([id, r]) => (
-                    <div key={id} className="border rounded-xl p-3">
+                {sizesForColor.map((v) => (
+                    <div key={v.id} className="border rounded-xl p-3">
                         <div className="flex items-center justify-between gap-2 mb-2">
-                            <div className="font-medium">{r.title}</div>
-                            <div className="text-sm opacity-70">{currency(r.price)}</div>
+                            <div className="font-medium">{v.size}</div>
+                            <div className="text-sm opacity-70">{currency(v.unit)}</div>
                         </div>
                         <div className="flex items-center gap-2">
                             <input
                                 type="number"
                                 min="0"
-                                value={r.qty}
-                                onChange={(e) =>
+                                value={v.qty}
+                                onChange={(e) => {
+                                    const qty = toNumber(e.target.value);
                                     setRows((prev) => {
-                                        const qty = toNumber(e.target.value);
-                                        const next = { ...prev, [id]: { ...prev[id], qty } };
+                                        const next = { ...prev, [v.id]: { ...prev[v.id], qty } };
                                         onChangeRows(next);
                                         return next;
-                                    })
-                                }
+                                    });
+                                }}
                                 className="w-28 px-3 py-2 rounded-lg border border-gray-200"
                             />
                             <span className="opacity-60 text-sm">Stück</span>
                         </div>
+                        <div className="mt-2 text-xs text-gray-500">{selectedColor}</div>
                     </div>
                 ))}
             </div>
 
+            {/* Summe aller Varianten über alle Farben */}
             <div className="mt-3 text-sm opacity-70">
                 Zwischensumme Varianten: <b>{currency(variantsSum)}</b>
             </div>
@@ -380,29 +580,76 @@ function VariantMatrix({ product, onChangeTotalQty, onChangeRows }) {
 }
 
 // ---- Veredelungen (nur Menge, Preis automatisch aus Staffel) ----
-function Veredelungen({ onChange }) {
+
+function Veredelungen({ onChange, frontPricing, backPricing, productTotalQty = 0 }) {
     const [items, setItems] = useState([
-        { id: "front", title: "Veredelung Front", qty: 0 },
-        { id: "back", title: "Veredelung Rücken", qty: 0 },
+        { id: "front-1", side: "front", title: "Veredelung Front", qty: 0 },
+        { id: "back-1", side: "back", title: "Veredelung Rücken", qty: 0 },
     ]);
 
-    const computed = useMemo(() => {
-        return items.map((it) => {
-            const unit = decorationUnitPrice(toNumber(it.qty));
-            const sum = unit * toNumber(it.qty);
-            return { ...it, unit, sum };
-        });
-    }, [items]);
+    // helper: zählt je Seite die Reihenfolge (1 = erste, >1 = Zusatz)
+    function indexWithinSide(list, item) {
+        const same = list.filter((x) => x.side === item.side);
+        const pos = same.findIndex((x) => x.id === item.id);
+        return pos === -1 ? 1 : pos + 1;
+    }
 
-    const subtotal = computed.reduce((s, it) => s + it.sum, 0);
+    const computed = useMemo(() => {
+        // nur Zeilen mit qty>0
+        const active = items.filter((it) => toNumber(it.qty) > 0);
+
+        // Reihenfolge pro Seite bewahren: erste aktive ist "main"
+        const mainIdBySide = {};
+        // const totalsBySide = {};
+        for (const it of active) {
+            if (!mainIdBySide[it.side]) mainIdBySide[it.side] = it.id;
+            // totalsBySide[it.side] = (totalsBySide[it.side] || 0) + toNumber(it.qty);
+        }
+
+        return items.map((it) => {
+            const qty = toNumber(it.qty);
+            if (qty <= 0) return { ...it, unit: 0, sum: 0, extra: false };
+
+            const isMain = mainIdBySide[it.side] === it.id; // ← exakt eine Hauptzeile pro Seite
+            if (!isMain) {
+                const unit = EXTRA_DECORATION_UNIT_NET; // €3.50
+                return { ...it, unit, sum: unit * qty, extra: true };
+            }
+
+            // Hauptzeile staffelt nach Gesamtmenge dieser Seite
+            // const sideTotal = totalsBySide[it.side] || qty;
+            const total = Math.max(0, Number(productTotalQty) || 0);
+
+            if (it.side === "front") {
+                const unit = pickDecorationUnit(total, frontPricing?.tiers || [], frontPricing?.base || 6.5);
+                const sumMain = unit + Math.max(0, qty - 1) * EXTRA_DECORATION_UNIT_NET;
+                return { ...it, unit, sum: sumMain, extra: false };
+            }
+            if (it.side === "back") {
+                const unit = pickDecorationUnit(total, backPricing?.tiers || [], backPricing?.base || 6.5);
+                const sumMain = unit + Math.max(0, qty - 1) * EXTRA_DECORATION_UNIT_NET;
+
+                return { ...it, unit, sum: sumMain, extra: false };
+            }
+            const unit = 6.5;
+            const sumMain = unit + Math.max(0, qty - 1) * EXTRA_DECORATION_UNIT_NET;
+
+            return { ...it, unit, sum: sumMain, extra: false };
+        });
+    }, [items, frontPricing, backPricing, productTotalQty]);
 
     useEffect(() => {
         onChange(computed);
     }, [computed]);
 
-    const update = (id, qty) => setItems((prev) => prev.map((it) => (it.id === id ? { ...it, qty } : it)));
-    const add = () =>
-        setItems((prev) => [...prev, { id: Math.random().toString(36).slice(2), title: "Veredelung", qty: 0 }]);
+    const update = (id, patch) => setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+    const add = () => {
+        // default neue Zeile = Front (der User kann Side umstellen)
+        setItems((prev) => [
+            ...prev,
+            { id: Math.random().toString(36).slice(2), side: "front", title: "Veredelung Front", qty: 0 },
+        ]);
+    };
     const remove = (id) => setItems((prev) => prev.filter((x) => x.id !== id));
 
     return (
@@ -418,15 +665,26 @@ function Veredelungen({ onChange }) {
                 {computed.map((it) => (
                     <div
                         key={it.id}
-                        className="grid grid-cols-1 md:grid-cols-[1fr,120px,1fr,44px] gap-2 border rounded-xl p-3"
+                        className="grid grid-cols-1 md:grid-cols-[110px,1fr,120px,1fr,44px] gap-2 border rounded-xl p-3"
                     >
+                        {/* Seite wählen */}
+                        <select
+                            value={it.side}
+                            onChange={(e) => {
+                                const side = e.target.value === "back" ? "back" : "front";
+                                const title = side === "back" ? "Veredelung Rücken" : "Veredelung Front";
+                                update(it.id, { side, title });
+                            }}
+                            className="px-3 py-2 rounded-lg border border-gray-200"
+                            title="Seite"
+                        >
+                            <option value="front">Front</option>
+                            <option value="back">Rücken</option>
+                        </select>
+
                         <input
                             value={it.title}
-                            onChange={(e) =>
-                                setItems((prev) =>
-                                    prev.map((x) => (x.id === it.id ? { ...x, title: e.target.value } : x))
-                                )
-                            }
+                            onChange={(e) => update(it.id, { title: e.target.value })}
                             className="px-3 py-2 rounded-lg border border-gray-200"
                             placeholder="Titel"
                         />
@@ -434,7 +692,7 @@ function Veredelungen({ onChange }) {
                             type="number"
                             min="0"
                             value={it.qty}
-                            onChange={(e) => update(it.id, toNumber(e.target.value))}
+                            onChange={(e) => update(it.id, { qty: toNumber(e.target.value) })}
                             className="px-3 py-2 rounded-lg border border-gray-200"
                             placeholder="Menge"
                             title="Anzahl Teile, die auf dieser Seite veredelt werden"
@@ -442,6 +700,7 @@ function Veredelungen({ onChange }) {
                         <div className="flex items-center justify-between text-sm">
                             <div className="opacity-70">
                                 Einzelpreis: <b>{currency(it.unit)}</b>
+                                {it.extra ? " (Zusatz)" : ""}
                             </div>
                             <div className="opacity-70">
                                 Summe: <b>{currency(it.sum)}</b>
@@ -454,11 +713,8 @@ function Veredelungen({ onChange }) {
                 ))}
             </div>
 
-            <div className="mt-3 text-sm opacity-70">
-                Zwischensumme Veredelungen: <b>{currency(subtotal)}</b>
-            </div>
             <div className="mt-1 text-xs text-gray-500">
-                Staffel: 1–19 €6.50 · 20–49 €5.50 · 50–99 €4.50 · ≥100 €3.90
+                1. Veredelung pro Seite staffelt (Shopify-Tiers). Jede weitere auf derselben Seite: €3.50 netto.
             </div>
         </div>
     );
@@ -500,7 +756,8 @@ function OfferSummary({ offerItems, onRemove, notes, onNotes, onSave, onDownload
                                     <div key={r.key} className="flex items-center justify-between">
                                         <div className="opacity-80">{r.title}</div>
                                         <div className="opacity-60">
-                                            {r.qty} × {currency(r.unit)} = <b>{currency(r.qty * r.unit)}</b>
+                                            {r.qty} × {currency(r.unit)} ={" "}
+                                            <b>{currency(Number.isFinite(r.sum) ? r.sum : r.qty * r.unit)}</b>{" "}
                                         </div>
                                     </div>
                                 ))}
@@ -511,7 +768,8 @@ function OfferSummary({ offerItems, onRemove, notes, onNotes, onSave, onDownload
                                     <div key={r.key} className="flex items-center justify-between">
                                         <div className="opacity-80">{r.title}</div>
                                         <div className="opacity-60">
-                                            {r.qty} × {currency(r.unit)} = <b>{currency(r.qty * r.unit)}</b>
+                                            {r.qty} × {currency(r.unit)} ={" "}
+                                            <b>{currency(Number.isFinite(r.sum) ? r.sum : r.qty * r.unit)}</b>{" "}
                                         </div>
                                     </div>
                                 ))}
@@ -624,30 +882,71 @@ export default function DashboardAngebot() {
     const [user, setUser] = useState(null);
     const [selected, setSelected] = useState(null);
     const [variantRows, setVariantRows] = useState({});
+    const [productTotalQty, setProductTotalQty] = useState(0); // <- NEU
+    const [customerProfile, setCustomerProfile] = useState(null);
+
     const [refinements, setRefinements] = useState([]);
     const [offerItems, setOfferItems] = useState([]);
     const [notes, setNotes] = useState("");
     const [archive, setArchive] = useState([]);
+    const [pricing, setPricing] = useState({
+        productDiscounts: [],
+        front: { tiers: [], base: 6.5 },
+        back: { tiers: [], base: 6.5 },
+    });
 
     const summaryRef = useRef(null);
+
+    useEffect(() => {
+        // bevorzugt E-Mail (DEV-Override), sonst UID
+        // const email = process.env.NEXT_PUBLIC_DEV && devEmail ? devEmail : auth.currentUser?.email || null;
+        const uid = auth.currentUser?.uid || null;
+        if (!uid) return;
+
+        (async () => {
+            try {
+                const data = await fetchDashboardData({ email, uid, maxPending: 50 });
+                // z.B. data.profile.companyName, companyAdress, companyCity, email ...
+                setCustomerProfile(data?.profile || null);
+            } catch (e) {
+                console.error("[Angebot] Firebase Profil-Load Fehler:", e);
+            }
+        })();
+    }, [/* ggf. devEmail, */ auth.currentUser?.email, auth.currentUser?.uid]);
 
     useEffect(() => {
         const unsub = auth.onAuthStateChanged((u) => setUser(u));
         return () => unsub();
     }, []);
 
+    useEffect(() => {
+        let active = true;
+        (async () => {
+            if (!selected || !selected.handle) {
+                setPricing({ productDiscounts: [], front: { tiers: [], base: 6.5 }, back: { tiers: [], base: 6.5 } });
+                return;
+            }
+            const p = await fetchPricingMeta(selected.handle);
+            if (active) setPricing(p);
+        })();
+        return () => {
+            active = false;
+        };
+    }, [selected?.handle]);
+
     const addPosition = () => {
         if (!selected) return;
 
+        const totalQty = Object.values(variantRows).reduce((s, r) => s + toNumber(r.qty), 0);
+        const { discountSum, discountPercentage } = pickProductDiscount(totalQty, pricing.productDiscounts || []);
+
         const variantList = Object.entries(variantRows)
             .filter(([, r]) => toNumber(r.qty) > 0)
-            .map(([id, r]) => ({
-                key: `v-${id}`,
-                variantId: id,
-                title: r.title,
-                qty: toNumber(r.qty),
-                unit: toNumber(r.price),
-            }));
+            .map(([id, r]) => {
+                const base = toNumber(r.price);
+                const unit = Math.max(0, base - (discountSum || 0)); // ← hier
+                return { key: `v-${id}`, variantId: id, title: r.title, qty: toNumber(r.qty), unit };
+            });
 
         const refinementsList = (refinements || [])
             .filter((r) => toNumber(r.qty) > 0)
@@ -656,11 +955,12 @@ export default function DashboardAngebot() {
                 title: r.title,
                 qty: toNumber(r.qty),
                 unit: toNumber(r.unit),
+                sum: toNumber(r.sum), // <- mitnehmen
             }));
 
         const sum =
             variantList.reduce((s, r) => s + r.qty * r.unit, 0) +
-            refinementsList.reduce((s, r) => s + r.qty * r.unit, 0);
+            refinementsList.reduce((s, r) => s + (Number.isFinite(r.sum) ? r.sum : r.qty * r.unit), 0);
 
         const img = selected.featuredImage?.url || selected.images?.edges?.[0]?.node?.url || "";
 
@@ -689,38 +989,94 @@ export default function DashboardAngebot() {
 
     const removePosition = (key) => setOfferItems((prev) => prev.filter((p) => p.key !== key));
     const netTotal = offerItems.reduce((s, it) => s + it.totalPrice, 0);
-
     async function handleDownloadPdf() {
         const { pdf } = await import("@react-pdf/renderer");
         const { default: CartOfferPDF } = await import("@/components/pdf/cartOfferPDF");
+        const now = new Date();
+        const offerNumber = `AN-${now.toISOString().slice(0, 10).replace(/-/g, "")}-${String(now.getHours()).padStart(
+            2,
+            "0"
+        )}${String(now.getMinutes()).padStart(2, "0")}`;
+
+        // offerItems -> cartItems (Struktur, die CartOfferPDF erwartet)
+        const cartItems = (offerItems || []).map((it) => ({
+            id: it.key,
+            productName: it.productName,
+            product: {
+                productName: it.productName,
+                images: { edges: [{ node: { originalSrc: it.productImage } }] },
+            },
+            variants: Object.fromEntries(
+                (it.variantRows || []).map((r) => [
+                    r.title,
+                    { quantity: Number(r.qty) || 0, price: Number(r.unit) || 0 },
+                ])
+            ),
+
+            // 🔧 Split each refinement row into "main" + "extra" lines for the PDF
+            refinements: (it.refinements || []).flatMap((r) => {
+                const qty = Number(r.qty) || 0;
+                const unit = Number(r.unit) || 0;
+                const side = /rück/i.test(r.title) ? "Rücken" : "Front";
+                const rows = [];
+
+                if (qty >= 1) {
+                    rows.push({
+                        title: `Veredelung ${side}`,
+                        quantity: 1,
+                        price: unit,
+                        // ensure the PDF doesn't recompute:
+                        sum: unit,
+                    });
+                }
+                if (qty > 1) {
+                    const extras = qty - 1;
+                    rows.push({
+                        title: `Zusatzveredelungen ${side}`,
+                        quantity: extras,
+                        price: EXTRA_DECORATION_UNIT_NET,
+                        sum: extras * EXTRA_DECORATION_UNIT_NET,
+                    });
+                }
+                return rows;
+            }),
+
+            totalPrice: Number(it.totalPrice) || 0,
+            design: { front: { downloadURL: it.productImage } },
+        }));
+
+        // 🔗 Kundendaten aus Firestore-Profil mappen
+        const customerFromFS = {
+            company: customerProfile?.companyName || "",
+            name: "", // falls du einen Ansprechpartner speichern solltest, hier einsetzen
+            street: customerProfile?.companyAdress || "",
+            city: customerProfile?.companyCity || "",
+            // country: "Deutschland", // wenn du das Land im Profil hast: ersetzen
+            customerNumber: customerProfile?.businessNumber || "", // oder eigene Kundennr.
+            email: customerProfile?.email || "", // wird im PDF Footer/Intro nicht automatisch gerendert
+        };
+
         const doc = (
             <CartOfferPDF
-                cartItems={offerItems.map((it) => ({
-                    id: it.key,
-                    productName: it.productName,
-                    product: {
-                        productName: it.productName,
-                        images: { edges: [{ node: { originalSrc: it.productImage } }] },
-                    },
-                    // Varianten
-                    variants: Object.fromEntries(
-                        (it.variantRows || []).map((r) => [r.title, { quantity: r.qty, price: r.unit }])
-                    ),
-                    // ✅ Veredelungen (neu)
-                    refinements: (it.refinements || []).map((r) => ({
-                        title: r.title,
-                        quantity: r.qty,
-                        price: r.unit,
-                    })),
-                    totalPrice: it.totalPrice,
-                    design: { front: { downloadURL: it.productImage } },
-                }))}
-                totalPrice={netTotal}
+                cartItems={cartItems}
+                totalPrice={netTotal} // <- statt sumNet
                 userNotes={notes}
                 vatRate={VAT_RATE}
                 b2bMode={true}
+                logoSrc={Logo.src}
+                // optional: nur setzen, wenn du Kopf wie im Muster brauchst
+                customer={customerFromFS}
+                docMeta={{
+                    type: "Angebot", // ✅ statt „Rechnung“
+                    number: offerNumber, // oder leer lassen, wenn noch nicht nötig
+                    reference: "", // optional
+                    date: now, // wird im PDF formatiert
+                    deliveryDate: "", // optional
+                    contact: "MAINPLOTT Vertrieb", // optional
+                }}
             />
         );
+
         const blob = await pdf(doc).toBlob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -800,10 +1156,16 @@ export default function DashboardAngebot() {
                             <div className="space-y-4">
                                 <VariantMatrix
                                     product={selected}
-                                    onChangeTotalQty={() => {}}
+                                    onChangeTotalQty={setProductTotalQty}
                                     onChangeRows={setVariantRows}
+                                    productDiscounts={pricing.productDiscounts}
                                 />
-                                <Veredelungen onChange={setRefinements} />
+                                <Veredelungen
+                                    onChange={setRefinements}
+                                    frontPricing={pricing.front}
+                                    backPricing={pricing.back}
+                                    productTotalQty={productTotalQty}
+                                />
                                 <div className="flex justify-end">
                                     <button
                                         onClick={addPosition}
