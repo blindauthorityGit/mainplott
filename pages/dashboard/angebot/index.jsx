@@ -20,7 +20,7 @@ import {
 import Logo from "@/assets/logo.jpg";
 
 // ---- Firebase (client-safe modular) ----
-import { auth } from "@/config/firebase";
+import { auth, fetchDashboardData } from "@/config/firebase";
 import {
     getFirestore,
     collection,
@@ -31,7 +31,6 @@ import {
     orderBy,
     query,
     serverTimestamp,
-    fetchDashboardData,
 } from "firebase/firestore";
 
 // ---- Shopify fetcher ----
@@ -884,7 +883,7 @@ export default function DashboardAngebot() {
     const [variantRows, setVariantRows] = useState({});
     const [productTotalQty, setProductTotalQty] = useState(0); // <- NEU
     const [customerProfile, setCustomerProfile] = useState(null);
-
+    const [dashboardData, setDashboardData] = useState(null);
     const [refinements, setRefinements] = useState([]);
     const [offerItems, setOfferItems] = useState([]);
     const [notes, setNotes] = useState("");
@@ -897,22 +896,55 @@ export default function DashboardAngebot() {
 
     const summaryRef = useRef(null);
 
+    console.log(user);
+
+    // Profil (Firmenkunde) laden – identisch zu deinem Dashboard-Index
     useEffect(() => {
-        // bevorzugt E-Mail (DEV-Override), sonst UID
-        // const email = process.env.NEXT_PUBLIC_DEV && devEmail ? devEmail : auth.currentUser?.email || null;
         const uid = auth.currentUser?.uid || null;
         if (!uid) return;
+        (async () => {
+            try {
+                const data = await fetchDashboardData({ email, uid, maxPending: 50 });
+                console.log("DATA", data);
+
+                setDashboardData(data);
+            } catch (e) {
+                console.error("[Angebot] Firebase Profil laden fehlgeschlagen:", e);
+            }
+        })();
+    }, [user /*, devEmail falls vorhanden */]);
+
+    // 1) Auth-State einmal setzen
+    useEffect(() => {
+        const unsub = auth.onAuthStateChanged((u) => {
+            setUser(u);
+        });
+        return () => unsub();
+    }, []);
+
+    // 2) Sobald user da ist, Dashboard-/Profil-Daten laden
+    useEffect(() => {
+        if (!user) {
+            console.log("[Angebot] kein User, lade kein Profil");
+            return;
+        }
+
+        const uid = user.uid;
+        const email = user.email || null;
+        console.log("[Angebot] lade Profil für UID:", uid, "Email:", email);
 
         (async () => {
             try {
                 const data = await fetchDashboardData({ email, uid, maxPending: 50 });
-                // z.B. data.profile.companyName, companyAdress, companyCity, email ...
+                console.log("[Angebot] DashboardData:", data);
+
+                setDashboardData(data);
                 setCustomerProfile(data?.profile || null);
             } catch (e) {
                 console.error("[Angebot] Firebase Profil-Load Fehler:", e);
             }
         })();
-    }, [/* ggf. devEmail, */ auth.currentUser?.email, auth.currentUser?.uid]);
+    }, [user]);
 
     useEffect(() => {
         const unsub = auth.onAuthStateChanged((u) => setUser(u));
@@ -989,6 +1021,7 @@ export default function DashboardAngebot() {
 
     const removePosition = (key) => setOfferItems((prev) => prev.filter((p) => p.key !== key));
     const netTotal = offerItems.reduce((s, it) => s + it.totalPrice, 0);
+
     async function handleDownloadPdf() {
         const { pdf } = await import("@react-pdf/renderer");
         const { default: CartOfferPDF } = await import("@/components/pdf/cartOfferPDF");
@@ -1045,15 +1078,34 @@ export default function DashboardAngebot() {
             design: { front: { downloadURL: it.productImage } },
         }));
 
-        // 🔗 Kundendaten aus Firestore-Profil mappen
-        const customerFromFS = {
-            company: customerProfile?.companyName || "",
-            name: "", // falls du einen Ansprechpartner speichern solltest, hier einsetzen
-            street: customerProfile?.companyAdress || "",
-            city: customerProfile?.companyCity || "",
-            // country: "Deutschland", // wenn du das Land im Profil hast: ersetzen
-            customerNumber: customerProfile?.businessNumber || "", // oder eigene Kundennr.
-            email: customerProfile?.email || "", // wird im PDF Footer/Intro nicht automatisch gerendert
+        // --- Kunde aus Firestore-Profil mappen ---
+        const p = customerProfile || {};
+        const customer = {
+            company: p.companyName || "",
+            name: p.contactPerson || "", // falls du später Ansprechpartner speicherst
+            street: p.companyAdress || "",
+            city: p.companyCity || "",
+            country: "Deutschland", // kannst du aus Profil ziehen, falls vorhanden
+            customerNumber: p.businessNumber || "",
+        };
+
+        console.log(p);
+
+        // Angebotsnummer generieren (Beispiel)
+        const today = new Date();
+        const anNumber = `AN-${today.toISOString().slice(0, 10).replace(/-/g, "")}-${today
+            .getFullYear()
+            .toString()
+            .slice(-2)}`;
+
+        const docMeta = {
+            type: "Angebot",
+            number: anNumber,
+            reference: "",
+            date: today,
+            deliveryDate: "",
+            validUntil: new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000), // 14 Tage gültig
+            contact: "MAINPLOTT Vertrieb", // oder p.email / p.contactPerson
         };
 
         const doc = (
@@ -1065,15 +1117,8 @@ export default function DashboardAngebot() {
                 b2bMode={true}
                 logoSrc={Logo.src}
                 // optional: nur setzen, wenn du Kopf wie im Muster brauchst
-                customer={customerFromFS}
-                docMeta={{
-                    type: "Angebot", // ✅ statt „Rechnung“
-                    number: offerNumber, // oder leer lassen, wenn noch nicht nötig
-                    reference: "", // optional
-                    date: now, // wird im PDF formatiert
-                    deliveryDate: "", // optional
-                    contact: "MAINPLOTT Vertrieb", // optional
-                }}
+                customer={customer}
+                docMeta={docMeta}
             />
         );
 

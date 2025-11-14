@@ -56,10 +56,34 @@ const styles = StyleSheet.create({
     spacer18: { height: 18 },
     addressRow: { flexDirection: "row", justifyContent: "space-between" },
     recipient: { width: "55%", fontSize: 10, lineHeight: 1.4 },
-    metaRight: { width: "40%", alignItems: "flex-end", fontSize: 9, lineHeight: 1.35 },
-    metaLine: { flexDirection: "row", gap: 8 },
-    metaKey: { width: 110, color: theme.colors.mute, textAlign: "right", marginRight: 8 },
-    metaVal: { color: theme.colors.text },
+    addressRow: { flexDirection: "row", justifyContent: "space-between" },
+    recipient: { width: "55%", fontSize: 10, lineHeight: 1.4 },
+
+    metaRight: {
+        width: "40%",
+        marginLeft: "auto", // schiebt den Block nach rechts
+        fontSize: 9,
+        lineHeight: 1.35,
+    },
+
+    metaLine: {
+        flexDirection: "row",
+        justifyContent: "flex-end", // Inhalt an rechten Rand
+        alignItems: "baseline",
+    },
+
+    metaKey: {
+        width: 80, // feste Spaltenbreite für Labels
+        textAlign: "right",
+        color: theme.colors.mute,
+        paddingRight: 8, // Abstand zur Wert-Spalte
+    },
+
+    metaVal: {
+        minWidth: 80, // gleichmäßige Wert-Spalte
+        textAlign: "left",
+        color: theme.colors.text,
+    },
     title: { fontSize: 16, fontWeight: 700, marginTop: 18, marginBottom: 6 },
     intro: { fontSize: 8, lineHeight: 1.45 },
     table: { marginTop: 10, borderTopWidth: 1, borderColor: theme.colors.black },
@@ -239,19 +263,19 @@ export default function CartOfferPDF({
                             </View>
                         ) : null}
 
-                        {safe(customer.customerNumber) ? (
+                        {/* {safe(customer.customerNumber) ? (
                             <View style={styles.metaLine}>
                                 <Text style={styles.metaKey}>Ihre Kundennummer</Text>
                                 <Text style={styles.metaVal}>{safe(customer.customerNumber)}</Text>
                             </View>
-                        ) : null}
+                        ) : null} */}
 
-                        {safe(docMeta.contact) ? (
+                        {/* {safe(docMeta.contact) ? (
                             <View style={styles.metaLine}>
                                 <Text style={styles.metaKey}>Ihr Ansprechpartner</Text>
                                 <Text style={styles.metaVal}>{safe(docMeta.contact)}</Text>
                             </View>
-                        ) : null}
+                        ) : null} */}
                     </View>
                 </View>
 

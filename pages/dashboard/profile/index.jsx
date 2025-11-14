@@ -143,7 +143,7 @@ export default function DashboardProfile() {
                         <NavIcon href="/dashboard/orders" icon={<FiShoppingBag />} />
                         <NavIcon href="/dashboard/uploads" icon={<FiUploadCloud />} />
                         <NavIcon href="/dashboard/angebot" icon={<FiFileText />} />
-                        <NavIcon href="/dashboard/addresses" icon={<FiMapPin />} />
+                        {/* <NavIcon href="/dashboard/addresses" icon={<FiMapPin />} /> */}
                         <NavIcon href="/dashboard/profile" icon={<FiUser />} active />
                         <button
                             onClick={() => auth.signOut()}
