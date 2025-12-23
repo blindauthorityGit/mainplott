@@ -16,12 +16,12 @@ const IconButton = ({
             <motion.button
                 type="button"
                 onClick={onClick}
-                className={`flex items-center justify-center ${bgColor} ${hoverColor} ${textColor} rounded-full p-3 shadow-md`}
+                className={`flex items-center justify-center ${bgColor} ${hoverColor} ${textColor} rounded-full p-2 xl:p-1 shadow-md`}
                 whileHover={{ scale: 1.1 }} // Hover animation
                 whileTap={{ scale: 0.9 }} // Tap animation
                 transition={{ type: "spring", stiffness: 300, damping: 15 }}
             >
-                <Icon className="text-xl" />
+                <Icon className="text-base 2xl:text-base" />
             </motion.button>
         </Tooltip>
     );

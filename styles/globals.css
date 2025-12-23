@@ -49,6 +49,16 @@ html.lenis, html.lenis body {
   transform: scale(1.2) rotate(15deg);
 } 
 
+/* globals.css */
+@media (max-width:640px) {
+  /* verschiebt das geschlossene Chat-Bubble-Iframe */
+  .tawk-min-container {
+    bottom: 80px !important;
+    left:   10px !important;
+    right:  auto !important;
+  }
+}
+
 
 @layer utilities {
   .text-balance {

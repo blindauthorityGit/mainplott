@@ -1,6 +1,8 @@
 import React, { useRef } from "react";
 import { H2 } from "@/components/typography";
 
+import useStore from "@/store/store";
+
 // COMPONENTS
 import { ListElement } from "@/components/list";
 import { ContainImage } from "@/components/images"; // Importing the ContainImage component
@@ -30,6 +32,7 @@ const GraphicUploadModalContent = ({
     setModalOpen,
     currentStep,
     steps,
+    stepAhead,
 }) => {
     // Reference for the hidden file input element
     const fileInputRef = useRef(null);
@@ -40,6 +43,8 @@ const GraphicUploadModalContent = ({
     // Validation logic
     const errors = {};
     const warnings = {};
+
+    console.log("STEPS", steps);
 
     if (isPDF) {
         // PDF-specific error handling
@@ -83,11 +88,25 @@ const GraphicUploadModalContent = ({
     };
 
     // Function to handle Next Step and close the modal
-    const handleNextStep = () => {
-        if (currentStep < steps.length - 1) {
+    // const handleNextStep = () => {
+    //     if (currentStep < steps.length - 1) {
+    //         setCurrentStep(currentStep + 1);
+    //     }
+    //     setModalOpen(false);
+    // };
+    const handleNextStep = (e) => {
+        e?.preventDefault?.();
+        e?.stopPropagation?.();
+        const canAdvance =
+            Array.isArray(steps) && typeof currentStep === "number" && typeof setCurrentStep === "function";
+
+        if (canAdvance && currentStep < steps.length - 1) {
             setCurrentStep(currentStep + 1);
         }
+        // always close
         setModalOpen(false);
+        // if your modal stays open when content is set, also clear it:
+        // props?.setModalContent?.(null);
     };
 
     return (
@@ -207,13 +226,15 @@ const GraphicUploadModalContent = ({
                 </button>
             </div>
             <div className="col-span-6 mt-2 lg:mt-0 pl-1 lg:pl-0">
-                <StepButton
-                    onClick={handleNextStep}
-                    className="px-4 py-2 bg-textColor text-white rounded !text-sm lg:text-base"
-                    klasse="bg-textColor"
-                >
-                    {hasErrors ? "Trotzdem weiter" : "Weiter"}
-                </StepButton>
+                {stepAhead ? null : (
+                    <StepButton
+                        onClick={handleNextStep}
+                        className="px-4 py-2 bg-textColor text-white rounded !text-sm lg:text-base"
+                        klasse="bg-textColor"
+                    >
+                        {hasErrors ? "Trotzdem weiter" : "Weiter"}
+                    </StepButton>
+                )}
             </div>
         </div>
     );

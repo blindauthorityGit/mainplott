@@ -28,29 +28,34 @@ export default function getImagePlacement({
     // Decide on offsets. If the image should scale/rotate from the center:
     // const offsetX = finalWidth / 2;
     // const offsetY = finalHeight / 2;
-    const offsetX = 0;
-    const offsetY = 0;
+    // const offsetX = 0;
+    // const offsetY = 0;
 
-    console.log(containerWidth, containerHeight);
+    // console.log(containerWidth, containerHeight);
 
     // Determine the center position
-    const x = centerImage ? containerWidth / 2 : (containerWidth - finalWidth) / 2;
-    const y = centerImage ? containerHeight / 2 : (containerHeight - finalHeight) / 2;
+    // const x = centerImage ? containerWidth / 2 : (containerWidth - finalWidth) / 2;
+    // const y = centerImage ? containerHeight / 2 : (containerHeight - finalHeight) / 2;
+    const x = (containerWidth - finalWidth) / 2;
+    const y = (containerHeight - finalHeight) / 2;
+    const offsetX = finalWidth / 2;
+    const offsetY = finalHeight / 2;
+    return { x, y, offsetX, offsetY, finalWidth, finalHeight, scale: 1 };
 
     // If scaling is needed, you can return a scale factor as well
     // For example, if `scale` is controlled outside, just return x, y, offsetX, offsetY
     // For now, assume scale is 1:
-    const scale = 1;
+    // const scale = 1;
 
-    return {
-        x,
-        y,
-        scale,
-        offsetX,
-        offsetY,
-        finalWidth,
-        finalHeight,
-    };
+    // return {
+    //     x,
+    //     y,
+    //     scale,
+    //     offsetX,
+    //     offsetY,
+    //     finalWidth,
+    //     finalHeight,
+    // };
 }
 
 // --- New function ---

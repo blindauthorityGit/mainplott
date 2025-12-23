@@ -1,146 +1,169 @@
-const prepareLineItems = (cartItems) => {
-    const lineItems = [];
+// functions/prepareLineItems.js
 
-    cartItems.forEach((item, itemIndex) => {
-        const { variants, profiDatenCheckPrice, sides, personalisierungsText, layout, design, configurator, product } =
-            item;
+const MAX_VAL = 240;
+const cap = (s) => (s == null ? "" : String(s)).slice(0, MAX_VAL);
+
+function uniqueUploadUrls(arr) {
+    const seen = new Set();
+    const out = [];
+    for (const g of arr || []) {
+        const url = g?.downloadURL || g?.url || null;
+        if (!url || seen.has(url)) continue;
+        seen.add(url);
+        out.push({ url });
+    }
+    return out;
+}
+
+function collectSide(item, side) {
+    const s = item?.sides?.[side] || {};
+
+    // only real uploads (no previews)
+    let images = [];
+    if (Array.isArray(s.uploadedGraphics) && s.uploadedGraphics.length) {
+        images = uniqueUploadUrls(s.uploadedGraphics);
+    } else if (s.uploadedGraphic?.downloadURL) {
+        images = uniqueUploadUrls([s.uploadedGraphic]);
+    }
+
+    const texts = Array.isArray(s.texts)
+        ? s.texts.map((t) => ({
+              value: t?.value || t?.text || "",
+              fontFamily: t?.fontFamily || "",
+              fill: t?.fill || "",
+          }))
+        : [];
+
+    return { images, texts };
+}
+
+function pushPretty(attrs, label, payload) {
+    payload.images.forEach((img, i) => {
+        attrs.push({ key: `${label} Image ${i + 1}`, value: cap(img.url) });
+    });
+    payload.texts.forEach((t, i) => {
+        const parts = [];
+        if (t.value) parts.push(`"${t.value}"`);
+        if (t.fontFamily) parts.push(t.fontFamily);
+        if (t.fill) parts.push(t.fill);
+        if (parts.length) attrs.push({ key: `${label} Text ${i + 1}`, value: cap(parts.join(", ")) });
+    });
+}
+
+export default function prepareLineItems(cartItems) {
+    const lines = [];
+
+    (cartItems || []).forEach((item, itemIndex) => {
+        const { configurator, personalisierungsText, product } = item;
+
+        // never mutate what's in the cart item
+        const variants = { ...(item.variants || {}) };
 
         const isAllInclusive =
             Boolean(product?.preisModell?.value) && product.preisModell.value.includes("Alles inklusive");
 
-        // 1) Size-/Color-Varianten & ggf. Veredelungen
-        Object.entries(variants).forEach(([key, variant]) => {
-            if (!variant.id || variant.quantity <= 0 || key === "layoutService" || key === "profiDatenCheck") {
-                return;
-            }
+        // --- derive per-side payload + motif counts ---
+        const frontPayload = collectSide(item, "front");
+        const backPayload = collectSide(item, "back");
 
-            const isVeredelung = /veredelung/i.test(key);
-            if (isVeredelung && isAllInclusive) {
-                // skip Veredelungen bei All-Inclusive
-                return;
-            }
+        const countFront = frontPayload.images.length + frontPayload.texts.length;
+        const countBack = backPayload.images.length + backPayload.texts.length;
 
-            // Basis-Attribute für jede Zeile
-            const customAttributes = [
-                { key: "price", value: parseFloat(variant.price || 0).toFixed(2) },
+        // base veredelung per side = 1 if there's at least one motif on that side
+        const baseFront = countFront > 0 ? 1 : 0;
+        const baseBack = countBack > 0 ? 1 : 0;
+
+        // --- 1) push SIZE (and other non-veredelung) variants as-is ---
+        Object.entries(variants).forEach(([key, v]) => {
+            if (!v?.id || Number(v.quantity) <= 0) return;
+            if (/veredelung/i.test(key)) return; // handle decorations in the next block
+            if (key === "layoutService" || key === "profiDatenCheck") return;
+
+            const attrs = [
+                { key: "price", value: Number(v.price || 0).toFixed(2) },
                 { key: "itemIndex", value: String(itemIndex) },
+                { key: "title", value: v.size ? `Variante ${v.size}` : "Variante" },
             ];
 
-            if (isVeredelung) {
-                // Beispiel key="frontVeredelung" → side="front"
-                const side = key.replace(/Veredelung/i, "").toLowerCase();
-
-                customAttributes.push(
-                    { key: "title", value: `Veredelung ${side}` },
-                    {
-                        key: "Platzierung",
-                        value: configurator !== "template" ? "Freie Platzierung" : "Fixe Position",
-                    }
-                );
-
-                // hochgeladene Grafik
-                const uploaded = sides?.[side]?.uploadedGraphic?.downloadURL;
-                if (uploaded) {
-                    customAttributes.push({
-                        key: `uploadedGraphic_${side}`,
-                        value: uploaded,
-                    });
-                }
-                // exportiertes Design
-                const designURL = design?.[side]?.downloadURL;
-                if (designURL) {
-                    customAttributes.push({
-                        key: `designURL_${side}`,
-                        value: designURL,
-                    });
-                }
-            } else {
-                // normale Size/Color-Variante
-                customAttributes.push({
-                    key: "title",
-                    value: variant.size ? `Variante ${variant.size}` : `Variant ${key}`,
-                });
-
-                // wenn All-Inclusive, hängen wir hier die hochgeladenen Grafiken & Designs an
-                if (isAllInclusive) {
-                    Object.keys(sides).forEach((side) => {
-                        const uploaded = sides[side]?.uploadedGraphic?.downloadURL;
-                        if (uploaded) {
-                            customAttributes.push({
-                                key: `uploadedGraphic_${side}`,
-                                value: uploaded,
-                            });
-                        }
-                        const designURL = design?.[side]?.downloadURL;
-                        if (designURL) {
-                            customAttributes.push({
-                                key: `designURL_${side}`,
-                                value: designURL,
-                            });
-                        }
-                    });
-                }
+            if (isAllInclusive) {
+                pushPretty(attrs, "Front", frontPayload);
+                pushPretty(attrs, "Back", backPayload);
             }
-
             if (personalisierungsText) {
-                customAttributes.push({
-                    key: "personalisierungsText",
-                    value: personalisierungsText,
-                });
+                attrs.push({ key: "Personalisierung", value: cap(personalisierungsText) });
             }
 
-            lineItems.push({
-                variantId: variant.id,
-                quantity: variant.quantity,
-                customAttributes,
+            lines.push({
+                variantId: v.id,
+                quantity: Number(v.quantity || 1),
+                customAttributes: attrs,
             });
         });
 
-        // 2) Profi Datencheck
-        if (item.profiDatenCheck && profiDatenCheckPrice > 0) {
-            const p = variants.profiDatenCheck;
-            if (p?.id) {
-                lineItems.push({
-                    variantId: p.id,
-                    quantity: 1,
-                    customAttributes: [
-                        { key: "title", value: "Profi Datencheck" },
-                        { key: "price", value: parseFloat(profiDatenCheckPrice).toFixed(2) },
-                        { key: "itemIndex", value: String(itemIndex) },
-                    ],
-                });
-            }
-        }
-
-        // 3) Layout Service
-        if (!isAllInclusive && variants.layoutService?.id && variants.layoutService.quantity > 0) {
-            const ls = variants.layoutService;
-            const attrs = [
-                { key: "title", value: "LayoutService" },
-                { key: "price", value: parseFloat(ls.price).toFixed(2) },
-                { key: "itemIndex", value: String(itemIndex) },
+        if (!isAllInclusive) {
+            // --- 2) push BASE veredelung per side (max 1 per side) ---
+            const decoSides = [
+                { key: "frontVeredelung", side: "front", label: "Front", baseQty: baseFront, payload: frontPayload },
+                { key: "backVeredelung", side: "back", label: "Back", baseQty: baseBack, payload: backPayload },
             ];
-            if (layout?.instructions) {
-                attrs.push({
-                    key: "layoutInstructions",
-                    value: layout.instructions,
+
+            decoSides.forEach(({ key, side, label, baseQty, payload }) => {
+                if (!baseQty) return; // nothing on this side
+                const v = variants[key];
+                if (!v?.id) return; // safety
+
+                const attrs = [
+                    { key: "price", value: Number(v.price || 0).toFixed(2) },
+                    { key: "itemIndex", value: String(itemIndex) },
+                    { key: "title", value: `Veredelung ${side}` },
+                    { key: "Platzierung", value: configurator !== "template" ? "Freie Platzierung" : "Fixe Position" },
+                ];
+                pushPretty(attrs, label, payload);
+
+                if (personalisierungsText) {
+                    attrs.push({ key: "Personalisierung", value: cap(personalisierungsText) });
+                }
+
+                // FORCE quantity to exactly 1 for the base veredelung on that side
+                lines.push({
+                    variantId: v.id,
+                    quantity: 1,
+                    customAttributes: attrs,
                 });
-            }
-            if (layout?.uploadedFile?.downloadURL) {
-                attrs.push({
-                    key: "layoutFile",
-                    value: layout.uploadedFile.downloadURL,
-                });
-            }
-            lineItems.push({
-                variantId: ls.id,
-                quantity: ls.quantity,
-                customAttributes: attrs,
             });
+
+            // --- 3) push ZUSATZ veredelungen (everything beyond the first per side) ---
+            const extraVariantId =
+                item.extraDecorationVariantId || item.extraDecorationVariantID || item.extraDecorationVariantIdNet;
+
+            const frontExtra = Math.max(0, countFront - baseFront);
+            const backExtra = Math.max(0, countBack - baseBack);
+            const totalExtra = frontExtra + backExtra;
+
+            if (extraVariantId && totalExtra > 0) {
+                const attrs = [
+                    { key: "title", value: "Zusatzveredelung" },
+                    { key: "itemIndex", value: String(itemIndex) },
+                    { key: "Front_extra", value: String(frontExtra) },
+                    { key: "Back_extra", value: String(backExtra) },
+                ];
+                if (frontExtra > 0) pushPretty(attrs, "Front", frontPayload);
+                if (backExtra > 0) pushPretty(attrs, "Back", backPayload);
+
+                lines.push({
+                    variantId: extraVariantId,
+                    quantity: totalExtra, // 1 per additional motif
+                    customAttributes: attrs,
+                });
+            } else if (totalExtra > 0 && !extraVariantId) {
+                console.warn("[prepareLineItems] Missing extraDecorationVariantId; extras cannot be added.", {
+                    frontExtra,
+                    backExtra,
+                    itemIndex,
+                });
+            }
         }
     });
 
-    return lineItems;
-};
-
-export default prepareLineItems;
+    return lines;
+}

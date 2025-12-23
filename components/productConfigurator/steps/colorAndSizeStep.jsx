@@ -245,7 +245,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
             )}
             <ContentWrapper data={product}>
                 {Object.keys(formattedVariants).length > 1 && (
-                    <div className="flex space-x-3 items-center gap-8 lg:mt-16">
+                    <div className="flex space-x-3 items-top lg:items-center gap-8 lg:mt-16">
                         <div className="left font-body text-textColor font-semibold">Größe</div>
                         <div className="right flex flex-wrap gap-x-3 gap-y-2">
                             {Object.keys(formattedVariants).map((size, i) => (
@@ -265,7 +265,7 @@ export default function ColorAndSizeStep({ product, sizes, colorPatternIds }) {
 
                 {selectedSize && secondaryOptionName == "Farbe" && (
                     <div
-                        className={`flex space-x-3 mt-4 items-center gap-8 lg:mb-16 ${
+                        className={`flex space-x-3 mt-4 items-top lg:items-center gap-8 lg:mb-16 ${
                             Object.keys(formattedVariants).length > 1 ? "" : "lg:mt-16"
                         }`}
                     >

@@ -1,65 +1,87 @@
 import React from "react";
-import { motion } from "framer-motion"; // For animations
-import useStore from "@/store/store"; // Import Zustand store
+import { motion } from "framer-motion";
+import useStore from "@/store/store";
 import { H4, P } from "@/components/typography";
+import { FiCheck } from "react-icons/fi";
 
-export default function ChoiceCard({ icon: Icon, heading, description, configuratorValue }) {
+export default function ChoiceCard({ icon: Icon, heading, description, configuratorValue, disabled = false }) {
     const { purchaseData, setPurchaseData } = useStore();
-
-    // Determine if the current card is active
     const isActive = purchaseData.configurator === configuratorValue;
 
-    const handleClick = () => {
-        if (configuratorValue === "layout") {
-            setPurchaseData({ ...purchaseData, configurator: configuratorValue, isLayout: true });
-        } else {
-            setPurchaseData({ ...purchaseData, configurator: configuratorValue, isLayout: false });
-        }
-    };
-
-    // Animation variants for the background
-    const backgroundVariants = {
-        hidden: { opacity: 0, scale: 0.8 }, // Initial state
-        visible: { opacity: 1, scale: 1 }, // Active state
-        exit: { opacity: 0, scale: 0.8 }, // Exit state
+    const handleSelect = () => {
+        if (disabled) return;
+        setPurchaseData({
+            ...purchaseData,
+            configurator: configuratorValue,
+            isLayout: configuratorValue === "layout",
+        });
     };
 
     return (
-        <div className="relative w-full flex-1 flex flex-col">
-            {/* Background for offset effect */}
-            <motion.div
-                className="absolute w-full h-full -bottom-2 -right-2 rounded-lg bg-accentColor"
-                style={{ zIndex: 0 }}
-                variants={backgroundVariants}
-                initial="hidden"
-                animate={isActive ? "visible" : "hidden"}
-                exit="exit"
-                transition={{
-                    duration: 0.3, // Smooth animation duration
-                    ease: "easeInOut", // Easing function
-                }}
-            ></motion.div>
+        <motion.button
+            type="button"
+            onClick={handleSelect}
+            disabled={disabled}
+            className={[
+                "group relative w-full flex-1 text-left focus:outline-none",
+                "rounded-2xl transition-all",
+                disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
+            ].join(" ")}
+            whileHover={!disabled ? { y: -2 } : {}}
+            whileTap={!disabled ? { scale: 0.995 } : {}}
+            aria-pressed={isActive}
+        >
+            {/* Offset-Shadow/Background */}
+            <div className="pointer-events-none absolute -bottom-2 -right-2 w-full h-full rounded-2xl bg-accentColor/60" />
 
-            {/* Main Content */}
-            <motion.div
-                className={`relative w-full h-full p-4 lg:p-8 rounded-lg lg:border-2  flex flex-col justify-between ${
-                    isActive ? "border-primaryColor" : "border-gray-300"
-                } transition-all duration-200 cursor-pointer shadow hover:shadow-lg`}
-                style={{ zIndex: 1 }}
-                whileHover={{ y: isActive ? 0 : -4 }}
-                onClick={handleClick}
+            {/* Card */}
+            <div
+                className={[
+                    "relative z-[1] h-full rounded-2xl border",
+                    "bg-accentColor/70",
+                    "px-5 py-6 lg:px-8 lg:py-10",
+                    "shadow-sm transition-all duration-200",
+                    isActive
+                        ? "border-primaryColor ring-2 ring-primaryColor/50"
+                        : "border-gray-200 hover:shadow-md hover:border-primaryColor-300/70",
+                ].join(" ")}
             >
-                {/* Icon */}
-                <div className="flex justify-center items-center mb-4">
-                    <Icon className="text-primaryColor w-12 h-12" />
+                {/* Check-Badge when active */}
+                {isActive && (
+                    <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-primaryColor text-white px-2 py-1 text-xs font-semibold shadow">
+                        <FiCheck className="text-sm" />
+                        Ausgewählt
+                    </span>
+                )}
+
+                {/* Icon in Badge */}
+                <div className="flex justify-center">
+                    <div
+                        className={[
+                            "mb-4 lg:mb-6 inline-flex items-center justify-center",
+                            "h-14 w-14 lg:h-16 lg:w-16 rounded-xl",
+                            "bg-white/90 border border-primaryColor-200 text-primaryColor-700",
+                            "transition-colors",
+                            "group-hover:border-primaryColor-300",
+                            isActive ? "ring-1 ring-primaryColor/60" : "",
+                        ].join(" ")}
+                    >
+                        <Icon className="text-2xl lg:text-3xl" />
+                    </div>
                 </div>
 
-                {/* Heading */}
-                <H4 klasse="text-base lg:text-xl font-bold text-textColor !text-center mb-2">{heading}</H4>
+                {/* Text */}
+                <H4 klasse="text-[15px] lg:text-xl font-bold text-center text-textColor mb-2">{heading}</H4>
+                <P klasse="text-center !text-xs lg:!text-sm text-textColor/80 leading-relaxed">{description}</P>
 
-                {/* Description */}
-                <P klasse="text-center !text-xs text-textColor font-body ">{description}</P>
-            </motion.div>
-        </div>
+                {/* Focus ring (keyboard) */}
+                <span
+                    className={[
+                        "pointer-events-none absolute inset-0 rounded-2xl",
+                        "ring-0 focus-within:ring-2 focus-within:ring-primaryColor/60",
+                    ].join(" ")}
+                />
+            </div>
+        </motion.button>
     );
 }

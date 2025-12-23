@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import { v4 as uuidv4 } from "uuid"; // To generate unique IDs for each cart item
 import { saveCartToLocalStorage, loadCartFromLocalStorage } from "@/functions/localStorage"; // Import the functions
+const stored = loadCartFromLocalStorage();
 
-const useStore = create((set) => ({
+const useStore = create((set, get) => ({
     activeCategory: "",
     activeSubCategory: "",
     activeTags: [],
@@ -23,6 +24,8 @@ const useStore = create((set) => ({
 
     // SHOP DATA
     purchaseData: {
+        id: null,
+
         selectedSize: null,
         configurator: "configurator",
         containerWidth: null,
@@ -44,6 +47,35 @@ const useStore = create((set) => ({
                 xPosition: 0,
                 yPosition: 0,
                 scale: 1,
+                uploadedGraphics: [
+                    {
+                        id: null,
+                        file: File, // oder downloadURL etc.
+                        width: 0,
+                        height: 0,
+                        xPosition: 0,
+                        yPosition: 0,
+                        scale: 1,
+                        rotation: 0,
+                    },
+                ],
+                activeGraphicId: null, // <--- HIER hinzufügen!
+                texts: [
+                    {
+                        id: "123",
+                        value: "Dein Text",
+                        x: 400,
+                        y: 100,
+                        fontSize: 36,
+                        fontFamily: "Roboto",
+                        fill: "#333",
+                        scale: 1,
+                        rotation: 0,
+                    },
+                ],
+                activeTextId: "123", // Aktuell ausgewählter Text
+                activeElement: {},
+                extraDecorations: 0,
             },
             back: {
                 uploadedGraphic: null,
@@ -51,6 +83,35 @@ const useStore = create((set) => ({
                 xPosition: 0,
                 yPosition: 0,
                 scale: 1,
+                uploadedGraphics: [
+                    {
+                        id: null,
+                        file: File, // oder downloadURL etc.
+                        width: 0,
+                        height: 0,
+                        xPosition: 0,
+                        yPosition: 0,
+                        scale: 1,
+                        rotation: 0,
+                    },
+                ],
+                activeGraphicId: null, // <--- HIER hinzufügen!
+                texts: [
+                    {
+                        id: "123",
+                        value: "Dein Text",
+                        x: 400,
+                        y: 100,
+                        fontSize: 36,
+                        fontFamily: "Roboto",
+                        fill: "#333",
+                        scale: 1,
+                        rotation: 0,
+                    },
+                ],
+                activeTextId: "123", // Aktuell ausgewählter Text
+                activeElement: {},
+                extraDecorations: 0,
             },
         },
         variants: {
@@ -58,6 +119,8 @@ const useStore = create((set) => ({
             color: null,
             quantity: 0,
         },
+        extraDecorationsTotalCount: 0,
+        extraDecorationsTotalCharge: 0,
     },
 
     setPurchaseData: (update) =>
@@ -71,6 +134,7 @@ const useStore = create((set) => ({
     resetPurchaseData: (persistentData = {}) =>
         set({
             purchaseData: {
+                id: null,
                 selectedSize: null,
                 configurator: null,
                 containerWidth: null,
@@ -92,6 +156,9 @@ const useStore = create((set) => ({
                         xPosition: 0,
                         yPosition: 0,
                         scale: 1,
+                        uploadedGraphics: [],
+                        activeGraphicId: null, // <--- HIER hinzufügen!
+                        extraDecorations: 0,
                     },
                     back: {
                         uploadedGraphic: null,
@@ -99,11 +166,204 @@ const useStore = create((set) => ({
                         xPosition: 0,
                         yPosition: 0,
                         scale: 1,
+                        uploadedGraphics: [],
+                        activeGraphicId: null, // <--- HIER hinzufügen!
+                        extraDecorations: 0,
                     },
                 },
-                variants: null,
+                variants: {
+                    // size: null,
+                    // color: null,
+                    // quantity: 0,
+                },
+                extraDecorationsTotalCount: 0,
+                extraDecorationsTotalCharge: 0,
+                extraDecorationUnitNet: 0,
                 // ...persistentData, // Preserve specific values if provided
             },
+        }),
+
+    // --- helper to (re)compute extra-deco counts ---------------------
+    recalcExtraDecorations: () => {
+        const pd = get().purchaseData || {};
+        const perSide = (side = {}) => {
+            const g = Array.isArray(side.uploadedGraphics) ? side.uploadedGraphics.length : 0;
+            const t = Array.isArray(side.texts) ? side.texts.length : 0;
+            const total = g + t;
+            // 1 decoration per side is included, extras are charged:
+            return Math.max(0, total - 1);
+        };
+
+        const frontExtras = perSide(pd.sides?.front);
+        const backExtras = perSide(pd.sides?.back);
+        const totalCount = frontExtras + backExtras;
+        const totalCharge = +(totalCount * 3.5).toFixed(2);
+
+        set({
+            purchaseData: {
+                ...pd,
+                sides: {
+                    ...pd.sides,
+                    front: { ...(pd.sides?.front || {}), extraDecorations: frontExtras },
+                    back: { ...(pd.sides?.back || {}), extraDecorations: backExtras },
+                },
+                extraDecorationsTotalCount: totalCount,
+                extraDecorationsTotalCharge: totalCharge,
+            },
+        });
+    },
+
+    setActiveGraphicId: (side, id) =>
+        set((state) => ({
+            purchaseData: {
+                ...state.purchaseData,
+                sides: {
+                    ...state.purchaseData.sides,
+                    [side]: {
+                        ...state.purchaseData.sides[side],
+                        activeGraphicId: id,
+                    },
+                },
+            },
+        })),
+
+    setActiveElement: (side, type, id) =>
+        set((state) => {
+            const pd = state.purchaseData;
+            const s = pd.sides?.[side] || {};
+            return {
+                purchaseData: {
+                    ...pd,
+                    sides: {
+                        ...pd.sides,
+                        [side]: {
+                            ...s,
+                            activeElement: { type, id },
+                            // Backwards-compat:
+                            activeTextId: type === "text" ? id : s.activeTextId,
+                            activeGraphicId: type === "graphic" ? id : s.activeGraphicId,
+                        },
+                    },
+                },
+            };
+        }),
+
+    addText: (side, props = {}) =>
+        set((state) => {
+            const id = uuidv4();
+            const pd = state.purchaseData;
+            const s = pd.sides?.[side] || {};
+
+            // Bounding-Box oder Containergröße heranziehen
+            const br = pd.boundingRect || {
+                x: 0,
+                y: 0,
+                width: pd.containerWidth || 800,
+                height: pd.containerHeight || 800,
+            };
+
+            const centerX = br.x + br.width / 2;
+            // etwas oberhalb der Mitte positionieren → z.B. 35 % der Höhe
+            const chestY = br.y + br.height * 0.35;
+
+            const base = {
+                id,
+                value: "Dein Text",
+                x: centerX,
+                y: chestY,
+                fontSize: 18,
+                fontFamily: "Roboto",
+                fill: "#000000",
+                scale: 1,
+                rotation: 0,
+                // Boxbreite auf ca. 85 % der Druckfläche beschränken
+                boxWidth: Math.min(br.width, (pd.containerWidth || 800) * 0.85),
+                align: "center",
+                ...props,
+            };
+
+            const texts = Array.isArray(s.texts) ? [...s.texts, base] : [base];
+
+            const next = {
+                purchaseData: {
+                    ...pd,
+                    sides: {
+                        ...pd.sides,
+                        [side]: {
+                            ...s,
+                            texts,
+                            activeTextId: id,
+                            activeElement: { type: "text", id },
+                        },
+                    },
+                },
+            };
+            setTimeout(() => get().recalcExtraDecorations(), 0);
+            return next;
+        }),
+
+    addTextCentered: (side, boundingRect) =>
+        set((state) => {
+            const id = uuidv4();
+            const pd = state.purchaseData;
+            const s = pd.sides?.[side] || {};
+
+            // Mittelpunkt der Druckfläche (boundingRect aus KonvaLayer)
+            const cx = boundingRect.x + boundingRect.width / 2;
+            const cy = boundingRect.y + boundingRect.height / 2;
+
+            const fontSize = 36;
+            const boxWidth = Math.round((boundingRect.width || 500) * 0.6);
+
+            const base = {
+                id,
+                value: "Neuer Text",
+                fontSize,
+                fontFamily: "Roboto",
+                boxWidth,
+                align: "center",
+                x: cx - boxWidth / 2,
+                y: cy - fontSize / 2,
+                scale: 1,
+                rotation: 0,
+                fill: "#000",
+                curvature: 0,
+            };
+
+            const texts = Array.isArray(s.texts) ? [...s.texts, base] : [base];
+
+            const next = {
+                purchaseData: {
+                    ...pd,
+                    sides: {
+                        ...pd.sides,
+                        [side]: {
+                            ...s,
+                            texts,
+                            activeTextId: id,
+                            activeElement: { type: "text", id },
+                        },
+                    },
+                },
+            };
+            setTimeout(() => get().recalcExtraDecorations(), 0);
+            return next;
+        }),
+
+    updateText: (side, id, patch) =>
+        set((state) => {
+            const pd = state.purchaseData;
+            const s = pd.sides?.[side] || {};
+            const texts = (s.texts || []).map((t) => (t.id === id ? { ...t, ...patch } : t));
+            return {
+                purchaseData: {
+                    ...pd,
+                    sides: {
+                        ...pd.sides,
+                        [side]: { ...s, texts },
+                    },
+                },
+            };
         }),
 
     // clearPurchaseData: () =>
@@ -112,7 +372,22 @@ const useStore = create((set) => ({
     //     ),
 
     // Cart Items Array and Functions
-    cartItems: [],
+    cartItems: typeof window !== "undefined" ? loadCartFromLocalStorage() : [], // Server-Fallback
+    // … restlicher State …
+    // our new cache:
+    blobCache: {},
+
+    // store a Blob under a given item id
+    cacheBlob: (id, blob) =>
+        set((state) => ({
+            blobCache: {
+                ...state.blobCache,
+                [id]: blob,
+            },
+        })),
+
+    // retrieve the cached Blob (or undefined)
+    getCachedBlob: (id) => get().blobCache[id],
 
     // Load cart from localStorage on initialization
     initializeCart: () => {
@@ -124,13 +399,17 @@ const useStore = create((set) => ({
     openCartSidebar: () => set({ isCartSidebarOpen: true }),
     closeCartSidebar: () => set({ isCartSidebarOpen: false }),
 
-    addCartItem: (item) => {
+    addCartItem: (item) =>
         set((state) => {
-            const updatedCartItems = [...state.cartItems, { ...item, id: uuidv4() }];
-            saveCartToLocalStorage(updatedCartItems); // Save to local storage if needed
+            // if item.id already exists, use it; otherwise generate
+            const id = item.id || uuidv4();
+            const newItem = { ...item, id };
+            const updatedCartItems = [...state.cartItems, newItem];
+            saveCartToLocalStorage(updatedCartItems);
             return { cartItems: updatedCartItems };
-        });
-    },
+        }),
+
+    replaceCartItems: (items) => set({ cartItems: items }),
 
     // Remove item from cart by id
     removeCartItem: (id) => {
@@ -140,6 +419,12 @@ const useStore = create((set) => ({
             return { cartItems: updatedCartItems };
         });
     },
+
+    // optional helper: set once when product page loads
+    setExtraDecorVariantId: (id) =>
+        set((state) => ({
+            purchaseData: { ...state.purchaseData, extraDecorationVariantId: id },
+        })),
 
     addToCart: () =>
         set((state) => ({
@@ -161,7 +446,7 @@ const useStore = create((set) => ({
 
     updateCartItem: (id, updatedData) =>
         set((state) => ({
-            cartItems: state.cartItems.map((item) => (item.id === id ? { ...item, ...updatedData } : item)),
+            cartItems: state.cartItems.map((it) => (it.id === id ? { ...it, ...updatedData } : it)),
         })),
 
     // Modal and Spinner

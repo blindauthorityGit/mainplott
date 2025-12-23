@@ -1,30 +1,45 @@
 import dataURLToBlob from "@/functions/dataURLToBlob";
 import { uploadImageToStorage } from "@/config/firebase";
 
-// This function will attempt to export both sides (front and back) if they have designs.
-// It relies on the parent to:
-// 1. Pass in `purchaseData` and `setPurchaseData` so it can switch sides and update state.
-// 2. Pass in `setConfiguredImage` to set the configured image after exporting the front.
-// 3. Pass in `exportCanvasRef`, which should be set to the `handleExport` function provided by KonvaLayer.
-// `handleExport` should return a dataURL of the current canvas.
+const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r()));
 
-export default async function exportAllSides({ purchaseData, setPurchaseData, setConfiguredImage, exportCanvasRef }) {
-    const frontHasDesign = !!purchaseData.sides.front.uploadedGraphicFile;
-    const backHasDesign = !!purchaseData.sides.back.uploadedGraphicFile;
+const hasDesign = (side) =>
+    !!side &&
+    ((Array.isArray(side.uploadedGraphics) && side.uploadedGraphics.length > 0) ||
+        (Array.isArray(side.texts) && side.texts.length > 0));
 
-    // Helper function to switch side, wait, and then export
+/**
+ * Exportiert Front/Back nacheinander, sobald auf der Stage gerendert.
+ * Erwartet, dass exportCanvasRef.current() dein handleExport aufruft.
+ */
+export default async function exportAllSides({
+    purchaseData,
+    setPurchaseData,
+    exportCanvasRef,
+    setConfiguredImage, // optional
+    extraWaitMs = 250, // ggf. anpassen, wenn Back sehr spät rendert
+}) {
+    const results = {};
+
     async function exportSide(side) {
-        // Switch current side
+        // Seite umschalten
         setPurchaseData((prev) => ({ ...prev, currentSide: side }));
-        // Give the UI some time to re-render with the correct side
-        await new Promise((r) => setTimeout(r, 500));
 
-        // Export current canvas
-        const dataURL = exportCanvasRef.current();
+        // kurz warten, bis Konva wirklich die neue Seite gemalt hat
+        await nextFrame(); // 1 Frame
+        await nextFrame(); // 2 Frames
+        if (extraWaitMs) await delay(extraWaitMs);
+
+        if (!exportCanvasRef?.current) {
+            throw new Error("exportCanvasRef.current ist nicht gesetzt.");
+        }
+
+        const dataURL = exportCanvasRef.current(); // nutzt dein handleExport
         const blob = dataURLToBlob(dataURL);
         const downloadURL = await uploadImageToStorage(blob, `${side}-${Date.now()}.png`);
 
-        // Store in purchaseData.design
+        // im State ablegen
         setPurchaseData((prev) => ({
             ...prev,
             design: {
@@ -32,25 +47,23 @@ export default async function exportAllSides({ purchaseData, setPurchaseData, se
                 [side]: { data: dataURL, downloadURL },
             },
         }));
-        if (side == "front") {
-            setConfiguredImage(downloadURL);
-        }
 
-        return { dataURL, downloadURL };
+        results[side] = { dataURL, downloadURL };
+        return results[side];
     }
 
-    // Export front if needed
-    if (frontHasDesign) {
-        await exportSide("front");
+    const frontHas = hasDesign(purchaseData?.sides?.front);
+    const backHas = hasDesign(purchaseData?.sides?.back);
+
+    if (frontHas) await exportSide("front");
+    if (backHas) await exportSide("back");
+
+    // Bild für die Zusammenfassung wählen (wie früher: Front bevorzugt)
+    if (results.front?.downloadURL) {
+        setConfiguredImage?.(results.front.downloadURL);
+    } else if (results.back?.downloadURL) {
+        setConfiguredImage?.(results.back.downloadURL);
     }
 
-    // Export back if needed
-    if (backHasDesign) {
-        await exportSide("back");
-    }
-
-    // If front was exported, set configuredImage from front design
-    // if (frontHasDesign && purchaseData.design && purchaseData.design.front) {
-    //     setConfiguredImage(purchaseData.design.front.data);
-    // }
+    return results;
 }

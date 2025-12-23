@@ -208,6 +208,10 @@ export default function Shop({ allProducts, globalData }) {
 
     const shopSEO = buildShopPageSEO(selectedCats, selectedTags);
 
+    useEffect(() => {
+        console.log(globalData.shop.categories);
+    }, [globalData.shop.categories]);
+
     return (
         <>
             <MetaShopify data={shopSEO} />

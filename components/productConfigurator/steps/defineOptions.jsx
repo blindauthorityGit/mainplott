@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import useStore from "@/store/store";
 import ContentWrapper from "../components/contentWrapper";
 import { H3, P } from "@/components/typography";
@@ -12,14 +12,20 @@ import calculateTotalQuantity from "@/functions/calculateTotalQuantity";
 import formatPrice from "@/functions/formatPrice";
 import { calculateNetPrice } from "@/functions/calculateNetPrice";
 import { getColorHex } from "@/libs/colors";
-import { isB2BUser, getUserPiecePrice, getUserTotalPrice } from "@/functions/priceHelpers";
+import { isB2BUser, getUserPiecePrice } from "@/functions/priceHelpers";
+import { getDecorationSummary } from "@/functions/decorationMode";
 
 export default function DefineOptions({ product, veredelungen, profiDatenCheck, layoutService }) {
-    const { purchaseData, setPurchaseData } = useStore(); // Global state
+    const { purchaseData, setPurchaseData } = useStore();
 
+    // ---------- CONFIG ----------
+    // Netto pro Zusatzveredelung & Stück (kannst du später aus Metafield ziehen)
+    const EXTRA_UNIT_NET = 3.5;
+
+    // ---------- LOCAL STATE ----------
     const [isChecked, setIsChecked] = useState(purchaseData.profiDatenCheck || false);
-    const [price, setPrice] = useState(0);
-    const [pricePerPiece, setPricePerPiece] = useState(0);
+    const [price, setPrice] = useState(0); // Gesamtpreis (mit Extras)
+    const [pricePerPiece, setPricePerPiece] = useState(0); // Preis/Stk. (mit Extras)
     const [discountApplied, setDiscountApplied] = useState(false);
     const [allInclusive, setAllInclusive] = useState(false);
     const [appliedDiscountPercentage, setAppliedDiscountPercentage] = useState(0);
@@ -29,16 +35,39 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
     const [totalQuantity, setTotalQuantity] = useState(0);
     const [medianPricePerPiece, setMedianPricePerPiece] = useState(0);
 
-    // Format the raw Shopify variants
+    // ---------- HELPERS ----------
     const formattedVariants = formatVariants(product.variants);
-
-    // Detect sub-variant mode (e.g., "Kugelschreiber")
     const useSubVariantMapping = product.tags && product.tags.includes("Kugelschreiber");
-
-    // If we have a min order requirement
     const minOrder = product.mindestBestellMenge?.value ? parseInt(product.mindestBestellMenge.value, 10) : 0;
+    const deco = getDecorationSummary(purchaseData);
 
-    // Check “All-Inclusive” from metafield
+    // robustes Fallback, falls du (noch) keine gespeicherten Zusatzfelder im Store hast
+    const countExtrasFromSides = (pd) => {
+        const sideNames = ["front", "back"];
+        const out = { front: 0, back: 0, total: 0 };
+        sideNames.forEach((side) => {
+            const s = pd?.sides?.[side] || {};
+            const texts = Array.isArray(s.texts) ? s.texts.length : 0;
+            const graphics = Array.isArray(s.uploadedGraphics) ? s.uploadedGraphics.length : 0;
+            const elements = texts + graphics;
+            const extra = Math.max(0, elements - 1); // erste Veredelung pro Seite inklusive
+            out[side] = extra;
+            out.total += extra;
+        });
+        return out;
+    };
+
+    // Extras zählen (bevorzugt Werte aus Store, sonst Fallback)
+    const extras = useMemo(() => {
+        const stored = purchaseData?.extraDecorations || purchaseData?.zusatzveredelungen;
+        if (stored && (typeof stored.front === "number" || typeof stored.back === "number")) {
+            const front = stored.front || 0;
+            const back = stored.back || 0;
+            return { front, back, total: front + back };
+        }
+        return countExtrasFromSides(purchaseData);
+    }, [purchaseData]);
+
     useEffect(() => {
         if (product?.preisModell?.value) {
             const preisModellArray = JSON.parse(product.preisModell.value);
@@ -48,42 +77,27 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
         }
     }, [product.preisModell]);
 
-    /**
-     * CLEANUP EFFECT:
-     *   If sub-variant => remove leftover "size" keys
-     *   If not sub-variant => remove leftover "color" keys
-     */
+    // Cleanup für Varianten (unverändert)
     useEffect(() => {
         setPurchaseData((prev) => {
             const updated = { ...prev };
             const newVariants = { ...updated.variants };
-
             if (useSubVariantMapping) {
-                // remove leftover purely “size” keys
                 Object.entries(newVariants).forEach(([k, v]) => {
-                    if (v.size && !v.color) {
-                        delete newVariants[k];
-                    }
+                    if (v && v.color && !v.size) delete newVariants[k];
                 });
             } else {
-                // remove leftover purely “color” keys
                 Object.entries(newVariants).forEach(([k, v]) => {
-                    if (v.color && !v.size) {
-                        delete newVariants[k];
-                    }
+                    if (v && v.size && !v.color) delete newVariants[k];
                 });
             }
             return { ...prev, variants: newVariants };
         });
     }, [useSubVariantMapping, setPurchaseData]);
 
-    /**
-     * Toggling “Profi Datencheck”
-     */
     const handleToggle = () => {
         const profiDatenCheckPrice = Number(profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.price?.amount || 0);
         const profiDatenCheckId = profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.id || null;
-        console.log(profiDatenCheckPrice, purchaseData.variants);
         setIsChecked((prev) => {
             const newIsChecked = !prev;
             setPurchaseData((old) => {
@@ -108,41 +122,30 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
         });
     };
 
-    /**
-     * Price Calculation Effect
-     */
+    // ---------- PRICE CALC ----------
     useEffect(() => {
         const discountData = product.preisReduktion ? JSON.parse(product.preisReduktion.value).discounts : null;
-
         const profiDatenCheckPrice = isChecked
             ? Number(profiDatenCheck[0]?.node?.variants?.edges[0]?.node?.price?.amount || 0)
             : 0;
 
-        let productDiscount = 0; // define outside the if/else
+        let productDiscount = 0;
+        let baseTotal = 0;
+        let basePricePerPiece = 0;
+        let baseVeredelungTotal = 0;
+        let baseVeredelungPerPiece = {};
+        let baseAppliedDiscount = 0;
 
         if (allInclusive) {
             const result = calculateTotalPriceAllInclusive(purchaseData.variants, product, discountData, purchaseData);
-            const finalTotal = Number(result.totalPrice);
-
-            productDiscount = result.productDiscount ?? 0; // store it here
-
-            setTotalPrice(finalTotal);
-            setPrice(finalTotal);
-            setPricePerPiece(result.pricePerPiece);
-            setVeredelungTotal("0.00");
-            setVeredelungPerPiece({});
-            setAppliedDiscountPercentage(result.appliedDiscountPercentage);
-
-            console.log("PRODUCT DISCOUNT (allInclusive)", productDiscount);
+            productDiscount = result.productDiscount ?? 0;
+            baseTotal = Number(result.totalPrice) || 0;
+            basePricePerPiece = Number(result.pricePerPiece) || 0;
+            baseVeredelungTotal = 0;
+            baseVeredelungPerPiece = {};
+            baseAppliedDiscount = result.appliedDiscountPercentage || 0;
         } else {
-            const {
-                totalPrice: complexTotal,
-                pricePerPiece: complexPricePiece,
-                appliedDiscountPercentage,
-                veredelungTotal,
-                veredelungPerPiece,
-                productDiscount: normalDiscount,
-            } = calculateTotalPrice(
+            const res = calculateTotalPrice(
                 purchaseData.variants,
                 product,
                 discountData,
@@ -150,30 +153,56 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
                 veredelungen,
                 purchaseData
             );
-
-            productDiscount = normalDiscount ?? 0; // store it here
-
-            console.log("PRODUCT DISCOUNT (normalMode)", productDiscount);
-
-            const numericTotalPrice = parseFloat(complexTotal) || 0;
-            setTotalPrice(numericTotalPrice);
-            setPrice(numericTotalPrice);
-            setPricePerPiece(Number(complexPricePiece));
-            setVeredelungTotal(veredelungTotal);
-            setVeredelungPerPiece(veredelungPerPiece);
-            setAppliedDiscountPercentage(appliedDiscountPercentage);
+            productDiscount = res.productDiscount ?? 0;
+            baseTotal = Number(res.totalPrice) || 0;
+            basePricePerPiece = Number(res.pricePerPiece) || 0;
+            baseVeredelungTotal = res.veredelungTotal || 0;
+            baseVeredelungPerPiece = res.veredelungPerPiece || {};
+            baseAppliedDiscount = res.appliedDiscountPercentage || 0;
         }
 
-        // Now productDiscount is defined in both branches
+        // Menge
+        const qty = calculateTotalQuantity(purchaseData);
+
+        // ---- Zusatzveredelungen einpreisen (NETTO pro Stück) ----
+        const extraPerPiece = extras.total * calculateNetPrice(EXTRA_UNIT_NET); // z.B. 2 Extras => 7,00€/Stk
+        const extraTotal = extraPerPiece * qty;
+
+        const finalTotal = baseTotal + extraTotal;
+        const finalPricePerPiece = basePricePerPiece + extraPerPiece;
+
+        // State & Store aktualisieren
+        setTotalPrice(finalTotal);
+        setPrice(finalTotal);
+        setPricePerPiece(finalPricePerPiece);
+        setVeredelungTotal(baseVeredelungTotal);
+        setVeredelungPerPiece(baseVeredelungPerPiece);
+        setAppliedDiscountPercentage(baseAppliedDiscount);
+
         setPurchaseData((old) => ({
             ...old,
             productDiscount,
             profiDatenCheckPrice,
+            // nützlich für Checkout / Zusammenfassung
+            extraDecorations: { front: extras.front, back: extras.back, total: extras.total },
+            extraDecorationUnitNet: EXTRA_UNIT_NET,
+            extraDecorationPerPieceNet: extraPerPiece,
+            extraDecorationTotalNet: extraTotal,
         }));
-    }, [purchaseData.variants, product, isChecked, allInclusive, veredelungen, setPurchaseData, profiDatenCheck]);
-    /**
-     * Keep store's price up to date
-     */
+    }, [
+        purchaseData.variants,
+        product,
+        isChecked,
+        allInclusive,
+        veredelungen,
+        setPurchaseData,
+        profiDatenCheck,
+        extras.front,
+        extras.back,
+        extras.total,
+    ]);
+
+    // Store-Preis spiegeln (unverändert)
     useEffect(() => {
         setPurchaseData((prev) => ({
             ...prev,
@@ -184,9 +213,7 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
         }));
     }, [price, veredelungTotal, veredelungPerPiece, setPurchaseData]);
 
-    /**
-     * Track total quantity & median price
-     */
+    // Menge & Mittelpreis pro Stück
     useEffect(() => {
         const total = calculateTotalQuantity(purchaseData);
         setTotalQuantity(total);
@@ -201,23 +228,11 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
         }
     }, [totalPrice, totalQuantity]);
 
-    // --------------------------------------------------
-    // RENDER LOGIC
-    // --------------------------------------------------
-
-    /**
-     * SUB VARIANT MAPPING (“Kugelschreiber”) => keyed by color
-     * (Unchanged from your existing code)
-     */
-    const renderSubVariantMapping = () => {
-        return formattedVariants.Standard.colors.map((variant) => {
+    // ---------- RENDER HELPERS ----------
+    const renderSubVariantMapping = () =>
+        formattedVariants.Standard.colors.map((variant) => {
             const key = variant.color;
-            const currentVariant = purchaseData.variants[key] || {
-                color: variant.color,
-                quantity: 0,
-                id: variant.id,
-            };
-
+            const currentVariant = purchaseData.variants[key] || { color: variant.color, quantity: 0, id: variant.id };
             return (
                 <NumberInputField
                     key={variant.id}
@@ -227,13 +242,9 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
                     inputProps={{ min: 0 }}
                     onIncrement={() => {
                         let newQuantity = currentVariant.quantity === 0 ? minOrder : currentVariant.quantity + 1;
-
                         setPurchaseData((prev) => {
                             const newVariants = { ...prev.variants };
-                            newVariants[key] = {
-                                ...currentVariant,
-                                quantity: newQuantity,
-                            };
+                            newVariants[key] = { ...currentVariant, quantity: newQuantity };
                             return { ...prev, variants: newVariants };
                         });
                     }}
@@ -241,73 +252,45 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
                         let newQuantity = currentVariant.quantity > minOrder ? currentVariant.quantity - 1 : 0;
                         setPurchaseData((prev) => {
                             const newVariants = { ...prev.variants };
-                            if (newQuantity === 0) {
-                                delete newVariants[key];
-                            } else {
-                                newVariants[key] = {
-                                    ...currentVariant,
-                                    quantity: newQuantity,
-                                };
-                            }
+                            if (newQuantity === 0) delete newVariants[key];
+                            else newVariants[key] = { ...currentVariant, quantity: newQuantity };
                             return { ...prev, variants: newVariants };
                         });
                     }}
                     onChange={(e) => {
                         let typed = parseInt(e.target.value, 10) || 0;
                         let newQuantity = 0;
-                        if (typed === 0) {
-                            newQuantity = 0;
-                        } else if (typed < minOrder) {
-                            newQuantity = minOrder;
-                        } else {
-                            newQuantity = typed;
-                        }
+                        if (typed === 0) newQuantity = 0;
+                        else if (typed < minOrder) newQuantity = minOrder;
+                        else newQuantity = typed;
 
                         setPurchaseData((prev) => {
                             const newVariants = { ...prev.variants };
-                            if (newQuantity === 0) {
-                                delete newVariants[key];
-                            } else {
-                                newVariants[key] = {
-                                    ...currentVariant,
-                                    quantity: newQuantity,
-                                };
-                            }
+                            if (newQuantity === 0) delete newVariants[key];
+                            else newVariants[key] = { ...currentVariant, quantity: newQuantity };
                             return { ...prev, variants: newVariants };
                         });
                     }}
                 />
             );
         });
-    };
 
-    /**
-     * TEXTILE MAPPING => your “old style” approach
-     * This snippet uses the global “purchaseData.selectedColor”
-     */
-    const renderTextileMapping = () => {
-        return Object.keys(formattedVariants).map((size) => {
-            // This is the old structure you had
+    const renderTextileMapping = () =>
+        Object.keys(formattedVariants).map((size) => {
             const currentVariant = purchaseData.variants?.[size] || {
                 size,
                 color: purchaseData.selectedColor || null,
                 quantity: 0,
-                // fetch the ID based on the currently selected color
                 id: formattedVariants[size]?.colors?.find((c) => c.color === purchaseData.selectedColor)?.id || null,
             };
-
-            console.log(currentVariant);
-
             return (
                 <NumberInputField
                     key={size}
                     label={size === "Default Title" ? product.title : size}
                     value={currentVariant.quantity}
                     onIncrement={() => {
-                        // On increment, recalc the ID
                         const updatedId =
                             formattedVariants[size]?.colors?.find((c) => c.color === currentVariant.color)?.id || null;
-
                         setPurchaseData({
                             ...purchaseData,
                             variants: {
@@ -316,7 +299,6 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
                                     ...currentVariant,
                                     quantity: currentVariant.quantity + 1,
                                     id: updatedId,
-                                    // Store pricePerPiece if you want
                                     price: pricePerPiece,
                                 },
                             },
@@ -327,7 +309,6 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
                             const updatedId =
                                 formattedVariants[size]?.colors?.find((c) => c.color === currentVariant.color)?.id ||
                                 null;
-
                             setPurchaseData({
                                 ...purchaseData,
                                 variants: {
@@ -346,7 +327,6 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
                         const newQuantity = parseInt(e.target.value, 10) || 0;
                         const updatedId =
                             formattedVariants[size]?.colors?.find((c) => c.color === currentVariant.color)?.id || null;
-
                         setPurchaseData({
                             ...purchaseData,
                             variants: {
@@ -363,19 +343,14 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
                 />
             );
         });
-    };
 
-    // console.log(product?.preisReduktion?.value, product);
-
-    // --------------------------------------------------
-    // Return final UI
-    // --------------------------------------------------
+    // ---------- UI ----------
     return (
         <div className="lg:px-16 lg:mt-8 font-body">
             <ContentWrapper data={{ title: "Staffelung" }}>
                 {useSubVariantMapping ? renderSubVariantMapping() : renderTextileMapping()}
-                {console.log(renderTextileMapping())}
-                {/* Profi Datencheck Checkbox */}
+
+                {/* Profi Datencheck */}
                 <div className="h-8"></div>
                 <div className="flex bg-accentColor p-4">
                     <P klasse="!text-xs">
@@ -389,7 +364,7 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
                     <GeneralCheckBox label="Profi Datencheck?" isChecked={isChecked} onToggle={handleToggle} />
                 </div>
 
-                {/* Price Display */}
+                {/* Preisbereich */}
                 <motion.div
                     className="mt-6 flex flex-wrap lg:flex-nowrap p-4 lg:p-0"
                     initial={{ scale: 1 }}
@@ -419,23 +394,66 @@ export default function DefineOptions({ product, veredelungen, profiDatenCheck, 
                             <H3 klasse="!mb-2">EUR {formatPrice(price)}</H3>
                             <P klasse="!text-xs mb-2 pl-2">EUR {medianPricePerPiece}/Stk.</P>
                         </div>
-                        {/* If layoutService is selected, show extra text */}
+
+                        {/* Zusatzpositionen */}
                         {purchaseData?.variants?.layoutService && (
                             <P klasse="!text-xs">
                                 + EUR {getUserPiecePrice(purchaseData.variants.layoutService.price)} LayoutService
                             </P>
                         )}
-                        {purchaseData.variants.profiDatenCheck && (
+                        {purchaseData?.variants?.profiDatenCheck && (
                             <P klasse="!text-xs">
                                 + EUR {getUserPiecePrice(purchaseData.variants.profiDatenCheck.price)} Profi Datencheck
                             </P>
                         )}
+
+                        {/* Basis-Veredelung pro Seite */}
                         <P klasse="!text-xs">
                             {veredelungPerPiece.front > 0 && `inkl. EUR ${veredelungPerPiece.front} Druck Brust / Stk.`}
                         </P>
                         <P klasse="!text-xs">
-                            {veredelungPerPiece.back > 0 && `inkl. EUR ${veredelungPerPiece.back} Druck Rücken / Stk`}
+                            {veredelungPerPiece.back > 0 && `inkl. EUR ${veredelungPerPiece.back} Druck Rücken / Stk.`}
                         </P>
+
+                        {/* Zusatzveredelungen Breakdown */}
+                        {(extras.front > 0 || extras.back > 0) && (
+                            <div className="mt-1 text-xs text-gray-800">
+                                <div>
+                                    + Zusatzveredelung: {extras.total}× à EUR{" "}
+                                    {calculateNetPrice(EXTRA_UNIT_NET.toFixed(2))} / Stk.
+                                </div>
+                                <div className="mt-1 flex gap-2">
+                                    {extras.front > 0 && (
+                                        <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 border border-gray-200">
+                                            {extras.front}× Front
+                                        </span>
+                                    )}
+                                    {extras.back > 0 && (
+                                        <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 border border-gray-200">
+                                            {extras.back}× Rücken
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Veredelungs-Zusammenfassung (existing chips) */}
+                        {/* {deco.front || deco.back ? (
+                            <div className="mt-1 flex gap-2">
+                                {deco.front > 0 && (
+                                    <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 border border-gray-200">
+                                        {deco.front}× Front
+                                    </span>
+                                )}
+                                {deco.back > 0 && (
+                                    <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 border border-gray-200">
+                                        {deco.back}× Rücken
+                                    </span>
+                                )}
+                            </div>
+                        ) : (
+                            <P klasse="!text-xs text-gray-500">Keine Veredelungen</P>
+                        )} */}
                     </div>
                 </motion.div>
             </ContentWrapper>

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion"; // Import framer-motion for animations
-import { React, useState, useEffect, useRef, forwardRef } from "react";
+import { React, useState, useEffect, useRef, forwardRef, useMemo, useLayoutEffect } from "react";
 import { BiRefresh, BiChevronLeft, BiChevronRight, BiShoppingBag } from "react-icons/bi"; // Import the rotate icon from react-icons
 import StepIndicator from "./shared/stepIndicator";
 import MobileStepNavigator from "./shared/mobileStepNavigator";
@@ -18,7 +18,10 @@ import { useSwipeable } from "react-swipeable";
 import { isNextDisabled, isPrevDisabled, handlePrevStep, handleNextStep } from "@/functions/stepHandlers";
 import exportAllSides from "@/functions/exportAllSides";
 import { calculateNetPrice } from "@/functions/calculateNetPrice"; // Import your net price function
+import { saveCartItem, cacheCartBlob } from "@/functions/saveCartItem";
+import { buildDecorationVariants, DECORATION_MODE } from "@/functions/decorations";
 
+import { v4 as uuidv4 } from "uuid";
 // Dynamically import the KonvaLayer component with no SSR
 // Provide a fallback
 const KonvaLayer = dynamic(() => import("@/components/konva"), {
@@ -36,18 +39,24 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     const konvaLayerRef = useRef(null);
 
     const router = useRouter();
-    const { handle } = router.query;
+    const { handle, editIndex } = router.query;
 
     const {
         purchaseData,
         setPurchaseData,
         selectedVariant,
         selectedImage,
+        setSelectedVariant,
         setSelectedImage,
         cartItems,
+        cacheBlob,
+        blobCache,
+        getCachedBlob,
+        initializeCart,
         addToCart,
         openCartSidebar,
         addCartItem,
+        updateCartItem,
         configuredImage,
         setConfiguredImage,
         stageRef,
@@ -71,20 +80,102 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
     const isMobile = useIsMobile();
 
     const exportCanvasRef = useRef(null);
+    const optionenIndex = steps.findIndex((s) => s === "Optionen"); // or whatever your step is called
+
+    const isEditing = editIndex != null;
+    const existingItem = isEditing ? cartItems[parseInt(editIndex, 10)] : null;
+    const existingItemId = existingItem?.id;
+
+    const [stableHeight, setStableHeight] = useState(700); // Fallback-Höhe
+    const [activeSrc, setActiveSrc] = useState(null); // aktuell gerendert
+    const [isImgReady, setIsImgReady] = useState(false);
+
+    // our extracted handler
+    function handleSave() {
+        saveCartItem({
+            purchaseData,
+            veredelungen,
+            selectedVariant,
+            addCartItem,
+            updateCartItem,
+            openCartSidebar,
+            hideMobileSteps,
+            isEditing,
+            existingItemId,
+        });
+    }
+
+    const replace = useStore.setState;
+    const [hydrated, setHydrated] = useState(false);
+
+    // 1) initialize cart once when router is ready
+    useEffect(() => {
+        console.log("🚀 Hydrate attempt:", {
+            ready: router.isReady,
+            editing: isEditing,
+            cartLen: cartItems.length,
+            editIndex,
+            cartItems,
+        });
+
+        if (!router.isReady || !isEditing) return;
+        console.log("CARTITMS", cartItems);
+
+        const item = cartItems[Number(editIndex)];
+        if (!item) return;
+
+        useStore.setState({ purchaseData: item, selectedVariant: item.selectedVariant });
+        console.log("✔ after setState, store is now:", useStore.getState().purchaseData);
+
+        console.log("💧 Hydrated purchaseData:", useStore.getState().purchaseData);
+
+        /** 2️⃣ Blobs cachen – darf gern bleiben */
+        ["front", "back"].forEach((side) => {
+            const key = `${item.id}:${side}`;
+            const file = getCachedBlob(key);
+            console.log("cached blob for", key, file);
+        });
+        console.log("FULL BLOB CACHE:", useStore.getState().blobCache);
+
+        console.log("SELCTED VARIANT", selectedVariant);
+
+        /** 3️⃣ Rest wieder wie gehabt */
+        setSelectedImage(item.selectedImage);
+        setCurrentStep(optionenIndex);
+        setHydrated(true);
+    }, [router.isReady, isEditing, cartItems, editIndex]);
+
+    // useEffect(() => {
+    //     console.log("PÖRTSCHESE", purchaseData);
+    // }, [purchaseData]);
 
     // Reset state when the URL changes
-    useEffect(() => {
-        if (handle) {
-            setCurrentStep(0);
-            resetPurchaseData(); // Clear previous product state
-            setSelectedImage(null); // Reset the image to prevent old data
-            // setPurchaseData({
-            //     ...purchaseData,
-            //     currentSide: "front", // Default to front view
-            //     product: null, // Ensure product-specific data resets
-            // });
-        }
-    }, [handle]);
+    // useEffect(() => {
+    //     // if we have both a handle and an editIndex, try to load that cartItem
+    //     if (handle != null && editIndex != null) {
+    //         const idx = parseInt(editIndex, 10);
+    //         const item = cartItems[idx];
+    //         console.log("the important item", item);
+    //         if (item && item.product?.handle === handle) {
+    //             // hydrate everything in one go
+    //             setPurchaseData(item);
+    //             setSelectedImage(item.selectedImage || null);
+    //             setCurrentStep(optionenIndex);
+
+    //             // leave currentStep at 0 so you start at step 1,
+    //             // but since all your data is already filled out,
+    //             // none of your validations will fire.
+    //             return;
+    //         }
+    //     }
+    //     const blob = getCachedBlob(existingItemId);
+    //     console.log("cached blob for", existingItemId, blob);
+
+    //     // otherwise, brand-new config
+    //     resetPurchaseData();
+    //     setSelectedImage(null);
+    //     setCurrentStep(0);
+    // }, [handle, editIndex, existingItemId]);
 
     const handleExport = () => {
         if (exportCanvasRef.current) {
@@ -176,31 +267,60 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         }
     }, [currentStep]);
 
-    //CHECK FOR COIRRECT PRODUCT IMAGE DEOPENSING IF CONFIG IS DONE OR NOT
+    // CHECK FOR COIRRECT PRODUCT IMAGE DEOPENSING IF CONFIG IS DONE OR NOT
     // In StepHolder.js
 
     // 1) Extract the front/back original images:
-    const frontOriginal = selectedVariant?.image?.originalSrc || null;
-    const backOriginal = selectedVariant?.backImageUrl || null;
+    // const frontOriginal = selectedVariant?.image?.originalSrc || null;
+    // const backOriginal = selectedVariant?.backImageUrl || null;
 
-    // 2) Extract the front/back *exported* images:
-    const frontExported = purchaseData?.design?.front?.downloadURL || null;
-    const backExported = purchaseData?.design?.back?.downloadURL || null;
+    // // 2) Extract the front/back *exported* images:
+    // const frontExported = purchaseData?.design?.front?.downloadURL || null;
+    // const backExported = purchaseData?.design?.back?.downloadURL || null;
+
+    // const isFront = purchaseData.currentSide === "front";
+
+    // // If we are past the config step, not in template, and not a tryout...
+    // const isPostDesign =
+    //     currentStep > configStepIndex && purchaseData.configurator !== "template" && !purchaseData.tryout;
+
+    // let displayedImage;
+    // if (isPostDesign) {
+    //     displayedImage = isFront ? frontExported || frontOriginal : backExported || backOriginal;
+    // } else {
+    //     // Otherwise show the original front/back
+    //     displayedImage = isFront ? frontOriginal : backOriginal;
+    // }
 
     const isFront = purchaseData.currentSide === "front";
-
-    // If we are past the config step, not in template, and not a tryout...
     const isPostDesign =
         currentStep > configStepIndex && purchaseData.configurator !== "template" && !purchaseData.tryout;
 
-    let displayedImage;
-    if (isPostDesign) {
-        displayedImage = isFront ? frontExported || frontOriginal : backExported || backOriginal;
-    } else {
-        // Otherwise show the original front/back
-        displayedImage = isFront ? frontOriginal : backOriginal;
-    }
+    const displayedImage = useMemo(() => {
+        if (!selectedVariant) return null;
 
+        const frontOrig = selectedVariant.image?.originalSrc ?? null;
+        const backOrig = selectedVariant.backImageUrl ?? null;
+        const frontExp = purchaseData.design?.front?.downloadURL ?? null;
+        const backExp = purchaseData.design?.back?.downloadURL ?? null;
+
+        if (isPostDesign) {
+            return isFront ? frontExp || frontOrig : backExp || backOrig;
+        }
+        return isFront ? frontOrig : backOrig;
+    }, [selectedVariant, purchaseData.design, purchaseData.currentSide, currentStep, isPostDesign]);
+
+    // preload and then switch:
+    useEffect(() => {
+        if (!displayedImage) return;
+        setIsImgReady(false);
+        const img = new Image();
+        img.src = displayedImage;
+        img.onload = () => {
+            setActiveSrc(displayedImage);
+            setIsImgReady(true);
+        };
+    }, [displayedImage]);
     // SET VIEW TO FRONMT WHEN NAVIGATING
     // useEffect(() => {
     //
@@ -224,15 +344,14 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
         }
     }, [containerRef.current]);
 
-    useEffect(() => {
-        if (selectedVariant && selectedVariant.image) {
-            setSelectedImage(
-                purchaseData.currentSide !== "front" && selectedVariant.backImageUrl
-                    ? selectedVariant.backImageUrl
-                    : selectedVariant.image.originalSrc
-            );
-        }
-    }, [purchaseData.currentSide, selectedVariant]);
+    // useEffect(() => {
+    //     if (!selectedVariant) return;
+    //     setSelectedImage(
+    //         purchaseData.currentSide !== "front" && selectedVariant.backImageUrl
+    //             ? selectedVariant.backImageUrl
+    //             : selectedVariant.image.originalSrc
+    //     );
+    // }, [purchaseData.currentSide, selectedVariant]);
 
     // Handle rotate button click
     // Toggles between front/back in the store
@@ -243,7 +362,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 ...prev,
                 currentSide: prev.currentSide === "front" ? "back" : "front",
             }));
-            console.log(purchaseData);
+            console.log("ROTATET", purchaseData);
         }
     };
 
@@ -256,66 +375,74 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
     // Adjust image dimensions dynamically to maintain aspect ratio and fill the container up to 860px height
     useEffect(() => {
-        if (imageRef.current) {
-            const img = new Image();
-            img.src = selectedImage;
-            img.onload = () => {
-                let { width, height } = img;
-                const containerWidth = containerRef.current?.offsetWidth;
-                const containerHeight = containerRef.current?.offsetHeight;
+        // skip until we actually have a URL
+        if (!activeSrc || !imageRef.current) return;
 
-                // Set a max height limit (lower for mobile)
-                const maxHeight = isMobile ? "auto" : 860;
+        const img = new Image();
+        img.src = activeSrc;
 
-                // Calculate aspect ratio
-                const aspectRatio = width / height;
+        img.onload = () => {
+            let { width, height } = img;
+            const cw = containerRef.current?.offsetWidth ?? 0;
+            const ch = containerRef.current?.offsetHeight ?? 0;
 
-                // Adjust the image to fit within the container and respect the max height
-                let finalWidth = containerWidth;
-                let finalHeight = containerHeight;
+            const maxH = isMobile ? Infinity : 860;
 
-                if (height > maxHeight) {
-                    const ratio = maxHeight / height;
-                    height = maxHeight;
-                    width = width * ratio;
-                }
+            if (height > maxH) {
+                const r = maxH / height;
+                height = maxH;
+                width *= r;
+            }
+            if (height < ch) {
+                const r = ch / height;
+                height = ch;
+                width *= r;
+            }
+            if (width > cw) {
+                const r = cw / width;
+                width = cw;
+                height *= r;
+            }
 
-                // If the height exceeds the container height, adjust the width accordingly
-                if (height < containerHeight) {
-                    const scaleFactor = containerHeight / height;
-                    height = containerHeight;
-                    width = width * scaleFactor;
-                }
+            setImageSize({ width, height });
+        };
+    }, [activeSrc, isMobile]);
 
-                // Ensure it respects the container dimensions
-                if (width > containerWidth) {
-                    const scaleFactor = containerWidth / width;
-                    width = containerWidth;
-                    height = height * scaleFactor;
-                }
+    // wenn displayedImage wechselt: erst vorladen, dann umschalten (kein Flicker)
+    useEffect(() => {
+        if (!displayedImage) return;
+        const img = new Image();
+        img.src = displayedImage;
+        img.onload = () => {
+            setActiveSrc(displayedImage); // erst jetzt sichtbar machen
+            setIsImgReady(true);
+        };
+        // währenddessen bleibt altes Bild stehen
+    }, [displayedImage]);
 
-                // Set the image size
-                setImageSize({ width, height });
-            };
-        }
-    }, [selectedImage, isMobile]);
+    // beim Laden Höhe messen und als stabile min-height merken
+    const handleMeasuredLoad = () => {
+        const h = imageRef.current?.clientHeight;
+        if (h) setStableHeight(h); // hält den Container stabil für künftige Wechsel
+    };
 
     // Determine if "Next" button should be disabled
     const isNextDisabled = () => {
-        if (steps[currentStep] === "Konfigurator" && !purchaseData.configurator) {
-            return true;
+        if (steps[currentStep] === "Konfigurator" && !purchaseData.configurator) return true;
+        if (steps[currentStep] === "Layout" && !purchaseData.layoutServiceSelected) return true;
+
+        if (steps[currentStep] === "Upload") {
+            const front = purchaseData.sides?.front || {};
+            const hasGraphics =
+                (front.uploadedGraphics?.length || 0) > 0 ||
+                !!front.uploadedGraphic || // falls noch alte Single-Property irgendwo gesetzt wird
+                !!front.uploadedGraphicFile; // fallback
+            const hasTexts = (front.texts?.length || 0) > 0;
+
+            if (!hasGraphics && !hasTexts) return true; // ← jetzt auch Text gültig
         }
 
-        if (steps[currentStep] === "Layout" && !purchaseData.layoutServiceSelected) {
-            return true;
-        }
-
-        if (steps[currentStep] === "Upload" && !purchaseData.sides["front"].uploadedGraphic) {
-            return true;
-        }
-        if (currentStep === steps.length - 1) {
-            return true;
-        }
+        if (currentStep === steps.length - 1) return true;
         return false;
     };
 
@@ -339,62 +466,26 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
     const handleAddToCart = () => {
         const updatedPurchaseData = { ...purchaseData };
-        const { sides, variants } = updatedPurchaseData;
 
-        // 1) Copy `variants` and remove "Standard"
-        const updatedVariants = { ...variants };
+        // 1) Varianten kopieren, "Standard" entfernen (wie gehabt)
+        const baseVariants = { ...(updatedPurchaseData.variants || {}) };
+        if (baseVariants.Standard) delete baseVariants.Standard;
+        updatedPurchaseData.variants = baseVariants;
 
-        if (updatedVariants.Standard) {
-            delete updatedVariants.Standard;
-        }
-
-        const totalQuantity = Object.values(updatedVariants).reduce((sum, variant) => sum + (variant.quantity || 0), 0);
-
-        const sidesToProcess = ["front", "back"];
-        sidesToProcess.forEach((sideKey) => {
-            const side = sides?.[sideKey];
-
-            if (side?.uploadedGraphic || side?.uploadedGraphicFile) {
-                const veredelungDetail = veredelungen?.[sideKey];
-
-                if (veredelungDetail) {
-                    const matchedDiscount = veredelungDetail.preisReduktion.discounts.find(
-                        (discount) =>
-                            totalQuantity >= discount.minQuantity &&
-                            (discount.maxQuantity === null || totalQuantity <= discount.maxQuantity)
-                    );
-
-                    if (matchedDiscount) {
-                        const variantIndex = veredelungDetail.preisReduktion.discounts.indexOf(matchedDiscount);
-
-                        const selectedVariant = veredelungDetail.variants.edges[variantIndex];
-
-                        if (selectedVariant) {
-                            updatedVariants[`${sideKey}Veredelung`] = {
-                                id: selectedVariant.node.id,
-                                size: null,
-                                quantity: totalQuantity,
-                                price: calculateNetPrice(parseFloat(matchedDiscount.price)),
-                                title: `${veredelungDetail.title} ${
-                                    sideKey.charAt(0).toUpperCase() + sideKey.slice(1)
-                                }`,
-                                currency: veredelungDetail.currency,
-                            };
-                        } else {
-                            console.error(`No matching variant found for ${sideKey}.`);
-                        }
-                    } else {
-                        console.error(`No matching discount for ${sideKey}.`);
-                    }
-                } else {
-                    console.error(`No veredelung detail found for side: ${sideKey}`);
-                }
-            } else {
-            }
+        // 2) Veredelungs-Variants anhand von Text/Grafik ermitteln
+        const { variantsPatch, perPiece, totalPerAll } = buildDecorationVariants({
+            purchaseData: updatedPurchaseData,
+            veredelungen, // kommt bei dir bereits aus den Props/State
+            calculateNetPrice, // deine vorhandene Netto-Helferfunktion
+            mode: DECORATION_MODE.PER_SIDE, // <— jetzt 1x pro Seite (Text ODER Grafik). Später PER_ELEMENT möglich.
         });
 
-        updatedPurchaseData.variants = updatedVariants;
-
+        // 3) Varianten mergen + Preise in purchaseData ablegen (damit Summary/Optionen/Cart stimmen)
+        updatedPurchaseData.variants = { ...baseVariants, ...variantsPatch };
+        updatedPurchaseData.veredelungPerPiece = perPiece; // { front, back }
+        updatedPurchaseData.veredelungTotal = totalPerAll; // Summe für Anzeige
+        console.log("UPDATES PÖRTSCHESE", updatedPurchaseData);
+        // 4) in den Warenkorb und UI
         addCartItem(updatedPurchaseData);
         openCartSidebar();
         hideMobileSteps();
@@ -407,6 +498,22 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
             revealMobileSteps();
         };
     }, [revealMobileSteps]);
+
+    //     const resetPurchaseData   = useStore.getState().resetPurchaseData;
+    //   const setSelectedVariant  = useStore.getState().setSelectedVariant
+
+    useEffect(() => {
+        return () => {
+            // resets the whole purchaseData tree
+            resetPurchaseData(); // (= your helper from the store)
+            // clear the variant object so the next product starts fresh
+            setSelectedVariant(null);
+        };
+    }, []); //  ← empty dep-array  ➜ runs only on unmount
+
+    if (isEditing && !hydrated) {
+        return null; // oder <Spinner/>
+    }
 
     return (
         <div className="grid grid-cols-12  lg:gap-4 h-full">
@@ -422,7 +529,10 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
 
             {/* Left - Product Image / Konva Layer with fade in/out animation */}
             <div className="col-span-12 lg:col-span-6 2xl:col-span-6 relative mb-4 lg:mb-0" ref={containerRef}>
-                <div className="w-full flex items-center justify-center xl:min-h-[600px] 2xl:min-h-[800px] lg:max-h-[760px] relative">
+                <div
+                    // style={{ minHeight: stableHeight - 80 }}
+                    className="w-full flex items-center justify-center xl:min-h-[600px] 2xl:min-h-[800px] lg:max-h-[760px] relative overflow-hidden"
+                >
                     <AnimatePresence mode="wait">
                         {steps[currentStep] === "Design" && purchaseData.configurator !== "template" ? (
                             <div
@@ -490,7 +600,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     />
                                 ) : (
                                     <KonvaLayer
-                                        key={purchaseData.currentSide}
+                                        key={`${purchaseData.currentSide}-${isPostDesign ? "post" : "pre"}`}
                                         onExportReady={(fn) => (exportCanvasRef.current = fn)}
                                         ref={konvaLayerRef}
                                         uploadedGraphicFile={
@@ -501,7 +611,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                         }
                                         isPDF={purchaseData.sides[purchaseData.currentSide].isPDF}
                                         pdfPreview={purchaseData.sides[purchaseData.currentSide].preview}
-                                        productImage={selectedVariant?.configImage || selectedImage}
+                                        productImage={activeSrc || displayedImage}
                                         boundaries={
                                             {
                                                 /* ... */
@@ -512,20 +622,20 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                             y: purchaseData.sides[purchaseData.currentSide].yPosition,
                                             rotation: purchaseData.sides[purchaseData.currentSide].rotation || 0,
                                         }}
-                                        setPosition={(newPos, newRotation) =>
-                                            setPurchaseData({
-                                                ...purchaseData,
-                                                sides: {
-                                                    ...purchaseData.sides,
-                                                    [purchaseData.currentSide]: {
-                                                        ...purchaseData.sides[purchaseData.currentSide],
-                                                        xPosition: newPos.x,
-                                                        yPosition: newPos.y,
-                                                        rotation: newRotation,
-                                                    },
-                                                },
-                                            })
-                                        }
+                                        // setPosition={(newPos, newRotation) =>
+                                        //     setPurchaseData({
+                                        //         ...purchaseData,
+                                        //         sides: {
+                                        //             ...purchaseData.sides,
+                                        //             [purchaseData.currentSide]: {
+                                        //                 ...purchaseData.sides[purchaseData.currentSide],
+                                        //                 xPosition: newPos.x,
+                                        //                 yPosition: newPos.y,
+                                        //                 rotation: newRotation,
+                                        //             },
+                                        //         },
+                                        //     })
+                                        // }
                                         scale={purchaseData.sides[purchaseData.currentSide].scale}
                                         setScale={(newScale) =>
                                             setPurchaseData({
@@ -550,26 +660,20 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                                     steps[currentStep] !== "Optionen" &&
                                     steps[currentStep] !== "Zusammenfassung")) && (
                                 <motion.div
-                                    className="relative mix-blend-multiply"
-                                    key={displayedImage}
+                                    className="relative mix-blend-multiply max-w-full max-h-full xl:p-12"
+                                    key={`${purchaseData.currentSide}-${isPostDesign ? "post" : "pre"}-${activeSrc}`}
                                     ref={imageRef}
-                                    style={{
-                                        maxHeight: isMobile ? "auto" : "760px",
-                                        width: isMobile ? "" : imageSize.width ? `${imageSize.width}px` : "auto",
-                                        height: isMobile ? "" : imageSize.height ? `auto` : "auto",
-                                        objectFit: "contain",
-                                    }}
                                     variants={fadeAnimationVariants}
                                     initial="initial"
                                     animate="animate"
                                     exit="exit"
-                                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                                    transition={{ duration: 0.1, ease: "easeInOut" }}
                                 >
                                     <img
-                                        src={displayedImage}
+                                        src={activeSrc ?? ""}
                                         alt="Product Step Image"
-                                        className="w-full mix-blend-multiply p-4 lg:max-h-[none]"
-                                        onLoad={() => setImageHeight(imageRef.current?.clientHeight)}
+                                        className="block max-w-full max-h-full w-auto h-auto object-contain mix-blend-multiply md:min-h-[700px]"
+                                        onLoad={handleMeasuredLoad}
                                     />
                                 </motion.div>
                             )
@@ -585,8 +689,21 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
             {/* Right - Step Indicator, Dynamic Content, Buttons */}
             <div className="col-span-12 lg:col-span-6 2xl:col-span-6   flex flex-col h-full">
                 {/* Step Indicator */}
-                <div className="lg:mb-6">
-                    <StepIndicator currentStep={currentStep} steps={steps} />
+                <div className=" fixed bottom-10 left-0 w-full z-30">
+                    <StepIndicator
+                        steps={steps}
+                        currentStep={currentStep}
+                        // actions
+                        onPrev={() => handlePrevStep(currentStep, steps, setCurrentStep, isMobile)}
+                        onNext={() =>
+                            handleNextStep(currentStep, steps, setCurrentStep, purchaseData, isMobile, handleExport)
+                        }
+                        onSave={handleSave} // used on "Zusammenfassung"
+                        isEditing={isEditing} // to switch label/icon on summary
+                        // validation (same logic you already use)
+                        prevDisabled={isPrevDisabled(currentStep)}
+                        nextDisabled={isNextDisabled(currentStep, steps, purchaseData)}
+                    />
 
                     {showMobileSteps && (
                         <MobileStepNavigator
@@ -596,19 +713,21 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                             handlePrevStep={handlePrevStep}
                             handleNextStep={handleNextStep}
                             isNextDisabled={isNextDisabled}
-                            handleAddToCart={handleAddToCart}
+                            handleAddToCart={handleSave}
+                            // onSave={handleSave} // used on "Zusammenfassung"
+                            isEditing={isEditing} // to switch label/icon on summary
                         />
                     )}
                 </div>
 
                 {/* Dynamic Content with entry/exit animation */}
                 <div
-                    className="flex-grow mb-8 px-4 lg:px-0"
+                    className="flex-grow mb-8 px-4 py-4 lg:px-0 bg-white shadow-md"
                     style={{ zIndex: steps[currentStep] === "Design" && isMobileSliderOpen ? "-1" : null }}
                 >
                     <AnimatePresence mode="wait" layout initial={false}>
                         <motion.div
-                            key={currentStep}
+                            key={`${router.query.editIndex}-${purchaseData.id}`} // ← include editIndex here
                             initial={{ opacity: 0, x: -10 }} // Slide from left for entry animation
                             animate={{ opacity: 1, x: 0 }} // Fade in and position to center
                             exit={{ opacity: 0, x: 10 }} // Slide out to the right for exit animation
@@ -623,7 +742,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                 </div>
 
                 {/* Navigation Buttons - Positioned at the bottom */}
-                <div className="mt-auto flex gap-2 lg:gap-4 justify-end 2xl:justify-between">
+                {/* <div className="mt-auto hidden lg:flex gap-2 lg:gap-4 justify-end 2xl:justify-between">
                     <div className="w-1/2 lg:w-auto">
                         <StepButton
                             onClick={() => handlePrevStep(currentStep, steps, setCurrentStep, isMobile)}
@@ -639,95 +758,21 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                     <div className="w-1/2 lg:w-auto">
                         {steps[currentStep] === "Zusammenfassung" ? (
                             <StepButton
-                                onClick={() => {
-                                    console.log(purchaseData);
-                                    const updatedPurchaseData = { ...purchaseData };
-                                    const { sides, variants } = updatedPurchaseData;
-
-                                    // 1) Copy and remove "Standard"
-                                    const updatedVariants = { ...variants };
-                                    if (updatedVariants.Standard) {
-                                        delete updatedVariants.Standard;
-                                    }
-
-                                    // 2) Calculate totalQuantity from updatedVariants
-                                    const totalQuantity = Object.values(updatedVariants).reduce(
-                                        (sum, variant) => sum + (variant.quantity || 0),
-                                        0
-                                    );
-
-                                    // 3) If you have sides "front" / "back", handle veredelung
-                                    const sidesToProcess = ["front", "back"];
-                                    sidesToProcess.forEach((sideKey) => {
-                                        const side = sides?.[sideKey];
-
-                                        if (side?.uploadedGraphic || side?.uploadedGraphicFile) {
-                                            const veredelungDetail = veredelungen?.[sideKey];
-
-                                            if (veredelungDetail) {
-                                                const matchedDiscount = veredelungDetail.preisReduktion.discounts.find(
-                                                    (discount) =>
-                                                        totalQuantity >= discount.minQuantity &&
-                                                        (discount.maxQuantity === null ||
-                                                            totalQuantity <= discount.maxQuantity)
-                                                );
-
-                                                console.log(matchedDiscount);
-
-                                                if (matchedDiscount) {
-                                                    const variantIndex =
-                                                        veredelungDetail.preisReduktion.discounts.indexOf(
-                                                            matchedDiscount
-                                                        );
-
-                                                    const selectedVariant =
-                                                        veredelungDetail.variants.edges[variantIndex];
-
-                                                    console.log(
-                                                        variantIndex,
-                                                        selectedVariant,
-                                                        veredelungDetail.variants.edges
-                                                    );
-
-                                                    if (selectedVariant) {
-                                                        updatedVariants[`${sideKey}Veredelung`] = {
-                                                            id: selectedVariant.node.id,
-                                                            size: null,
-                                                            quantity: totalQuantity,
-                                                            price: calculateNetPrice(parseFloat(matchedDiscount.price)),
-                                                            title: `${veredelungDetail.title} ${
-                                                                sideKey.charAt(0).toUpperCase() + sideKey.slice(1)
-                                                            }`,
-                                                            currency: veredelungDetail.currency,
-                                                        };
-                                                        console.log(
-                                                            `Added ${sideKey}Veredelung:`,
-                                                            updatedVariants[`${sideKey}Veredelung`]
-                                                        );
-                                                    } else {
-                                                        console.error(`No matching variant found for ${sideKey}.`);
-                                                    }
-                                                } else {
-                                                    console.error(`No matching discount for ${sideKey}.`);
-                                                }
-                                            } else {
-                                                console.error(`No veredelung detail found for side: ${sideKey}`);
-                                            }
-                                        }
-                                    });
-
-                                    // 4) Update purchase data and proceed
-                                    updatedPurchaseData.variants = updatedVariants;
-                                    console.log(updatedPurchaseData);
-
-                                    addCartItem(updatedPurchaseData);
-                                    openCartSidebar();
-                                }}
-                                className="px-4 py-2 !bg-successColor text-white rounded w-full"
+                                onClick={handleSave}
                                 klasse="!bg-successColor"
+                                className="px-4 py-2 text-white rounded w-full"
                             >
-                                <BiShoppingBag className="inline-block mr-2 text-lg" />
-                                In den Einkaufswagen
+                                {isEditing ? (
+                                    <>
+                                        <BiRefresh className="inline-block mr-2 text-lg" />
+                                        Bestellung&nbsp;aktualisieren
+                                    </>
+                                ) : (
+                                    <>
+                                        <BiShoppingBag className="inline-block mr-2 text-lg" />
+                                        In&nbsp;den&nbsp;Einkaufswagen
+                                    </>
+                                )}
                             </StepButton>
                         ) : (
                             <StepButton
@@ -750,7 +795,7 @@ export default function StepHolder({ children, steps, currentStep, setCurrentSte
                             </StepButton>
                         )}
                     </div>
-                </div>
+                </div> */}
             </div>
         </div>
     );

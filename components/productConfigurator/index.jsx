@@ -25,12 +25,12 @@ export default function ProductConfigurator({
     const { purchaseData, setPurchaseData, resetPurchaseData } = useStore();
     const [currentStep, setCurrentStep] = useState(0);
     const [selectedImage, setSelectedImage] = useState(null);
+    const isEditing = router.query.editIndex != null;
 
     useEffect(() => {
         // Reset purchaseData on URL change
-
-        resetPurchaseData();
-    }, [router.asPath]);
+        if (!isEditing) resetPurchaseData();
+    }, [router.asPat, isEditing]);
 
     console.log(product);
 

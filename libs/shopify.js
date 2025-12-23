@@ -34,92 +34,67 @@ async function callShopify(query) {
 }
 export async function getAllProductsInCollection(collection) {
     const query = `{
-      collectionByHandle(handle: "${collection}") {
-         id
-        title
-    products (first: 10) {
-      edges {
-        node {
-          id
-          title
-          description
-          handle
-          tags
-         images(first: 250) {
-                edges {
-                node {
-                 id
-                originalSrc
-                  height
-                   width
-                  altText
-                    }
-                  }
-                 }
-                        variants(first: 40) {
+    collectionByHandle(handle: "${collection}") {
+      id
+      title
+      products(first: 50) {
+        edges {
+          node {
+            id
+            title
+            description
+            handle
+            tags
+            images(first: 10) {
+              edges { node { id originalSrc height width altText } }
+            }
+            priceRange {
+              minVariantPrice { amount currencyCode }
+              maxVariantPrice { amount currencyCode }
+            }
+            variants(first: 40) {
               edges {
-                  node {
-                      title     
-                      selectedOptions {
-                          name
-                          value
-                      }
-                      image {
-                          originalSrc
-                          altText
-                      }
-                      metafield(namespace: "custom", key: "back_image") {
-                          value
-                      }
-                  }
+                node {
+                  id
+                  title
+                  priceV2 { amount currencyCode }
+                  selectedOptions { name value }
+                  image { originalSrc altText }
+                  metafield(namespace: "custom", key: "back_image") { value }
+                }
               }
+            }
           }
         }
       }
     }
-    }
   }`;
 
     const response = await callShopify(query);
-    // const allProducts = response.data || [];
-
-    const allProducts = response.data.collectionByHandle.products.edges
-        ? response.data.collectionByHandle.products.edges
-        : [];
-
-    return allProducts;
+    return response?.data?.collectionByHandle?.products?.edges || [];
 }
 
 export async function getAllCollectionsWithSubcollections() {
     const query = `{
-      collections(first: 20) {   // Fetch the first 10 collections, adjust if necessary
-        id
-        title
-    }`;
-    // const query = `{
-    //   collections(first: 10) {   // Fetch the first 10 collections, adjust if necessary
-    //     edges {
-    //       node {
-    //         id
-    //         handle
-    //         title
-    //       }
-    //     }
-    //   }
-    // }`;
+    collections(first: 20) {
+      edges {
+        node {
+          id
+          handle
+          title
+        }
+      }
+    }
+  }`;
 
     const response = await callShopify(query);
-    // Hier prüfen wir die Struktur der Antwort
-
-    const allCollections = response?.data?.collections?.edges
+    return response?.data?.collections?.edges
         ? response.data.collections.edges.map((edge) => ({
               id: edge.node.id,
               handle: edge.node.handle,
               title: edge.node.title,
           }))
         : [];
-
-    return allCollections;
 }
 
 // libs/shopify.js
@@ -141,6 +116,43 @@ export async function getAllProductHandles() {
 }
 
 // libs/shopify.js
+
+async function getSingleVariantIdByQuery(queryString) {
+    const query = `{
+    products(first: 1, query: ${JSON.stringify(queryString)}) {
+      edges {
+        node {
+          id
+          title
+          handle
+          variants(first: 1) {
+            edges { node { id } }
+          }
+        }
+      }
+    }
+  }`;
+    const res = await callShopify(query);
+    return res?.data?.products?.edges?.[0]?.node?.variants?.edges?.[0]?.node?.id || null;
+}
+
+// Try by handle first, then by tag/title as fallback
+export async function getExtraDecorationVariantId() {
+    // adapt the handle/tag to what you actually use in Shopify
+    const byHandle = await getSingleVariantIdByQuery('handle: "zusatzveredelung"');
+    if (byHandle) return byHandle;
+
+    // e.g. a tag you put on the product: "zusatzveredelung"
+    const byTag = await getSingleVariantIdByQuery('tag:"zusatzveredelung"');
+    if (byTag) return byTag;
+
+    // e.g. title match (last resort)
+    const byTitle = await getSingleVariantIdByQuery('title:"Zusatzveredelung"');
+    if (byTitle) return byTitle;
+
+    // fallback to env (optional)
+    return process.env.NEXT_PUBLIC_EXTRA_DECORATION_VARIANT_ID || null;
+}
 
 export async function getProductByHandle(handle) {
     const query = `{
@@ -260,6 +272,10 @@ export async function getProductByHandle(handle) {
     const response = await callShopify(query);
     const product = response.data.productByHandle;
 
+    if (!product) {
+        // unknown handle -> let the page render 404
+        return null;
+    }
     // Create sizes array
     const sizes =
         product.variants?.edges
@@ -370,6 +386,9 @@ export async function getProductByHandle(handle) {
     const veredelungBrustResponse = await callShopify(veredelungQueryBrust);
     const veredelungRueckenResponse = await callShopify(veredelungQueryRuecken);
 
+    const extraDecorationVariantId = await getExtraDecorationVariantId();
+    console.log("extra", extraDecorationVariantId);
+
     function parseVeredelungEdges(edges) {
         return edges.map((edge) => {
             const product = edge.node;
@@ -465,6 +484,7 @@ export async function getProductByHandle(handle) {
         parsedVeredelungData,
         profiDatenCheckData,
         layoutServiceData, // Added layoutService data here
+        extraDecorationVariantId,
 
         // veredelungProducts, // Include in the final response
     };
@@ -535,7 +555,6 @@ export async function getAllProducts() {
 
     try {
         const response = await callShopify(query);
-
         // Safely handle null or undefined responses
         return response?.data?.products?.edges || [];
     } catch (error) {
@@ -574,31 +593,44 @@ export async function getBackImageUrl(mediaImageId) {
 
 export async function getProductsByCategory(categoryHandle) {
     const query = `{
-        collectionByHandle(handle: "${categoryHandle}") {
-            products(first: 20) {  
-                edges {
-                    node {
-                        id
-                        title
-                        handle
-                        images(first: 1) {
-                            edges {
-                                node {
-                                    originalSrc
-                                    altText
-                                }
-                            }
-                        }
-                    }
-                }
+    collectionByHandle(handle: "${categoryHandle}") {
+      products(first: 24) {
+        edges {
+          node {
+            id
+            title
+            handle
+            tags
+            images(first: 1) {
+              edges { node { originalSrc altText } }
             }
+            # Produktweite Preisrange (min/max)
+            priceRange {
+              minVariantPrice { amount currencyCode }
+              maxVariantPrice { amount currencyCode }
+            }
+            # Varianten inkl. Einzelpreis – wichtig für min-Preis-Fallbacks
+            variants(first: 50) {
+              edges {
+                node {
+                  id
+                  title
+                  priceV2 { amount currencyCode }
+                  selectedOptions { name value }
+                  image { originalSrc altText }
+                }
+              }
+            }
+          }
         }
-    }`;
+      }
+    }
+  }`;
 
     try {
         const response = await callShopify(query);
-
-        const products = response?.data?.collectionByHandle?.products?.edges.map((edge) => edge.node) || [];
+        // → Array von Product-Nodes zurückgeben (nicht edges)
+        const products = response?.data?.collectionByHandle?.products?.edges?.map((e) => e.node) || [];
         return products;
     } catch (error) {
         console.error("Error fetching products by category:", error);
@@ -639,79 +671,145 @@ export async function fetchMetaobjects(metaobjectGids) {
 
 // libs/shopify.js
 
-export async function createCart(lineItems, cartAttributes, note) {
-    // Prepare the note field if provided.
-    const noteField = note && note.trim() !== "" ? `, note: ${JSON.stringify(note)}` : "";
+// export async function createCart(lineItems, cartAttributes, note) {
+//     // Prepare the note field if provided.
+//     const noteField = note && note.trim() !== "" ? `, note: ${JSON.stringify(note)}` : "";
 
-    // Construct the query dynamically with inlined lineItems and note (if any)
+//     // Construct the query dynamically with inlined lineItems and note (if any)
+//     const query = `
+//         mutation {
+//             cartCreate(input: {
+//                 lines: [
+//                     ${lineItems
+//                         .map(
+//                             (item) => `{
+//                         merchandiseId: "${item.variantId}",
+//                         quantity: ${item.quantity},
+//                         attributes: [
+//                             ${
+//                                 item.customAttributes
+//                                     ?.map((attr) => `{ key: "${attr.key}", value: "${attr.value}" }`)
+//                                     .join(", ") || ""
+//                             }
+//                         ]
+//                     }`
+//                         )
+//                         .join(", ")}
+//                 ],
+//                      buyerIdentity: {
+//         countryCode: DE
+//       }
+//                 attributes: [
+//                     ${cartAttributes.map((attr) => `{ key: "${attr.key}", value: "${attr.value}" }`).join(", ")}
+//                 ]
+//                 ${noteField}
+
+//             }) {
+//                 cart {
+//                     id
+//                     checkoutUrl
+//                     cost {
+//                     subtotalAmount { amount currencyCode }
+//                     totalTaxAmount { amount currencyCode }
+//                     totalAmount { amount currencyCode }
+//                     }
+//                 }
+//                 userErrors {
+//                     field
+//                     message
+//                 }
+//             }
+//         }
+//     `;
+
+//     try {
+//         const response = await callShopify(query);
+
+//         if (response.errors) {
+//             console.error("Shopify API Errors:", response.errors);
+//             throw new Error("Invalid input for Shopify cartCreate mutation.");
+//         }
+
+//         const userErrors = response?.data?.cartCreate?.userErrors || [];
+//         if (userErrors.length > 0) {
+//             console.error("Shopify User Errors:", userErrors);
+//             throw new Error(userErrors.map((error) => error.message).join(", "));
+//         }
+
+//         const cart = response?.data?.cartCreate?.cart;
+//         if (cart?.checkoutUrl) {
+//             return cart.checkoutUrl; // Return the checkout URL
+//         } else {
+//             throw new Error("No checkout URL returned!");
+//         }
+//     } catch (error) {
+//         console.error("Shopify createCart Error:", error.message);
+//         throw new Error("Could not create cart");
+//     }
+// }
+export async function createCart(lineItems = [], cartAttributes = [], note) {
+    const maxVal = (v) => String(v ?? "").slice(0, 240); // < 255 chars
+    const esc = (v) => JSON.stringify(maxVal(v)); // → korrekt gequotet
+    const keySan = (k) =>
+        String(k ?? "")
+            .replace(/[^\w-]/g, "_")
+            .slice(0, 30);
+
+    const linesStr = (lineItems || [])
+        .map((item) => {
+            const attrs = (item.customAttributes || [])
+                .map((a) => `{ key: ${JSON.stringify(keySan(a.key))}, value: ${esc(a.value)} }`)
+                .join(", ");
+
+            return `{
+      merchandiseId: ${JSON.stringify(item.variantId || item.merchandiseId)},
+      quantity: ${Number(item.quantity || 1)},
+      attributes: [${attrs}]
+    }`;
+        })
+        .join(", ");
+
+    const cartAttrsStr = (cartAttributes || [])
+        .map((a) => `{ key: ${JSON.stringify(keySan(a.key))}, value: ${esc(a.value)} }`)
+        .join(", ");
+
+    const noteField = note && String(note).trim() ? `, note: ${JSON.stringify(String(note))}` : "";
+
     const query = `
-        mutation {
-            cartCreate(input: {
-                lines: [
-                    ${lineItems
-                        .map(
-                            (item) => `{
-                        merchandiseId: "${item.variantId}",
-                        quantity: ${item.quantity},
-                        attributes: [
-                            ${
-                                item.customAttributes
-                                    ?.map((attr) => `{ key: "${attr.key}", value: "${attr.value}" }`)
-                                    .join(", ") || ""
-                            }
-                        ]
-                    }`
-                        )
-                        .join(", ")}
-                ],  
-                     buyerIdentity: {
-        countryCode: DE
-      }
-                attributes: [
-                    ${cartAttributes.map((attr) => `{ key: "${attr.key}", value: "${attr.value}" }`).join(", ")}
-                ]
-                ${noteField}
- 
-            }) {
-                cart {
-                    id
-                    checkoutUrl
-                    cost {
-                    subtotalAmount { amount currencyCode }
-                    totalTaxAmount { amount currencyCode }
-                    totalAmount { amount currencyCode }
-                    }
-                }
-                userErrors {
-                    field
-                    message
-                }
-            }
+    mutation {
+      cartCreate(input: {
+        lines: [ ${linesStr} ],
+        buyerIdentity: { countryCode: DE }
+        attributes: [ ${cartAttrsStr} ]
+        ${noteField}
+      }) {
+        cart { id checkoutUrl
+          cost { subtotalAmount { amount currencyCode } totalTaxAmount { amount currencyCode } totalAmount { amount currencyCode } }
         }
-    `;
+        userErrors { field message }
+      }
+    }
+  `;
 
     try {
         const response = await callShopify(query);
 
-        if (response.errors) {
-            console.error("Shopify API Errors:", response.errors);
+        if (response?.errors?.length) {
+            console.error("Shopify GraphQL errors:", response.errors);
             throw new Error("Invalid input for Shopify cartCreate mutation.");
         }
 
         const userErrors = response?.data?.cartCreate?.userErrors || [];
-        if (userErrors.length > 0) {
-            console.error("Shopify User Errors:", userErrors);
-            throw new Error(userErrors.map((error) => error.message).join(", "));
+        if (userErrors.length) {
+            console.error("Shopify User Errors:", userErrors, { lineItems, cartAttributes });
+            throw new Error(userErrors.map((e) => e.message).join("; "));
         }
 
-        const cart = response?.data?.cartCreate?.cart;
-        if (cart?.checkoutUrl) {
-            return cart.checkoutUrl; // Return the checkout URL
-        } else {
-            throw new Error("No checkout URL returned!");
-        }
-    } catch (error) {
-        console.error("Shopify createCart Error:", error.message);
+        const url = response?.data?.cartCreate?.cart?.checkoutUrl;
+        if (!url) throw new Error("No checkout URL returned!");
+        return url;
+    } catch (err) {
+        console.error("Shopify createCart Error:", err);
         throw new Error("Could not create cart");
     }
 }

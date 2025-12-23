@@ -27,16 +27,18 @@ import client from "../../client";
 import { useRouter } from "next/router";
 
 export default function Product({ product, sizes, relatedProducts, category, globalData }) {
-    const { resetPurchaseData } = useStore(); // Add a reset function in your Zustand store
+    const { resetPurchaseData, purchaseData, setPurchaseData } = useStore(); // Add a reset function in your Zustand store
     const router = useRouter();
     const { handle } = router.query; // Extract the product handle from the URL
 
     const [galleryImages, setGalleryImages] = useState([]);
     const [selectedImage, setSelectedImage] = useState(null);
 
+    const isEditing = router.query.editIndex != null;
+
     // Reset purchase data and images on product change
     useEffect(() => {
-        resetPurchaseData();
+        if (!isEditing) resetPurchaseData();
 
         // Reset gallery images when the handle changes
         const customImages =
@@ -47,7 +49,34 @@ export default function Product({ product, sizes, relatedProducts, category, glo
         if (customImages.length > 0) {
             setSelectedImage(customImages[0]);
         }
-    }, [handle, product]);
+    }, [handle, product, isEditing]);
+
+    useEffect(() => {
+        // Be liberal in what we accept; use whatever your Shopify helper returned
+        const extraId =
+            product?.extraDecorationVariantId || // recommended key you added
+            product?.zusatzVeredelungData?.variants?.edges?.[0]?.node?.id || // if you returned a block
+            product?.parsedVeredelungData?.extra?.variants?.edges?.[0]?.node?.id || // another possible shape
+            process.env.NEXT_PUBLIC_EXTRA_DECORATION_VARIANT_ID || // last-resort env fallback
+            null;
+
+        if (extraId) {
+            setPurchaseData((prev) => ({
+                ...prev,
+                extraDecorationVariantId: extraId, // used later by prepareLineItems()
+            }));
+        }
+    }, [
+        product?.extraDecorationVariantId,
+        product?.zusatzVeredelungData,
+        product?.parsedVeredelungData,
+        setPurchaseData,
+    ]);
+
+    useEffect(() => {
+        console.log("PÖRTSCHESE", purchaseData);
+        console.log("EPRODUCT", product);
+    }, [purchaseData]);
 
     // Extract the product title from the Shopify data
     const productTitle = product?.productByHandle?.title || "Unbekanntes Produkt";
@@ -56,7 +85,7 @@ export default function Product({ product, sizes, relatedProducts, category, glo
     return (
         <>
             <MetaShopify data={seoData} />
-            <MainContainer>
+            <div className="mx-auto container !max-w-[1600px]  3xl:max-h-full ">
                 <Breadcrumbs category={category} productTitle={productTitle} />
                 {product?.productByHandle?.konfigurator?.value == "true" ? (
                     <ProductConfigurator
@@ -71,7 +100,9 @@ export default function Product({ product, sizes, relatedProducts, category, glo
                     ></ProductConfigurator>
                 ) : (
                     <SimpleConfigurator product={product?.productByHandle}></SimpleConfigurator>
-                )}
+                )}{" "}
+            </div>
+            <MainContainer>
                 {product?.productByHandle?.detailbeschreibung?.value ? (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 lg:mt-20 mb-16 lg:mb-4">
                         <div className="lg:pl-24  font-body text-sm lg:text-base text-textColor p-4 lg:p-2 lg:pr-24">
