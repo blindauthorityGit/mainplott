@@ -467,7 +467,7 @@ export default function CartSidebar() {
                             )}
                         </div>
 
-                        {cartItems.length > 0 ? (
+                        {/* {cartItems.length > 0 ? (
                             <button
                                 onClick={async () => {
                                     try {
@@ -500,7 +500,7 @@ export default function CartSidebar() {
                                     {pdfLoading ? "PDF wird erstellt …" : "Angebot als PDF herunterladen"}
                                 </span>
                             </button>
-                        ) : null}
+                        ) : null} */}
 
                         {/* Notizen */}
                         <div className="my-4 bg-[#f3f4f6] rounded-xl border border-gray-200">
