@@ -42,6 +42,17 @@ function getDecorationCounts(item) {
     };
 }
 
+function getVariantLabel(variant) {
+    if (!variant) return null;
+    // 1) bevorzugt: Variant-Titel (so zeigt Shopify es auch)
+    if (variant.title && !/Default Title/i.test(variant.title)) return variant.title;
+    // 2) fallback: ausgewählte Optionen zusammenbauen
+    if (Array.isArray(variant.selectedOptions) && variant.selectedOptions.length) {
+        return variant.selectedOptions.map((o) => o.value).join(" / ");
+    }
+    return null;
+}
+
 export default function CartSidebar() {
     const { cartItems, isCartSidebarOpen, closeCartSidebar, removeCartItem, setModalContent, setModalOpen } =
         useStore();
@@ -52,7 +63,7 @@ export default function CartSidebar() {
     const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
-        const subtotal = cartItems.reduce((sum, item) => sum + Number(item.totalPrice), 0);
+        const subtotal = cartItems.reduce((sum, item) => sum + Number(item.totalPrice || 0), 0);
         setTotalPrice(subtotal.toFixed(2));
     }, [cartItems]);
 

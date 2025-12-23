@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion"; // Import framer-motion for animations
-import useStore from "@/store/store"; // Your Zustand store
+import { motion, AnimatePresence } from "framer-motion";
+import useStore from "@/store/store";
 import { StepButton } from "@/components/buttons";
 import ContentWrapper from "./components/content/index";
 import CustomTextField from "@/components/inputs/customTextField";
@@ -8,46 +8,61 @@ import QuantitySelector from "@/components/inputs/quantitySelector";
 import { P, H3 } from "@/components/typography";
 import dynamic from "next/dynamic";
 import { calculateNetPrice } from "@/functions/calculateNetPrice";
-
-//Hooks
 import useIsMobile from "@/hooks/isMobile";
 
-// Dynamically import the KonvaLayer component with no SSR
+// Dynamically import the KonvaLayer component with no SSR (falls später benötigt)
 const KonvaLayer = dynamic(() => import("@/components/konva"), { ssr: false });
 
 export default function SimpleConfigurator({ product }) {
     const { purchaseData, setPurchaseData, openCartSidebar, addCartItem } = useStore();
 
-    const [selectedImage, setSelectedImage] = useState(null); // Start with the first image
+    const [selectedImage, setSelectedImage] = useState(null);
     const [inputValue, setInputValue] = useState("");
-    const [quantity, setQuantity] = useState(1);
     const [price, setPrice] = useState(0);
+    const [selectedVariant, setSelectedVariant] = useState(product?.variants?.edges?.[0]?.node ?? null);
 
-    const containerRef = useRef(); // Add a reference to the container
+    const containerRef = useRef();
     const isMobile = useIsMobile();
 
+    // Initialisieren/Reset bei Produktwechsel
     useEffect(() => {
-        setSelectedImage(product.images.edges[0].node.originalSrc);
+        const firstVariant = product?.variants?.edges?.[0]?.node ?? null;
+        setSelectedVariant(firstVariant);
+
+        // Bildpriorität: Variant-Bild -> erstes Produktbild
+        const fallbackImage = product?.images?.edges?.[0]?.node?.originalSrc ?? null;
+        setSelectedImage(firstVariant?.image?.originalSrc ?? fallbackImage);
+
+        setPrice(firstVariant?.priceV2?.amount ?? 0);
+
+        // Store angleichen (ohne fremde Keys zu verlieren)
+        setPurchaseData({
+            ...purchaseData,
+            selectedVariant: firstVariant || undefined,
+            quantity: purchaseData.quantity || 1,
+            price: firstVariant?.priceV2?.amount ?? 0,
+        });
+
+        setInputValue(purchaseData.personalisierungsText || "");
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [product]);
 
-    useEffect(() => {
-        setPrice(product.variants.edges[0].node.priceV2.amount);
-    }, [product]);
-
+    // Variante wechseln
     const handleVariantChange = (variantTitle) => {
-        const selectedVariant = product.variants.edges.find((variant) => variant.node.title === variantTitle);
+        const found = product.variants.edges.find((v) => v.node.title === variantTitle)?.node;
+        if (!found) return;
 
-        if (selectedVariant) {
-            setPurchaseData({
-                ...purchaseData,
-                selectedVariant: selectedVariant.node,
-                price: selectedVariant.node.priceV2.amount,
-            });
-            setPrice(selectedVariant.node.priceV2.amount);
+        setSelectedVariant(found);
+        setPrice(found.priceV2.amount);
 
-            if (selectedVariant.node.image?.originalSrc) {
-                setSelectedImage(selectedVariant.node.image.originalSrc);
-            }
+        setPurchaseData({
+            ...purchaseData,
+            selectedVariant: found,
+            price: found.priceV2.amount,
+        });
+
+        if (found.image?.originalSrc) {
+            setSelectedImage(found.image.originalSrc);
         }
     };
 
@@ -55,9 +70,12 @@ export default function SimpleConfigurator({ product }) {
         setInputValue(newValue);
         setPurchaseData({
             ...purchaseData,
-            personalisierungsText: newValue, // Update the customization text in Zustand
+            personalisierungsText: newValue,
         });
     };
+
+    const qty = purchaseData.quantity > 0 ? purchaseData.quantity : 1;
+    const displayTotalNet = (calculateNetPrice(Number(price)) * qty).toFixed(2).replace(".", ",");
 
     return (
         <div className="grid grid-cols-12 lg:px-24 lg:gap-4 h-full">
@@ -65,12 +83,14 @@ export default function SimpleConfigurator({ product }) {
             <div className="col-span-12 lg:col-span-6 relative mb-4 lg:mb-0" ref={containerRef}>
                 <div className="w-full flex items-center justify-center lg:min-h-[664px] lg:max-h-[664px] relative">
                     <AnimatePresence mode="wait">
-                        <img
-                            key={selectedImage}
-                            src={selectedImage}
-                            alt="Main Product"
-                            className="w-full object-contain lg:max-h-[664px]"
-                        />
+                        {selectedImage && (
+                            <img
+                                key={selectedImage}
+                                src={selectedImage}
+                                alt="Main Product"
+                                className="w-full object-contain lg:max-h-[664px]"
+                            />
+                        )}
                     </AnimatePresence>
                 </div>
                 <div className="flex mt-4 gap-2">
@@ -100,12 +120,13 @@ export default function SimpleConfigurator({ product }) {
                             exit={{ opacity: 0, x: 10 }}
                             transition={{ duration: 0.3, ease: "easeInOut" }}
                         >
-                            <ContentWrapper product={product}></ContentWrapper>
+                            <ContentWrapper product={product} />
                             <div className="lg:px-16 mt-8">
-                                {/* Render Dropdown if multiple variants exist */}
+                                {/* Variant Dropdown */}
                                 {product.variants.edges.length > 1 && (
                                     <select
                                         className="border font-body border-gray-300 rounded-md p-2 mb-4"
+                                        value={selectedVariant?.title || product.variants.edges[0].node.title}
                                         onChange={(e) => handleVariantChange(e.target.value)}
                                     >
                                         {product.variants.edges.map((variant) => (
@@ -119,13 +140,15 @@ export default function SimpleConfigurator({ product }) {
                                         ))}
                                     </select>
                                 )}
+
                                 <P klasse="lg:!text-sm">{product?.textPersonalisierung?.value}</P>
                                 <CustomTextField
                                     value={inputValue}
                                     onChange={handleTextChange}
                                     maxLength={80}
                                     placeholder="Personalisierung...."
-                                ></CustomTextField>
+                                />
+
                                 <QuantitySelector
                                     quantity={purchaseData.quantity || 1}
                                     setQuantity={(newQuantity) =>
@@ -135,8 +158,6 @@ export default function SimpleConfigurator({ product }) {
                                         })
                                     }
                                     onQuantityChange={(newQuantity) => {
-                                        // Handle any additional logic you need when the quantity changes
-
                                         setPurchaseData({
                                             ...purchaseData,
                                             quantity: newQuantity,
@@ -144,28 +165,27 @@ export default function SimpleConfigurator({ product }) {
                                     }}
                                 />
 
-                                <H3 klasse="!mb-2 mt-8">
-                                    {/* EUR {(Number(price) * (purchaseData.quantity || 1)).toFixed(2)} */}
-                                    EUR{" "}
-                                    {(calculateNetPrice(Number(price)) * (purchaseData.quantity || 1))
-                                        .toFixed(2)
-                                        .replace(".", ",")}
-                                </H3>
+                                <H3 klasse="!mb-2 mt-8">EUR {displayTotalNet}</H3>
                             </div>
                         </motion.div>
                     </AnimatePresence>
-                    <div className="mt-auto lg:flex justify-end  lg:px-16 lg:mt-8">
+
+                    <div className="mt-auto lg:flex justify-end lg:px-16 lg:mt-8">
                         <StepButton
                             onClick={() => {
+                                if (!selectedVariant?.id) return;
+
+                                const qtySafe = purchaseData.quantity > 0 ? purchaseData.quantity : 1;
+
                                 const updatedVariants = {
                                     ...purchaseData.variants,
                                     mainVariant: {
-                                        id: product.variants.edges[0].node.id, // Assuming the first variant is used
-                                        quantity: purchaseData.quantity > 0 ? purchaseData.quantity : 1,
+                                        id: selectedVariant.id, // <-- WICHTIG: gewählte Variante
+                                        quantity: qtySafe,
                                         attributes: [
                                             {
                                                 key: "personalisierung",
-                                                value: purchaseData.personalisierungsText || "", // Add the personalisierungsText
+                                                value: purchaseData.personalisierungsText || "",
                                             },
                                         ],
                                     },
@@ -174,16 +194,14 @@ export default function SimpleConfigurator({ product }) {
                                 const updatedPurchaseData = {
                                     ...purchaseData,
                                     variants: updatedVariants,
-                                    quantity: purchaseData.quantity > 0 ? purchaseData.quantity : 1,
-                                    product: product,
+                                    quantity: qtySafe,
+                                    product,
                                     productName: product.title,
-                                    totalPrice: Number(price) * (purchaseData.quantity || 1),
+                                    totalPrice: Number(price) * qtySafe,
+                                    selectedVariant, // optional hilfreich
                                 };
 
-                                // Update Zustand store with the prepared data
                                 setPurchaseData(updatedPurchaseData);
-
-                                // Add the item to the cart and open the sidebar
                                 addCartItem({ ...updatedPurchaseData, selectedImage });
                                 openCartSidebar();
                             }}
