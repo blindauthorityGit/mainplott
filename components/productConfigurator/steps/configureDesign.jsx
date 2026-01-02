@@ -505,7 +505,12 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
     };
 
     return (
-        <div className="flex flex-col lg:px-16 lg:mt-4 2xl:my-8 font-body ">
+        <div
+            className="flex flex-col lg:px-16 lg:mt-4 2xl:my-8 font-body     touch-manipulation
+    select-none
+    [-webkit-touch-callout:none]
+ "
+        >
             {/* Tabs */}
             {/* <Tabs
                 value={tabIndex}
@@ -684,7 +689,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 </div>
             ) : noElementsCurrent ? (
                 <div className="flex gap-3">
-                    <Button
+                    {/* <Button
                         variant="contained"
                         component="label"
                         sx={{
@@ -719,7 +724,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                         onClick={addCenteredText}
                     >
                         Text hinzufügen
-                    </Button>
+                    </Button> */}
                 </div>
             ) : (
                 <>

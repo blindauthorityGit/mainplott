@@ -712,6 +712,7 @@ const MobileKonvaLayer = forwardRef(function MobileKonvaLayer({ onExportReady, p
                                 fontFamily={t.fontFamily || "Roboto"}
                                 fill={t.fill || "#000"}
                                 align={t.align || "left"}
+                                textDecoration={t.textDecoration || "none"}
                                 width={boundingRect.width}
                                 offsetX={boundingRect.width / 2}
                                 rotation={t.rotation || 0}
