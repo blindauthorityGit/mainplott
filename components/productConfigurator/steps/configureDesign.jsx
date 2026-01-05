@@ -360,6 +360,17 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
 
     const copyGraphicToCurrent = (g) => {
         const id = uuidv4();
+
+        // Neue preview-URL erstellen, wenn es eine PDF mit blob-preview ist
+        let nextPreview = g.preview;
+        if (g.isPDF && g.file instanceof Blob) {
+            try {
+                nextPreview = URL.createObjectURL(g.file);
+            } catch {
+                nextPreview = g.preview;
+            }
+        }
+
         setPurchaseData((prev) => ({
             ...prev,
             sides: {
@@ -368,7 +379,15 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                     ...prev.sides[currentSide],
                     uploadedGraphics: [
                         ...(prev.sides[currentSide].uploadedGraphics || []),
-                        { ...g, id, xPosition: centerX, yPosition: centerY, rotation: 0 },
+                        {
+                            ...g,
+                            id,
+                            // wichtig: NEUE preview referenz
+                            preview: nextPreview,
+                            xPosition: centerX,
+                            yPosition: centerY,
+                            rotation: 0,
+                        },
                     ],
                     activeGraphicId: id,
                     activeElement: { type: "graphic", id },
