@@ -36,7 +36,9 @@ export default function TextControls({
     // - alphaDown < 1  => finer near BASE when going smaller
     // - alphaUp   < 1  => coarser near BASE when going bigger
     const alphaDown = 0.55; // feel free to tweak (0.45..0.7)
-    const alphaUp = 0.65; // feel free to tweak (0.55..0.8)
+    const alphaUp = 1.25; // feel free to tweak (0.55..0.8)
+
+    const roundTo = (n, step) => Math.round(n / step) * step;
 
     // font-size -> slider position [0..100]
     const sizeToPos = (sizeIn) => {
@@ -337,9 +339,9 @@ export default function TextControls({
                         value={sizeSliderValue} // <-- position [0..100], not font-size
                         min={0}
                         max={100}
-                        step={1}
+                        step={0.5}
                         onChange={(_e, v) => {
-                            const newSize = Math.round(posToSize(v));
+                            const newSize = roundTo(posToSize(v), 0.5);
                             setTextProp({ fontSize: newSize });
                         }}
                         onChangeCommitted={(_e, v) => {
