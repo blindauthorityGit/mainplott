@@ -130,7 +130,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 [currentSide]: {
                     ...prev.sides[currentSide],
                     uploadedGraphics: prev.sides[currentSide].uploadedGraphics.map((g) =>
-                        g.id === activeGraphicId ? { ...g, xPosition: newValue } : g
+                        g.id === activeGraphicId ? { ...g, xPosition: newValue } : g,
                     ),
                 },
             },
@@ -146,7 +146,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 [currentSide]: {
                     ...prev.sides[currentSide],
                     uploadedGraphics: prev.sides[currentSide].uploadedGraphics.map((g) =>
-                        g.id === activeGraphicId ? { ...g, yPosition: newValue } : g
+                        g.id === activeGraphicId ? { ...g, yPosition: newValue } : g,
                     ),
                 },
             },
@@ -173,7 +173,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 [currentSide]: {
                     ...prev.sides[currentSide],
                     uploadedGraphics: prev.sides[currentSide].uploadedGraphics.map((g) =>
-                        g.id === activeGraphicId ? { ...g, scale: newValue } : g
+                        g.id === activeGraphicId ? { ...g, scale: newValue } : g,
                     ),
                 },
             },
@@ -189,7 +189,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 [currentSide]: {
                     ...prev.sides[currentSide],
                     uploadedGraphics: prev.sides[currentSide].uploadedGraphics.map((g) =>
-                        g.id === activeGraphicId ? { ...g, rotation: newValue } : g
+                        g.id === activeGraphicId ? { ...g, rotation: newValue } : g,
                     ),
                 },
             },
@@ -205,8 +205,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
             const nextActive = firstGraphicId
                 ? { type: "graphic", id: firstGraphicId }
                 : firstTextId
-                ? { type: "text", id: firstTextId }
-                : null;
+                  ? { type: "text", id: firstTextId }
+                  : null;
             return {
                 ...prev,
                 currentSide: nextSide,
@@ -215,8 +215,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                     [nextSide]: {
                         ...sideData,
                         activeGraphicId:
-                            nextActive?.type === "graphic" ? nextActive.id : sideData.activeGraphicId ?? null,
-                        activeTextId: nextActive?.type === "text" ? nextActive.id : sideData.activeTextId ?? null,
+                            nextActive?.type === "graphic" ? nextActive.id : (sideData.activeGraphicId ?? null),
+                        activeTextId: nextActive?.type === "text" ? nextActive.id : (sideData.activeTextId ?? null),
                         activeElement: nextActive,
                     },
                 },
@@ -263,12 +263,12 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                         pos.includes("Vorne") ||
                         pos.includes("Kugelschreiber") ||
                         pos.includes("Zollstock") ||
-                        pos.includes("Front")
+                        pos.includes("Front"),
                 )
                 .map((name) => ({ name, enabled: true, position: { x: 0.42, y: 0.42 } }));
             const backPositions = fixed
                 .filter(
-                    (pos) => pos.includes("Rücken") || pos.includes("Oberschenkel hinten") || pos.includes("Hinten")
+                    (pos) => pos.includes("Rücken") || pos.includes("Oberschenkel hinten") || pos.includes("Hinten"),
                 )
                 .map((name) => ({ name, enabled: true, position: { x: 0.42, y: 0.42 } }));
             return { front: { default: frontPositions }, back: { default: backPositions } };
@@ -337,7 +337,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 [currentSide]: {
                     ...prev.sides[currentSide],
                     uploadedGraphics: prev.sides[currentSide].uploadedGraphics.map((g) =>
-                        g.id === activeGraphicId ? { ...g, rotation: 0 } : g
+                        g.id === activeGraphicId ? { ...g, rotation: 0 } : g,
                     ),
                 },
             },
@@ -432,7 +432,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                 url: i.url,
                 name: i.filename || i.productTitle || i.name || "Grafik",
             })),
-        [assetsImages]
+        [assetsImages],
     );
 
     const [libOpen, setLibOpen] = useState(false);
@@ -551,55 +551,72 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
             </Tabs> */}
             {/* Top toolbar: side switch + CTAs */}
             {/* Top toolbar: side switch + compact CTAs */}
-            <div className="mb-6 rounded-2xl hidden md:block border border-gray-200 bg-white/80 backdrop-blur px-4 py-3 shadow-sm">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    {/* Segmented tabs – visually distinct from buttons */}
-                    <div className="inline-flex overflow-hidden rounded-full border border-gray-200 bg-white shadow-sm">
-                        <button
-                            type="button"
-                            onClick={() => handleTabChange(null, 0)}
-                            className={[
-                                "px-4 py-2 text-sm font-medium transition",
-                                currentSide === "front"
-                                    ? "bg-primaryColor-50 text-primaryColor-700"
-                                    : "text-gray-600 hover:bg-gray-50",
-                            ].join(" ")}
-                            aria-pressed={currentSide === "front"}
-                        >
-                            Vorderseite
-                        </button>
+            <div className="mb-6 hidden md:block rounded-2xl border border-gray-200 bg-white/80 backdrop-blur px-4 py-3 shadow-sm">
+                {/* 
+      Wichtig:
+      - erst ab xl in eine Zeile, damit bei 1440px / “knappen” Layouts nichts crasht
+      - min-w-0 verhindert “unshrinkable” Flex-Kinder
+    */}
+                <div className="flex min-w-0 flex-col gap-3 xl:flex-row xl:items-center">
+                    {/* Segmented tabs */}
+                    <div className="min-w-0">
+                        {/* 
+              Key-Fix:
+              - overflow-x-auto statt overflow-hidden
+              - whitespace-nowrap + shrink-0 auf Buttons
+              => “Rückseite” wird nie abgeschnitten
+            */}
+                        <div className="w-full">
+                            <div className="inline-flex w-full overflow-hidden rounded-full border border-gray-200 bg-white shadow-sm">
+                                <button
+                                    type="button"
+                                    onClick={() => handleTabChange(null, 0)}
+                                    className={[
+                                        "shrink-0 whitespace-nowrap px-3 2xl:px-4 py-2 text-xs 2xl:text-sm font-medium transition",
+                                        currentSide === "front"
+                                            ? "bg-primaryColor-50 text-primaryColor-700"
+                                            : "text-gray-600 hover:bg-gray-50",
+                                    ].join(" ")}
+                                    aria-pressed={currentSide === "front"}
+                                >
+                                    Vorderseite
+                                </button>
 
-                        {selectedVariant?.backImageUrl && (
-                            <button
-                                type="button"
-                                onClick={() => handleTabChange(null, 1)}
-                                className={[
-                                    "px-4 py-2 text-sm font-medium transition border-l border-gray-200",
-                                    currentSide === "back"
-                                        ? "bg-primaryColor-50 text-primaryColor-700"
-                                        : "text-gray-600 hover:bg-gray-50",
-                                ].join(" ")}
-                                aria-pressed={currentSide === "back"}
-                            >
-                                Rückseite
-                            </button>
-                        )}
+                                {selectedVariant?.backImageUrl && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleTabChange(null, 1)}
+                                        className={[
+                                            "shrink-0 whitespace-nowrap border-l border-gray-200 px-3 2xl:px-4 py-2 text-xs 2xl:text-sm font-medium transition",
+                                            currentSide === "back"
+                                                ? "bg-primaryColor-50 text-primaryColor-700"
+                                                : "text-gray-600 hover:bg-gray-50",
+                                        ].join(" ")}
+                                        aria-pressed={currentSide === "back"}
+                                    >
+                                        Rückseite
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
-                    {/* CTAs: smaller, lively “+” buttons */}
-                    <div className="flex gap-2">
-                        {/* Add Graphic — uses Konva logic */}
+                    {/* CTAs */}
+                    <div className="flex flex-wrap items-center gap-2 xl:ml-auto xl:flex-nowrap xl:justify-end">
+                        {/* Add Graphic */}
                         <button
                             type="button"
                             onClick={triggerAddGraphic}
-                            className="group inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 shadow-sm hover:border-primaryColor-300 hover:bg-primaryColor-50 active:scale-[0.98] transition"
+                            className="group inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white
+           px-2.5 2xl:px-3 py-1.5 text-xs 2xl:text-sm font-medium text-gray-800 shadow-sm transition
+           hover:border-primaryColor-300 hover:bg-primaryColor-50 active:scale-[0.98]"
                             title="Grafik hinzufügen"
                         >
                             <span className="grid h-5 w-5 place-items-center rounded-md bg-textColor text-white transition group-hover:bg-primaryColor-600">
                                 <FiPlus className="text-[12px]" />
                             </span>
                             <FiImage className="opacity-70" />
-                            Grafik
+                            <span className="hidden 2xl:inline">Grafik</span>
                         </button>
 
                         <input
@@ -614,42 +631,45 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                         <button
                             type="button"
                             onClick={addCenteredText}
-                            className="group inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 shadow-sm hover:border-primaryColor-300 hover:bg-primaryColor-50 active:scale-[0.98] transition"
+                            className="group inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white
+           px-2.5 2xl:px-3 py-1.5 text-xs 2xl:text-sm font-medium text-gray-800 shadow-sm transition
+           hover:border-primaryColor-300 hover:bg-primaryColor-50 active:scale-[0.98]"
                             title="Text hinzufügen"
                         >
                             <span className="grid h-5 w-5 place-items-center rounded-md bg-textColor text-white transition group-hover:bg-primaryColor-600">
                                 <FiPlus className="text-[12px]" />
                             </span>
                             <FiType className="opacity-70" />
-                            Text
+                            <span className="hidden 2xl:inline">Text</span>
                         </button>
-                        {/* Meine Grafiken (Library) */}
+
+                        {/* Library */}
                         <div ref={libraryWrapRef} className="relative">
                             <button
                                 type="button"
                                 onClick={openLibrary}
-                                className="group inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 shadow-sm hover:border-primaryColor-300 hover:bg-primaryColor-50 active:scale-[0.98] transition"
+                                className="group inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 shadow-sm transition hover:border-primaryColor-300 hover:bg-primaryColor-50 active:scale-[0.98]"
                                 title="Meine Grafiken"
                                 aria-expanded={libOpen}
                             >
                                 <span className="grid h-5 w-5 place-items-center rounded-md bg-[#ba979d] text-white transition group-hover:bg-primaryColor-600">
                                     <FiSearch className="text-[12px]" />
                                 </span>
-                                <span className="opacity-80">Bibliothek</span>
+                                <span className="hidden 2xl:inline opacity-80 whitespace-nowrap">Bibliothek</span>
                             </button>
 
                             {libOpen && (
                                 <div
-                                    className="absolute z-50 top-10 w-64 max-h-80 overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 shadow-xl"
+                                    className="absolute right-0 z-50 mt-2 w-72 max-h-80 overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 shadow-xl"
                                     role="dialog"
                                     aria-label="Meine Grafiken"
                                 >
-                                    <div className="flex items-center justify-between mb-1 px-1">
+                                    <div className="mb-1 flex items-center justify-between px-1">
                                         <div className="flex items-center gap-2 text-sm font-medium">
                                             <FiSearch /> <span>Meine Grafiken</span>
                                         </div>
                                         <button
-                                            className="p-1 rounded hover:bg-gray-100"
+                                            className="rounded p-1 hover:bg-gray-100"
                                             onClick={() => setLibOpen(false)}
                                             title="Schließen"
                                         >
@@ -658,24 +678,24 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                     </div>
 
                                     {assetsLoading ? (
-                                        <div className="text-sm text-gray-500 px-1 py-2">Lade …</div>
+                                        <div className="px-1 py-2 text-sm text-gray-500">Lade …</div>
                                     ) : libImages.length === 0 ? (
-                                        <div className="text-xs text-gray-500 px-1 py-2">Keine Grafiken gefunden.</div>
+                                        <div className="px-1 py-2 text-xs text-gray-500">Keine Grafiken gefunden.</div>
                                     ) : (
                                         <div className="flex flex-col gap-2">
                                             {libImages.map((a) => (
                                                 <button
                                                     key={a.id}
                                                     onClick={() => insertGraphicFromLibrary(a)}
-                                                    className="flex items-center gap-3 border rounded-lg p-2 hover:bg-[#f7f2f4] transition text-left"
+                                                    className="flex items-center gap-3 rounded-lg border p-2 text-left transition hover:bg-[#f7f2f4]"
                                                     title={a.name || "Grafik"}
                                                 >
                                                     <img
                                                         src={a.url}
                                                         alt={a.name || "Grafik"}
-                                                        className="w-12 h-12 object-contain rounded border"
+                                                        className="h-12 w-12 rounded border object-contain"
                                                     />
-                                                    <span className="text-xs text-gray-800 truncate">
+                                                    <span className="truncate text-xs text-gray-800">
                                                         {a.name || "Grafik"}
                                                     </span>
                                                 </button>
@@ -829,8 +849,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                 g.isPDF && g.preview
                                     ? g.preview
                                     : g.file instanceof Blob
-                                    ? URL.createObjectURL(g.file)
-                                    : g.downloadURL || "";
+                                      ? URL.createObjectURL(g.file)
+                                      : g.downloadURL || "";
 
                             return (
                                 <button
@@ -884,8 +904,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                             g.isPDF && g.preview
                                 ? g.preview
                                 : g.file instanceof Blob
-                                ? URL.createObjectURL(g.file)
-                                : g.downloadURL || "";
+                                  ? URL.createObjectURL(g.file)
+                                  : g.downloadURL || "";
 
                         return (
                             <button
@@ -921,7 +941,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                         e.stopPropagation();
                                         setPurchaseData((prev) => {
                                             const next = prev.sides[currentSide].uploadedGraphics.filter(
-                                                (gg) => gg.id !== g.id
+                                                (gg) => gg.id !== g.id,
                                             );
                                             const wasActive =
                                                 prev.sides[currentSide].activeGraphicId === g.id &&
@@ -941,8 +961,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                                             ? texts[0]
                                                                 ? { type: "text", id: texts[0].id }
                                                                 : next[0]
-                                                                ? { type: "graphic", id: next[0].id }
-                                                                : null
+                                                                  ? { type: "graphic", id: next[0].id }
+                                                                  : null
                                                             : prev.sides[currentSide].activeElement,
                                                     },
                                                 },
@@ -1012,7 +1032,7 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                         e.stopPropagation();
                                         setPurchaseData((prev) => {
                                             const nextTexts = prev.sides[currentSide].texts.filter(
-                                                (tt) => tt.id !== t.id
+                                                (tt) => tt.id !== t.id,
                                             );
 
                                             const wasActiveText =
@@ -1023,8 +1043,8 @@ export default function ConfigureDesign({ product, setCurrentStep, steps, curren
                                                 ? nextTexts[0]
                                                     ? { type: "text", id: nextTexts[0].id }
                                                     : uploadedGraphics[0]
-                                                    ? { type: "graphic", id: uploadedGraphics[0].id }
-                                                    : null
+                                                      ? { type: "graphic", id: uploadedGraphics[0].id }
+                                                      : null
                                                 : prev.sides[currentSide].activeElement;
 
                                             return {
