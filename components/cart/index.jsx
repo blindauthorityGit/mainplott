@@ -161,7 +161,7 @@ export default function CartSidebar() {
         return cartItems.map((src, idx) => {
             const li =
                 lineItems.find((li) =>
-                    (li.customAttributes || []).some((a) => a.key === "itemIndex" && Number(a.value) === idx)
+                    (li.customAttributes || []).some((a) => a.key === "itemIndex" && Number(a.value) === idx),
                 ) ||
                 lineItems[idx] ||
                 null;
@@ -318,10 +318,10 @@ export default function CartSidebar() {
             if (!checkoutUrl) throw new Error("Checkout URL missing");
 
             const dev = [process.env.NEXT_PUBLIC_DEV, process.env.NEXT_DEV].some((v) => v === "1" || v === "true");
-            if (dev) {
-                console.log("DEV MODE – checkoutUrl:", checkoutUrl);
-                return;
-            }
+            // if (dev) {
+            //     console.log("DEV MODE – checkoutUrl:", checkoutUrl);
+            //     return;
+            // }
             window.location.href = checkoutUrl;
         } catch (err) {
             console.error("❌ handleCheckout failed:", err);
@@ -413,7 +413,7 @@ export default function CartSidebar() {
                                                                     ([variantName, det]) =>
                                                                         det.quantity > 0 &&
                                                                         variantName !== "frontVeredelung" &&
-                                                                        variantName !== "backVeredelung"
+                                                                        variantName !== "backVeredelung",
                                                                 )
                                                                 .map(([size, det]) => (
                                                                     <span
