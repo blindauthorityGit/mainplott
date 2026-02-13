@@ -43,7 +43,7 @@ const KonvaLayer = forwardRef(
             initialPosition,
             resetHandler,
         },
-        ref
+        ref,
     ) => {
         const stageRef = useRef(null);
         const productImageRef = useRef(null);
@@ -238,6 +238,17 @@ const KonvaLayer = forwardRef(
             }
         }, [activeGraphicId, uploadedGraphics, imageObjs]);
 
+        const activateGraphic = (id) => {
+            setActiveElement(currentSide, "graphic", id);
+            requestAnimationFrame(() => {
+                const node = graphicRefs.current[id]?.current;
+                if (!node) return;
+                transformerRef.current?.nodes([node]);
+                transformerRef.current?.getLayer()?.batchDraw();
+                showTransformerFor(4);
+            });
+        };
+
         // DELETB BUTTONS LOGIK
         useEffect(() => {
             if (!activeGraphicId || !graphicRefs.current[activeGraphicId]?.current || !stageRef.current) {
@@ -388,7 +399,7 @@ const KonvaLayer = forwardRef(
                     } catch {}
                 }
             },
-            []
+            [],
         );
 
         function showTransformerFor(seconds = 4) {
@@ -798,7 +809,7 @@ const KonvaLayer = forwardRef(
                         [currentSide]: {
                             ...prev.sides[currentSide],
                             uploadedGraphics: prev.sides[currentSide].uploadedGraphics.map((g) =>
-                                g.id === id ? { ...g, xPosition: x, yPosition: y } : g
+                                g.id === id ? { ...g, xPosition: x, yPosition: y } : g,
                             ),
                         },
                     },
@@ -832,7 +843,7 @@ const KonvaLayer = forwardRef(
                                           scale: node.scaleX(),
                                           rotation: node.rotation(),
                                       }
-                                    : g
+                                    : g,
                             ),
                         },
                     },
@@ -884,6 +895,33 @@ const KonvaLayer = forwardRef(
             }
 
             return { x: clampedX, y: clampedY };
+        };
+
+        const dragBoundFuncForId = (id) => (pos) => {
+            const boundingRectNode = boundaryRectRef.current;
+            const shapeNode = graphicRefs.current[id]?.current;
+            if (!boundingRectNode || !shapeNode) return pos;
+
+            const boundingRect = boundingRectNode.getClientRect();
+
+            const sx = shapeNode.scaleX?.() ?? 1;
+            const sy = shapeNode.scaleY?.() ?? 1;
+            const w = (shapeNode.width?.() ?? 0) * sx;
+            const h = (shapeNode.height?.() ?? 0) * sy;
+
+            const halfW = w / 2;
+            const halfH = h / 2;
+
+            let x = pos.x;
+            let y = pos.y;
+
+            if (x - halfW < boundingRect.x) x = boundingRect.x + halfW;
+            if (x + halfW > boundingRect.x + boundingRect.width) x = boundingRect.x + boundingRect.width - halfW;
+
+            if (y - halfH < boundingRect.y) y = boundingRect.y + halfH;
+            if (y + halfH > boundingRect.y + boundingRect.height) y = boundingRect.y + boundingRect.height - halfH;
+
+            return { x, y };
         };
 
         const boundBoxFunc = (oldBox, newBox) => {
@@ -1013,7 +1051,7 @@ const KonvaLayer = forwardRef(
                     url: i.url, // hook liefert .url
                     name: i.filename || i.productTitle || i.name || "Grafik",
                 })),
-            [assetsImages]
+            [assetsImages],
         );
 
         // =================================================
@@ -1180,11 +1218,25 @@ const KonvaLayer = forwardRef(
                                         offsetX={(g.width || imageObjs[i]?.width || 0) / 2}
                                         offsetY={(g.height || imageObjs[i]?.height || 0) / 2}
                                         draggable={isGraphicDraggable}
-                                        onDragStart={handleGraphicDragStart}
+                                        // ✅ WICHTIG: Aktivieren passiert VOR Drag
+                                        onMouseDown={(e) => {
+                                            e.cancelBubble = true; // verhindert "Stage click" etc.
+                                            activateGraphic(g.id);
+                                        }}
+                                        onTouchStart={(e) => {
+                                            e.cancelBubble = true;
+                                            activateGraphic(g.id);
+                                        }}
+                                        onDragStart={(e) => {
+                                            e.cancelBubble = true;
+                                            activateGraphic(g.id); // Transformer springt sofort auf richtiges Objekt
+                                            handleGraphicDragStart(e); // dein bestehender Handler
+                                        }}
                                         onDragEnd={(e) => handleGraphicDragEnd(e, g.id)}
                                         onTransform={handleGraphicTransform}
                                         onTransformEnd={(e) => handleGraphicTransformEnd(e, g.id)}
-                                        dragBoundFunc={dragBoundFunc}
+                                        // ✅ pro-Objekt Boundaries (siehe Punkt 2)
+                                        dragBoundFunc={dragBoundFuncForId(g.id)}
                                         onMouseEnter={() => {
                                             hoveredRef.current = true;
                                             setTransformerVisible(true);
@@ -1196,13 +1248,13 @@ const KonvaLayer = forwardRef(
                                                 if (!hoveredRef.current) hideGraphicTransformer({ immediate: false });
                                             }, 120);
                                         }}
-                                        onClick={() => {
-                                            setActiveElement(currentSide, "graphic", g.id);
-                                            transformerRef.current?.nodes([graphicRefs.current[g.id].current]);
-                                            transformerRef.current?.getLayer()?.batchDraw();
-                                            showTransformerFor(4);
+                                        // Click kannst du drin lassen, aber nur noch als Fallback
+                                        onClick={(e) => {
+                                            e.cancelBubble = true;
+                                            activateGraphic(g.id);
                                         }}
                                         hitFunc={(context, shape) => {
+                                            // (Optional) später kleiner machen – erstmal lassen oder reduzieren
                                             const sideTolerance = 30;
                                             const topTolerance = 60;
                                             const bottomTolerance = 30;
@@ -1211,7 +1263,7 @@ const KonvaLayer = forwardRef(
                                                 -sideTolerance,
                                                 -topTolerance,
                                                 shape.width() + sideTolerance * 2,
-                                                shape.height() + topTolerance + bottomTolerance
+                                                shape.height() + topTolerance + bottomTolerance,
                                             );
                                             context.closePath();
                                             context.fillStrokeShape(shape);
@@ -1232,7 +1284,7 @@ const KonvaLayer = forwardRef(
                                 const { width } = measureTextPx(
                                     (t.value || "").replace(/\n+/g, " "),
                                     fontFamily,
-                                    fontSize
+                                    fontSize,
                                 );
                                 const PAD = Math.max(6, Math.round(fontSize * 0.12));
                                 const pathLength = width + 2 * PAD;
@@ -1282,7 +1334,7 @@ const KonvaLayer = forwardRef(
                                         if (isParagraph) {
                                             const width = Math.max(
                                                 80,
-                                                Math.min(boundingRect.width, node.width?.() || (t.boxWidth ?? 300))
+                                                Math.min(boundingRect.width, node.width?.() || (t.boxWidth ?? 300)),
                                             );
                                             next.boxWidth = width;
                                         }
@@ -1422,7 +1474,7 @@ const KonvaLayer = forwardRef(
                 </div>
             </div>
         );
-    }
+    },
 );
 
 KonvaLayer.displayName = "KonvaLayer";
