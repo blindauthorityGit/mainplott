@@ -22,7 +22,7 @@ function ProductCard({ product }) {
     const specialCollectionKeywords = ["kinder", "hochzeit", "geburt", "weihnachten", "geschenkidee"];
     const collections = product.node.collections?.edges || [];
     const isSpecialCollection = collections.some((e) =>
-        specialCollectionKeywords.some((kw) => e.node.handle.includes(kw))
+        specialCollectionKeywords.some((kw) => e.node.handle.includes(kw)),
     );
 
     const firstOptionKey = Object.keys(formattedVariants)[0];
@@ -98,10 +98,10 @@ function ProductCard({ product }) {
             {/* Content */}
             <div className="p-4 flex flex-col gap-3">
                 <div>
-                    <h3 className="font-body text-base lg:text-md 2xl:text-lg font-semibold text-textColor leading-snug line-clamp-2">
+                    <h3 className="font-body text-base lg:text-md 2xl:text-md font-semibold text-textColor leading-snug line-clamp-2">
                         {title}
                     </h3>
-                    <p className="mt-1 text-xs lg:text-xs 2xl:text-sm text-textColor/80 line-clamp-2">{description}</p>
+                    <p className="mt-1 text-xs lg:text-xs 2xl:text-xs text-textColor/80 line-clamp-2">{description}</p>
                 </div>
 
                 <div className="mt-1 flex flex-col gap-3">
@@ -132,8 +132,8 @@ function ProductCard({ product }) {
                     </div>
 
                     {/* Preis */}
-                    <div className="flex items-baseline justify-between">
-                        <div className="font-primary font-semibold text-base 2xl:text-lg text-gray-700">
+                    <div className="flex items-baseline justify-between xl:mt-2">
+                        <div className="font-primary font-semibold text-base 2xl:text-base text-gray-700">
                             {calculateLowestPrice(product.node.variants.edges)}
                         </div>
                         <div className="text-[11px] text-textColor/70">
